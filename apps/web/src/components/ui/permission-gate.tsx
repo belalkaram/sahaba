@@ -1,43 +1,48 @@
 'use client';
 
+/**
+ * R1B — PermissionGate
+ * Guards UI elements by permission key or experience type.
+ * Backed by the canonical AuthSession from /auth/me.
+ *
+ * NOTE: This is a UI visibility guard only.
+ * Backend API endpoints enforce authorization independently.
+ */
+
 import React from 'react';
 import { useAuth } from '../../context/auth-context';
+import { useCan } from '../../hooks/useCan';
+import type { Experience } from '../../types/auth';
 
 export interface PermissionGateProps {
+  /** Show only if user has this permission in their PermissionsMap */
   permission?: string;
-  role?: 'student' | 'teacher' | 'parent' | 'admin';
+  /** Show only if user's experience matches one of these */
+  experience?: Experience | Experience[];
   fallback?: React.ReactNode;
   children: React.ReactNode;
 }
 
 export const PermissionGate: React.FC<PermissionGateProps> = ({
   permission,
-  role,
+  experience,
   fallback = null,
   children,
 }) => {
-  const { user, currentRole } = useAuth();
+  const { experience: userExperience } = useAuth();
+  const hasPermission = useCan(permission ?? '');
 
-  // If role is specified, check role
-  if (role && currentRole !== role && currentRole !== 'admin') {
-    return <>{fallback}</>;
-  }
-
-  // If specific permission is specified, check user's roles' permissions
-  if (permission && user) {
-    // Admin has all permissions
-    if (currentRole === 'admin') {
-      return <>{children}</>;
-    }
-
-    const userPermissions = (user.roles || []).flatMap((r) =>
-      (r.permissions || []).map((p) => p.name)
-    );
-
-    const hasPermission = userPermissions.includes(permission);
-    if (!hasPermission) {
+  // Check experience restriction
+  if (experience !== undefined) {
+    const allowed = Array.isArray(experience) ? experience : [experience];
+    if (!userExperience || !allowed.includes(userExperience)) {
       return <>{fallback}</>;
     }
+  }
+
+  // Check permission restriction
+  if (permission !== undefined && !hasPermission) {
+    return <>{fallback}</>;
   }
 
   return <>{children}</>;

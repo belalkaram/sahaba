@@ -1,43 +1,56 @@
 'use client';
 
 import React from 'react';
-import { Card } from './card';
+import { Inbox } from 'lucide-react';
+import { cn } from '../../lib/cn';
+import { Button } from './button';
 
 export interface EmptyStateProps {
   icon?: React.ReactNode;
   title: string;
   description: string;
-  action?: {
-    label: string;
-    onClick: () => void;
-  };
+  action?:
+    | {
+        label: string;
+        onClick: () => void;
+      }
+    | React.ReactNode;
   className?: string;
+  compact?: boolean;
 }
 
-export const EmptyState: React.FC<EmptyStateProps> = ({
-  icon,
-  title,
-  description,
-  action,
-  className = '',
-}) => {
+/** Empty state with the Gulf arch frame and a next action — never a bare "0". */
+export const EmptyState: React.FC<EmptyStateProps> = ({ icon, title, description, action, className = '', compact }) => {
+  const isActionObject =
+    !!action && typeof action === 'object' && 'label' in (action as object) && 'onClick' in (action as object);
+
   return (
-    <Card className={`p-12 text-center flex flex-col items-center justify-center space-y-4 border-dashed border-border bg-background/40 ${className}`} dir="rtl">
-      <div className="h-14 w-14 rounded-[20px] bg-card border border-border flex items-center justify-center text-2xl text-secondary">
-        {icon || '📭'}
+    <div
+      className={cn(
+        'flex flex-col items-center justify-center text-center rounded-lg border border-dashed border-border-strong bg-surface',
+        compact ? 'gap-3 px-6 py-8' : 'gap-4 px-6 py-12',
+        className,
+      )}
+    >
+      <div className="arch relative grid h-16 w-14 place-items-center overflow-hidden bg-primary-subtle text-primary">
+        <span className="pattern-overlay" aria-hidden />
+        <span className="relative">{icon || <Inbox size={24} strokeWidth={1.75} aria-hidden />}</span>
       </div>
-      <div className="max-w-md">
-        <h3 className="text-sm font-bold text-white">{title}</h3>
-        <p className="text-xs text-secondary mt-1 leading-relaxed">{description}</p>
+      <div className="max-w-md space-y-1">
+        <h3 className="text-base font-bold text-fg">{title}</h3>
+        <p className="text-sm leading-relaxed text-fg-muted">{description}</p>
       </div>
       {action && (
-        <button
-          onClick={action.onClick}
-          className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-[16px] bg-primary hover:bg-primary text-white font-semibold text-xs shadow-md shadow-emerald-600/20 transition-all active:scale-95"
-        >
-          {action.label}
-        </button>
+        <div className="mt-1">
+          {isActionObject ? (
+            <Button size="sm" onClick={(action as { onClick: () => void }).onClick}>
+              {(action as { label: string }).label}
+            </Button>
+          ) : (
+            (action as React.ReactNode)
+          )}
+        </div>
       )}
-    </Card>
+    </div>
   );
 };

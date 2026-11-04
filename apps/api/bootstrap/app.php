@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Middleware\PlatformAuthenticate;
 use App\Http\Middleware\RequestCorrelationMiddleware;
 use App\Http\Middleware\TenantAuthenticate;
 use App\Http\Middleware\TenantAuthorize;
+use App\Http\Middleware\TenantModuleMiddleware;
 use App\Http\Middleware\TenantResolutionMiddleware;
 use App\Support\ApiResponse;
 use App\Tenancy\Exceptions\TenantInactiveException;
@@ -37,6 +39,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant' => TenantResolutionMiddleware::class,
             'tenant.auth' => TenantAuthenticate::class,
             'tenant.can' => TenantAuthorize::class,
+            'tenant.module' => TenantModuleMiddleware::class, // R1-A5: Organization module gate
+            'platform.auth' => PlatformAuthenticate::class,   // R0-1 interim; replaced by real platform tokens in R1-A9
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

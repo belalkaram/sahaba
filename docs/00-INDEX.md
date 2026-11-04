@@ -1,5 +1,13 @@
 # Documentation Index
 
+## Canonical files
+- `master/MASTER-SPECIFICATION.md` is canonical for the specification; files under `phases/` are the source phases it was built from.
+- `phases/phase-h-rendered-document.md` is a rendered mirror of `phases/phase-h.md`: edit `phase-h.md` only.
+- Status: `../prompts/recovery/03-PROGRESS-TRACKER.md` and `recovery-reports/`. Older status documents are historical.
+
+## Audit & Recovery (current source of truth for status)
+- `audit/2026-10-30-system-gap-analysis/README.md`
+
 ## Master
 - `master/MASTER-SPECIFICATION.md`
 

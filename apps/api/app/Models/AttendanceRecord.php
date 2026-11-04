@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AttendanceRecord extends TenantModel
 {
@@ -35,5 +36,10 @@ class AttendanceRecord extends TenantModel
     public function recordedBy(): BelongsTo
     {
         return $this->belongsTo(TenantUser::class, 'recorded_by_user_id');
+    }
+
+    public function changes(): HasMany
+    {
+        return $this->hasMany(AttendanceRecordChange::class, 'attendance_record_id')->orderBy('created_at', 'desc');
     }
 }

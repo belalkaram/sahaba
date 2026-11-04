@@ -81,8 +81,15 @@ class Tenant extends Model
      */
     public function hasFeature(string $featureKey): bool
     {
+        $this->loadMissing('features');
         $feature = $this->features->firstWhere('feature_key', $featureKey);
 
-        return $feature ? (bool) $feature->enabled : false;
+        if ($feature !== null) {
+            return (bool) $feature->enabled;
+        }
+
+        $module = config("authorization.modules.{$featureKey}");
+
+        return $module ? (bool) ($module['is_default'] ?? true) : false;
     }
 }

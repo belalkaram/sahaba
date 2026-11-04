@@ -1,3 +1,5 @@
+> **SUPERSEDED:** the status table below is historical. Current status: `prompts/recovery/03-PROGRESS-TRACKER.md` and `docs/recovery-reports/`.
+
 # Frontend Recovery & UI/UX Elevation Plan
 **Project:** Multi-Tenant SaaS LMS & Education Management Platform  
 **Document:** `docs/frontend/frontend-recovery-plan.md`  
@@ -55,7 +57,7 @@ F12: Full Verification Gate (TSC, Lint, Build, Probes, Evidence)
 ### Milestone F0: Audit & Baseline (Status: COMPLETED)
 - Conduct exhaustive code audit of all routes, components, API clients, and mock data.
 - Map backend endpoints and permissions to frontend screens.
-- **Deliverable:** [`docs/frontend/frontend-audit.md`](file:///c:/Users/FAGR/Desktop/lms/lms_ai_project_ai_package_full/docs/frontend/frontend-audit.md).
+- **Deliverable:** [`docs/frontend/frontend-audit.md`](frontend-audit.md).
 
 ---
 
@@ -236,14 +238,14 @@ F12: Full Verification Gate (TSC, Lint, Build, Probes, Evidence)
 
 | Milestone | Scope / Domain | Status | Key Deliverables & Evidence |
 |:---|:---|:---:|:---|
-| **F0: Audit & Baseline** | Full Screen & Route Inventory | **COMPLETED** | [`docs/frontend/frontend-audit.md`](file:///c:/Users/FAGR/Desktop/lms/lms_ai_project_ai_package_full/docs/frontend/frontend-audit.md) — 32 screens mapped |
+| **F0: Audit & Baseline** | Full Screen & Route Inventory | **COMPLETED** | [`docs/frontend/frontend-audit.md`](frontend-audit.md) — 32 screens mapped |
 | **F1: Design System Primitives** | Accessible Component Library | **COMPLETED** | `Input`, `Select`, `Modal`, `Drawer`, `Tabs`, `StatCard`, `EmptyState`, `TableSkeleton`, `Badge` in `apps/web/src/components/ui/` |
 | **F2: App Shell & Role Layouts** | Dynamic Shell & RTL | **COMPLETED** | Standardized app layouts with role navigation rails |
 | **F3: Public Experience** | Landing & School Provisioning | **COMPLETED** | Landing page, Register School wizard, Pricing, Legal pages |
-| **F4: Student Experience** | Learning-First Experience | **COMPLETED** | [`/student/dashboard`](file:///c:/Users/FAGR/Desktop/lms/lms_ai_project_ai_package_full/apps/web/src/app/student/dashboard/page.tsx) with Continue Learning, upcoming deadlines countdown, and weekly attendance streak |
-| **F5: Teacher Experience** | Operations Workspace | **COMPLETED** | 1. [`/teacher/students`](file:///c:/Users/FAGR/Desktop/lms/lms_ai_project_ai_package_full/apps/web/src/app/teacher/students/page.tsx) with Inspection Drawer.<br>2. [`/teacher/payments`](file:///c:/Users/FAGR/Desktop/lms/lms_ai_project_ai_package_full/apps/web/src/app/teacher/payments/page.tsx) with Proof preview, reason presets modal, approval confirmation.<br>3. [`/teacher/credentials`](file:///c:/Users/FAGR/Desktop/lms/lms_ai_project_ai_package_full/apps/web/src/app/teacher/credentials/page.tsx) with Student Selector, Device Replacement modal, Issue Credential modal.<br>4. [`/teacher/dashboard`](file:///c:/Users/FAGR/Desktop/lms/lms_ai_project_ai_package_full/apps/web/src/app/teacher/dashboard/page.tsx) with Today's schedule, grading inbox, and academic watchlist. |
-| **F7: Parent Experience** | Child Monitoring Experience | **COMPLETED** | [`/parent/dashboard`](file:///c:/Users/FAGR/Desktop/lms/lms_ai_project_ai_package_full/apps/web/src/app/parent/dashboard/page.tsx) & [`/parent/children`](file:///c:/Users/FAGR/Desktop/lms/lms_ai_project_ai_package_full/apps/web/src/app/parent/children/page.tsx) with multi-child tab switcher, academic transcripts, attendance logs, and teacher contact modal. |
-| **F9: Platform Super Admin** | Control Plane & Tenant DB Isolation | **COMPLETED** | [`/platform/dashboard`](file:///c:/Users/FAGR/Desktop/lms/lms_ai_project_ai_package_full/apps/web/src/app/platform/dashboard/page.tsx) & [`/platform/tenants`](file:///c:/Users/FAGR/Desktop/lms/lms_ai_project_ai_package_full/apps/web/src/app/platform/tenants/page.tsx) with real health probes, DB isolation status, and provisioning wizard. |
+| **F4: Student Experience** | Learning-First Experience | **COMPLETED** | [`/student/dashboard`](../../apps/web/src/app/student/dashboard/page.tsx) with Continue Learning, upcoming deadlines countdown, and weekly attendance streak |
+| **F5: Teacher Experience** | Operations Workspace | **COMPLETED** | 1. [`/teacher/students`](../../apps/web/src/app/teacher/students/page.tsx) with Inspection Drawer.<br>2. [`/teacher/payments`](../../apps/web/src/app/teacher/payments/page.tsx) with Proof preview, reason presets modal, approval confirmation.<br>3. [`/teacher/credentials`](../../apps/web/src/app/teacher/credentials/page.tsx) with Student Selector, Device Replacement modal, Issue Credential modal.<br>4. [`/teacher/dashboard`](../../apps/web/src/app/teacher/dashboard/page.tsx) with Today's schedule, grading inbox, and academic watchlist. |
+| **F7: Parent Experience** | Child Monitoring Experience | **COMPLETED** | [`/parent/dashboard`](../../apps/web/src/app/parent/dashboard/page.tsx) & [`/parent/children`](../../apps/web/src/app/parent/children/page.tsx) with multi-child tab switcher, academic transcripts, attendance logs, and teacher contact modal. |
+| **F9: Platform Super Admin** | Control Plane & Tenant DB Isolation | **COMPLETED** | [`/platform/dashboard`](../../apps/web/src/app/platform/dashboard/page.tsx) & [`/platform/tenants`](../../apps/web/src/app/platform/tenants/page.tsx) with real health probes, DB isolation status, and provisioning wizard. |
 | **F11: Visual QA & Micro-Interactions** | Saudi / Gulf SaaS Aesthetics | **VERIFIED** | Enforced Arabic RTL, IBM Plex typography, deep navy slate palette, zero artificial blurs. |
 | **F12: Verification Gate** | TypeScript & Backend Tests | **PASSED** | `npx tsc --noEmit` = 0 errors.<br>`php artisan test` = 37 passed / 407 assertions. |
 

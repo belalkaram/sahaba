@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Staff extends TenantModel
@@ -13,6 +14,14 @@ class Staff extends TenantModel
         'user_id',
         'staff_type',
         'status',
+        'photo_path',
+        'headline',
+        'public_bio',
+        'is_public',
+    ];
+
+    protected $casts = [
+        'is_public' => 'boolean',
     ];
 
     public function user(): BelongsTo
@@ -28,6 +37,16 @@ class Staff extends TenantModel
     public function classes(): HasMany
     {
         return $this->hasMany(SchoolClass::class, 'teacher_staff_id');
+    }
+
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(StaffAssignment::class, 'staff_id');
+    }
+
+    public function branches(): BelongsToMany
+    {
+        return $this->belongsToMany(Branch::class, 'staff_branches', 'staff_id', 'branch_id')->withTimestamps();
     }
 
     public function isTeacher(): bool

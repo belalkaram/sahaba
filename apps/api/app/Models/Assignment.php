@@ -16,12 +16,21 @@ class Assignment extends TenantModel
         'description',
         'points_possible',
         'due_at',
+        'allow_late',
+        'late_penalty_percent',
+        'allow_resubmission',
+        'max_file_size_mb',
+        'allowed_file_types',
         'status',
     ];
 
     protected $casts = [
         'points_possible' => 'decimal:2',
         'due_at' => 'datetime',
+        'allow_late' => 'boolean',
+        'late_penalty_percent' => 'integer',
+        'allow_resubmission' => 'boolean',
+        'max_file_size_mb' => 'integer',
     ];
 
     public function course(): BelongsTo

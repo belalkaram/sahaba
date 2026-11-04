@@ -46,21 +46,23 @@ export const credentialsApi = {
     return res.data;
   },
 
-  async replaceDevice(
+  /** Unbinds the current device; the student's next sign-in binds the new one. */
+  async replaceDevice(credentialId: string, reason: string): Promise<void> {
+    await apiClient.post(`/credentials/${credentialId}/replace-device`, { reason });
+  },
+
+  async requestReplacement(
     credentialId: string,
-    params: {
-      newDeviceId: string;
-      newDeviceName: string;
-      newDeviceFingerprint: string;
-      reason: string;
-    }
-  ): Promise<void> {
-    await apiClient.post(`/credentials/${credentialId}/replace-device`, {
-      new_device_id: params.newDeviceId,
-      new_device_fingerprint: params.newDeviceFingerprint,
-      new_device_name: params.newDeviceName,
-      reason: params.reason,
-    });
+    params: { reason: string; newDeviceName?: string }
+  ): Promise<{ message: string }> {
+    const res = await apiClient.post<{ message: string }>(
+      `/credentials/${credentialId}/request-replacement`,
+      {
+        reason: params.reason,
+        new_device_name: params.newDeviceName,
+      }
+    );
+    return res.data;
   },
 
   async revoke(credentialId: string, reason: string): Promise<void> {

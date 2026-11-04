@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Domain\Reporting\Services\ReportGenerationService;
 use App\Models\Assignment;
 use App\Models\AssignmentSubmission;
 use App\Models\AttendanceRecord;
@@ -9,9 +10,11 @@ use App\Models\Branch;
 use App\Models\Classroom;
 use App\Models\ClassSession;
 use App\Models\Course;
+use App\Models\Enrollment;
 use App\Models\Grade;
 use App\Models\MetricMeasurement;
 use App\Models\Permission;
+use App\Models\ReportInstance;
 use App\Models\Role;
 use App\Models\SchoolClass;
 use App\Models\Staff;
@@ -24,6 +27,7 @@ use App\Tenancy\TenantContext;
 use App\Tenancy\TenantDatabaseManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class AnalyticsAndReportingGateTest extends TestCase
@@ -193,6 +197,9 @@ class AnalyticsAndReportingGateTest extends TestCase
         AttendanceRecord::create(['session_id' => $session1->id, 'student_id' => $tenantA['student']->id, 'status' => 'present', 'mode' => 'qr']);
         AttendanceRecord::create(['session_id' => $session2->id, 'student_id' => $tenantA['student']->id, 'status' => 'absent', 'mode' => 'manual']);
 
+        // Completion counts assignments in the student's enrolled courses
+        Enrollment::create(['student_id' => $tenantA['student']->id, 'course_id' => $course->id, 'status' => 'active', 'enrolled_at' => now()]);
+
         // 1 assignment created and submitted -> 100% completion
         $assignment = Assignment::create(['course_id' => $course->id, 'title' => 'Cell Structure', 'points_possible' => 100, 'status' => 'published']);
         AssignmentSubmission::create(['assignment_id' => $assignment->id, 'student_id' => $tenantA['student']->id, 'score' => 90, 'status' => 'graded']);
@@ -309,17 +316,18 @@ class AnalyticsAndReportingGateTest extends TestCase
         // -------------------------------------------------------------
         // 2. Failure Handling
         // -------------------------------------------------------------
-        $failRes = $this->postJson('/api/v1/reports', [
+        // A data source failure is recorded on the report instead of being lost.
+        $failing = ReportInstance::create([
             'title' => 'Failing Report Test',
+            'requested_by_user_id' => $tenantA['teacherUser']->id,
+            'status' => 'queued',
             'format' => 'json',
-            'parameters' => [
-                'simulate_failure' => true,
-            ],
-        ], $headersTeacherA);
+            'parameters' => ['type' => 'student', 'student_id' => (string) Str::uuid()],
+        ]);
+        $failed = app(ReportGenerationService::class)->generate($failing);
 
-        $failRes->assertStatus(201);
-        $this->assertEquals('failed', $failRes->json('data.report.status'));
-        $this->assertNotEmpty($failRes->json('data.report.error_message'));
+        $this->assertEquals('failed', $failed->status);
+        $this->assertNotEmpty($failed->error_message);
 
         // -------------------------------------------------------------
         // 3. Download Authorization

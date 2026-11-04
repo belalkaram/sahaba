@@ -1,168 +1,271 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useAuth } from '../../../context/auth-context';
+/**
+ * R7B — Student Attendance Page
+ * Built using Design System Primitives and Semantic Tokens.
+ */
+
+import React, { useEffect, useState, useMemo } from 'react';
+import Link from 'next/link';
 import { attendanceApi } from '../../../lib/attendance-api';
-import { analyticsApi } from '../../../lib/analytics-api';
-import type { SchoolClass, ClassSession, StudentAnalyticsSnapshot } from '../../../types';
+import type { StudentAttendanceSummary } from '../../../types';
 import { Card } from '../../../components/ui/card';
 import { Badge } from '../../../components/ui/badge';
-import { CalendarIcon, CheckCircleIcon, QrCodeIcon, AlertCircleIcon } from '../../../components/icons';
+import { Button } from '../../../components/ui/button';
+import { PageHeader } from '../../../components/ui/page-header';
+import { StatCard } from '../../../components/ui/stat-card';
+import { Tabs } from '../../../components/ui/tabs';
+import { ProgressBar } from '../../../components/ui/progress-bar';
+import { CalendarWeek, CalendarEvent } from '../../../components/ui/calendar-week';
+import { EmptyState } from '../../../components/ui/empty-state';
+import { SkeletonTable } from '../../../components/ui/skeleton';
+import { QrCodeIcon } from '../../../components/icons';
 
+import { CalendarDays } from 'lucide-react';
+import { formatDateTime, formatPercent, formatTime } from '../../../lib/format';
 export default function StudentAttendancePage() {
-  const { user } = useAuth();
-  const [classes, setClasses] = useState<SchoolClass[]>([]);
-  const [sessions, setSessions] = useState<ClassSession[]>([]);
-  const [snapshot, setSnapshot] = useState<StudentAnalyticsSnapshot | null>(null);
+  const [data, setData] = useState<StudentAttendanceSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'present' | 'absent' | 'late' | 'excused'>('all');
 
   useEffect(() => {
     const loadAttendance = async () => {
       try {
         setLoading(true);
-        const cls = await attendanceApi.getClasses().catch(() => []);
-        setClasses(cls);
-        if (cls.length > 0) {
-          const sess = await attendanceApi.getSessions(cls[0].id).catch(() => []);
-          setSessions(sess);
-        }
-
-        if (user?.student?.id) {
-          const snap = await analyticsApi.getStudentDashboard(user.student.id).catch(() => null);
-          if (snap) setSnapshot(snap);
-        }
+        setError(null);
+        const res = await attendanceApi.getMyAttendance();
+        setData(res);
+      } catch (err: unknown) {
+        const e = err as { response?: { data?: { message?: string } } };
+        setError(e.response?.data?.message || 'تعذر تحميل سجل الحضور.');
       } finally {
         setLoading(false);
       }
     };
-    if (user) {
-      loadAttendance();
-    }
-  }, [user]);
 
-  const totalSessions = sessions.length;
-  const completedSessions = sessions.filter(s => s.status === 'completed').length;
-  const attendanceRate = snapshot?.attendance_rate ?? 0;
+    loadAttendance();
+  }, []);
+
+  const summary = data?.summary || {
+    total_records: 0,
+    present: 0,
+    absent: 0,
+    late: 0,
+    excused: 0,
+    attendance_rate: 100,
+  };
+
+  const filteredRecords = useMemo(() => {
+    return (data?.records || []).filter((r) => {
+      if (statusFilter === 'all') return true;
+      return r.status === statusFilter;
+    });
+  }, [data, statusFilter]);
+
+  // Convert records to CalendarEvents for CalendarWeek
+  const calendarEvents: CalendarEvent[] = useMemo(() => {
+    // Records without any date cannot be placed on the calendar (never invent "today").
+    return (data?.records || [])
+      .filter((r) => r.session?.session_date || r.session?.starts_at || r.recorded_at)
+      .map((r) => {
+      const d = new Date((r.session?.session_date || r.session?.starts_at || r.recorded_at) as string);
+      const dayIdx = d.getDay(); // 0 is Sunday
+      const statusLabel =
+        r.status === 'present'
+          ? 'حاضر'
+          : r.status === 'late'
+          ? 'متأخر'
+          : r.status === 'excused'
+          ? 'معذور'
+          : 'غائب';
+
+      return {
+        id: r.id,
+        dayIndex: dayIdx,
+        title: `${r.session?.school_class?.name || 'حصة'}: ${statusLabel}`,
+        time: formatTime(d),
+        category: 'attendance',
+      };
+    });
+  }, [data]);
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'present':
+        return <Badge variant="success">حاضر</Badge>;
+      case 'late':
+        return <Badge variant="warning">متأخر</Badge>;
+      case 'excused':
+        return <Badge variant="info">غياب بعذر</Badge>;
+      case 'absent':
+      default:
+        return <Badge variant="danger">غائب</Badge>;
+    }
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
-            <CalendarIcon size={24} className="text-primary" />
-            سجل الحضور والغياب الأكاديمي
-          </h1>
-          <p className="text-sm text-secondary mt-1">
-            سجل تفصيلي لكافة الحصص الدراسية، أوقات التسجيل، وطرق التحقق عبر رمز الاستجابة السريعة (QR Code).
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant={attendanceRate >= 90 ? 'success' : attendanceRate >= 75 ? 'warning' : 'danger'}>
-            نسبة الحضور: {attendanceRate}%
+    <div className="space-y-6 text-start">
+      <PageHeader
+        title="سجل الحضور والغياب الأكاديمي"
+        description="متابعة دقيقة لحضورك في المجموعات والحصص الحضورية، وطرق التسجيل، ونسبة الانضباط العام."
+        breadcrumbs={[
+          { label: 'الرئيسية', href: '/student/dashboard' },
+          { label: 'سجل الحضور' },
+        ]}
+        badge={
+          <Badge variant={summary.attendance_rate >= 80 ? 'success' : 'warning'}>
+            نسبة الحضور: {formatPercent(summary.attendance_rate)}
           </Badge>
+        }
+        actions={
+          <Link href="/student/card">
+            <Button variant="primary" className="flex items-center gap-2">
+              <QrCodeIcon size={16} />
+              <span>فتح بطاقة الطالب (QR)</span>
+            </Button>
+          </Link>
+        }
+      />
+
+      {error && (
+        <div className="p-4 rounded-md bg-danger-subtle border border-danger/30 text-danger text-xs font-semibold">
+          {error}
         </div>
-      </div>
+      )}
 
-      {/* Summary KPI */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="p-5 flex items-center justify-between">
-          <div>
-            <p className="text-xs text-secondary">إجمالي الحصص المجدولة</p>
-            <h3 className="text-2xl font-bold text-white mt-1">{totalSessions}</h3>
+      {loading ? (
+        <SkeletonTable rows={4} cols={6} />
+      ) : (
+        <>
+          {/* Summary Stat Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <StatCard
+              title="نسبة الانضباط"
+              value={`${summary.attendance_rate}%`}
+              variant="emerald"
+            />
+            <StatCard
+              title="إجمالي الجلسات"
+              value={summary.total_records}
+              variant="default"
+            />
+            <StatCard
+              title="حاضر"
+              value={summary.present}
+              variant="emerald"
+            />
+            <StatCard
+              title="متأخر"
+              value={summary.late}
+              variant="amber"
+            />
+            <StatCard
+              title="غياب بعذر"
+              value={summary.excused}
+              variant="indigo"
+            />
+            <StatCard
+              title="غائب"
+              value={summary.absent}
+              variant="purple"
+            />
           </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-[16px] bg-card border-border border text-secondary">
-            <CalendarIcon size={20} />
-          </div>
-        </Card>
 
-        <Card className="p-5 flex items-center justify-between">
-          <div>
-            <p className="text-xs text-secondary">مرات الحضور المؤكد</p>
-            <h3 className="text-2xl font-bold text-primary mt-1">{completedSessions}</h3>
+          {/* Week Calendar Visualization */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-bold text-fg">جدول الحصص هذا الأسبوع</h3>
+            <CalendarWeek events={calendarEvents} />
           </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-[16px] bg-primary/10 text-primary">
-            <CheckCircleIcon size={20} />
-          </div>
-        </Card>
 
-        <Card className="p-5 flex items-center justify-between">
-          <div>
-            <p className="text-xs text-secondary">طريقة الرصد الغالبة</p>
-            <h3 className="text-sm font-bold text-turquoise mt-1 flex items-center gap-1.5">
-              <QrCodeIcon size={16} /> مسح QR Code
-            </h3>
-          </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-[16px] bg-cyan-500/10 text-turquoise">
-            <QrCodeIcon size={20} />
-          </div>
-        </Card>
-      </div>
+          {/* Classes Breakdown */}
+          {data?.classes && data.classes.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-bold text-fg">نسبة الحضور حسب المجموعات والفصول</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {data.classes.map((c) => (
+                  <Card key={c.class_id} className="p-4 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-bold text-fg truncate">{c.class_name}</h4>
+                      <Badge variant={c.attendance_rate >= 80 ? 'success' : 'warning'}>
+                        {formatPercent(c.attendance_rate)}
+                      </Badge>
+                    </div>
+                    <ProgressBar
+                      value={c.attendance_rate}
+                      variant={c.attendance_rate >= 80 ? 'success' : 'warning'}
+                      size="sm"
+                    />
+                    <div className="flex items-center justify-between text-xs text-fg-muted pt-1">
+                      <span>إجمالي الجلسات: {c.total_sessions}</span>
+                      <span>حاضر: {c.present}</span>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
 
-      {/* Sessions Table */}
-      <Card className="p-6">
-        <h2 className="text-base font-bold text-white mb-4">سجل الحصص الدراسية الأخيرة</h2>
+          {/* Detailed Records Table */}
+          <Card className="p-4 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <h3 className="text-sm font-bold text-fg">السجل التفصيلي للجلسات</h3>
+              <Tabs
+                tabs={[
+                  { id: 'all', label: 'الكل' },
+                  { id: 'present', label: 'حاضر' },
+                  { id: 'late', label: 'متأخر' },
+                  { id: 'excused', label: 'بعذر' },
+                  { id: 'absent', label: 'غائب' },
+                ]}
+                activeTab={statusFilter}
+                onChange={(t) => setStatusFilter(t as any)}
+              />
+            </div>
 
-        {loading ? (
-          <div className="py-12 text-center text-secondary text-sm">جارٍ تحميل سجل الحضور...</div>
-        ) : sessions.length === 0 ? (
-          <div className="py-8 text-center text-secondary text-sm">
-            لا توجد جلسات حضور مسجلة حالياً.
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-right text-xs">
-              <thead className="border-b border-border text-secondary">
-                <tr>
-                  <th className="pb-3 px-3">عنوان الحصة</th>
-                  <th className="pb-3 px-3">تاريخ ووقت الانعقاد</th>
-                  <th className="pb-3 px-3">طريقة الرصد</th>
-                  <th className="pb-3 px-3">حالة الحضور</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60">
-                {sessions.map((sess) => {
-                  const isCompleted = sess.status === 'completed';
-                  const isScheduled = sess.status === 'scheduled';
-                  
-                  return (
-                    <tr key={sess.id} className="hover:bg-card/40">
-                      <td className="py-3 px-3 font-semibold text-white">{sess.title}</td>
-                      <td className="py-3 px-3 text-secondary font-mono">
-                        {new Date(sess.session_date).toLocaleString('ar-EG', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </td>
-                      <td className="py-3 px-3">
-                        {isCompleted ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] text-turquoise bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20 font-medium">
-                            <QrCodeIcon size={12} /> رمز QR
-                          </span>
-                        ) : (
-                          <span className="text-secondary">—</span>
-                        )}
-                      </td>
-                      <td className="py-3 px-3">
-                        {isCompleted ? (
-                          <Badge variant="success">حاضر (Present)</Badge>
-                        ) : isScheduled ? (
-                          <Badge variant="neutral" className="bg-secondary/20 text-secondary border-none">قادم (Upcoming)</Badge>
-                        ) : (
-                          <Badge variant="warning">قيد الانعقاد</Badge>
-                        )}
-                      </td>
+            {filteredRecords.length === 0 ? (
+              <EmptyState
+                title="لا توجد سجلات مطابقة"
+                description="لم يتم العثور على أي جلسات حضور تطابق معيار التصفية المحدد."
+                icon={<CalendarDays size={20} strokeWidth={1.75} aria-hidden />}
+              />
+            ) : (
+              <div tabIndex={0} className="overflow-x-auto rounded-md border border-border bg-surface">
+                <table className="w-full text-start border-collapse text-xs">
+                  <thead className="border-b border-border bg-surface-sunken text-fg-muted font-semibold">
+                    <tr>
+                      <th className="py-3 px-4">الفصل / المجموعة</th>
+                      <th className="py-3 px-4">تاريخ ووقت الجلسة</th>
+                      <th className="py-3 px-4">طريقة الرصد</th>
+                      <th className="py-3 px-4">الحالة</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {filteredRecords.map((r) => (
+                      <tr key={r.id} className="hover:bg-surface-raised transition-colors">
+                        <td className="py-3.5 px-4 font-semibold text-fg">
+                          {r.session?.school_class?.name || 'فصل دراسي'}
+                        </td>
+                        <td className="py-3.5 px-4 text-fg font-mono">
+                          {formatDateTime(r.session?.session_date || r.session?.starts_at || r.recorded_at)}
+                        </td>
+                        <td className="py-3.5 px-4 text-fg-muted">
+                          {r.attendance_mode === 'qr'
+                            ? 'مسح باركود ذكي (QR)'
+                            : r.attendance_mode === 'manual'
+                            ? 'رصد يدوي بواسطة المعلم'
+                            : 'نظامي'}
+                        </td>
+                        <td className="py-3.5 px-4">{getStatusBadge(r.status)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Card>
+        </>
+      )}
     </div>
   );
 }

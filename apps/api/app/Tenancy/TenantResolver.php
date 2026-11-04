@@ -38,6 +38,10 @@ class TenantResolver
     protected function resolveFromHeaders(Request $request): ?Tenant
     {
         $slug = $request->header('X-Tenant-Slug') ?? $request->header('X-Tenant');
+        // Public, read-only academy images are loaded by a bare <img> that cannot send headers.
+        if (! $slug && $request->isMethod('GET') && $request->is('api/v1/public/academy/*')) {
+            $slug = $request->query('tenant');
+        }
         if (is_string($slug) && trim($slug) !== '') {
             return Tenant::with(['domains', 'databaseConfig', 'features'])
                 ->where('slug', trim($slug))

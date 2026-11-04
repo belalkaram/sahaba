@@ -8,8 +8,9 @@ export const analyticsApi = {
   /**
    * Fast-read student dashboard snapshot.
    */
-  async getStudentDashboard(studentId: string): Promise<StudentAnalyticsSnapshot> {
-    const res = await apiClient.get<{ dashboard: StudentAnalyticsSnapshot }>(
+  /** Null when no snapshot has been computed yet. */
+  async getStudentDashboard(studentId: string): Promise<StudentAnalyticsSnapshot | null> {
+    const res = await apiClient.get<{ dashboard: StudentAnalyticsSnapshot | null }>(
       `/students/${studentId}/dashboard`
     );
     return res.data.dashboard;

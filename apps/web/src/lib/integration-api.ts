@@ -7,7 +7,7 @@ import type { Meeting, MediaAsset } from '../types';
 export interface CreateMeetingPayload {
   title: string;
   description?: string;
-  provider?: 'google_meet' | 'zoom' | 'mock';
+  provider?: 'manual' | 'google_meet' | 'zoom' | 'mock';
   meeting_code?: string;
   meet_url?: string;
   duration_minutes?: number;
@@ -47,6 +47,12 @@ export const integrationApi = {
   async createMeeting(payload: CreateMeetingPayload): Promise<Meeting> {
     const res = await apiClient.post<{ meeting: Meeting }>('/meetings', payload);
     return res.data.meeting;
+  },
+
+  /** The link is issued only after the backend access and time-window checks. */
+  async getMeetingJoinUrl(id: string): Promise<string> {
+    const res = await apiClient.get<{ join_url: string }>(`/meetings/${id}/join`);
+    return res.data.join_url;
   },
 
   /**

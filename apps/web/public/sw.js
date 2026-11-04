@@ -1,8 +1,10 @@
-const CACHE_NAME = 'madar-cache-v1';
+const CACHE_NAME = 'sahaba-cache-v2';
 const OFFLINE_URL = '/offline.html';
 
+// Only static offline assets. API responses, proofs, reports and credentials are never cached:
+// the fetch handler below only answers page navigations (Master §69).
 const urlsToCache = [
-  '/',
+  OFFLINE_URL,
   '/manifest.json'
 ];
 
@@ -38,7 +40,7 @@ self.addEventListener('fetch', (event) => {
           if (response) return response;
           // Return a basic fallback response if offline.html is missing
           return new Response(
-            '<html><head><meta charset="utf-8"><title>منصة مدار - وضع عدم الاتصال</title></head><body style="text-align:center;font-family:sans-serif;padding-top:50px;background:#0d1117;color:#fff;"><h2>أنت غير متصل بالإنترنت</h2><p>يرجى التحقق من اتصال الشبكة الخاص بك.</p></body></html>',
+            '<html><head><meta charset="utf-8"><title>سحابة — وضع عدم الاتصال</title></head><body style="text-align:center;font-family:sans-serif;padding-top:50px;background:#F8F8F6;color:#121A18;"><h2>أنت غير متصل بالإنترنت</h2><p>يرجى التحقق من اتصال الشبكة الخاص بك.</p></body></html>',
             { headers: { 'Content-Type': 'text/html' } }
           );
         });

@@ -11,6 +11,21 @@ class PlatformTenantApiTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected string $platformToken = 'test-platform-admin-token-for-tests';
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        config(['platform.admin_token' => $this->platformToken]);
+    }
+
+    protected function platformHeaders(): array
+    {
+        return [
+            'Authorization' => 'Bearer '.$this->platformToken,
+        ];
+    }
+
     public function test_can_list_tenants()
     {
         $tenant = Tenant::create([
@@ -20,7 +35,7 @@ class PlatformTenantApiTest extends TestCase
             'status' => 'active',
         ]);
 
-        $response = $this->getJson('/api/v1/tenants');
+        $response = $this->withHeaders($this->platformHeaders())->getJson('/api/v1/tenants');
 
         $response->assertStatus(200)
             ->assertJsonStructure(['data' => ['tenants']]);
@@ -36,7 +51,7 @@ class PlatformTenantApiTest extends TestCase
             'type' => 'university',
         ];
 
-        $response = $this->postJson('/api/v1/tenants', $payload);
+        $response = $this->withHeaders($this->platformHeaders())->postJson('/api/v1/tenants', $payload);
 
         $response->assertStatus(201)
             ->assertJsonStructure([

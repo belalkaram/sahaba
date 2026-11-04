@@ -68,7 +68,12 @@ class SupportAccessGateTest extends TestCase
 
     public function test_can_generate_support_access_token()
     {
-        $response = $this->actingAs($this->platformUser)->postJson("/api/v1/tenants/{$this->tenant->id}/support-access", [
+        $platformToken = 'support-gate-platform-token-secret';
+        config(['platform.admin_token' => $platformToken]);
+
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer '.$platformToken,
+        ])->postJson("/api/v1/tenants/{$this->tenant->id}/support-access", [
             'reason' => 'Debugging payment gateway issue.',
         ]);
 
@@ -77,8 +82,8 @@ class SupportAccessGateTest extends TestCase
                 'data' => [
                     'message',
                     'tenant',
-                    'token',
-                    'expires_at',
+                    'support_code',
+                    'support_code_ttl',
                     'audit_log_id',
                 ],
             ]);
@@ -86,9 +91,25 @@ class SupportAccessGateTest extends TestCase
         // Verify the audit log was created in the global DB
         $this->assertDatabaseHas('support_access_logs', [
             'tenant_id' => $this->tenant->id,
-            'platform_user_id' => $this->platformUser->id,
             'reason' => 'Debugging payment gateway issue.',
         ]);
+
+        $supportCode = $response->json('data.support_code');
+
+        // Exchange code for tenant bearer token
+        $exchangeResponse = $this->withHeaders([
+            'X-Tenant-Slug' => $this->tenant->slug,
+        ])->postJson('/api/v1/auth/support/exchange', [
+            'code' => $supportCode,
+        ]);
+
+        $exchangeResponse->assertStatus(200)
+            ->assertJsonStructure([
+                'data' => [
+                    'token',
+                    'expires_at',
+                ],
+            ]);
 
         // Verify the support user was created in the tenant DB
         app(TenantDatabaseManager::class)->configureConnection($this->tenant);

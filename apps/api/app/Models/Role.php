@@ -21,7 +21,9 @@ class Role extends TenantModel
 
     public function permissions(): BelongsToMany
     {
-        return $this->belongsToMany(Permission::class, 'role_permission', 'role_id', 'permission_id');
+        return $this->belongsToMany(Permission::class, 'role_permission', 'role_id', 'permission_id')
+            ->withPivot('scope')
+            ->withTimestamps();
     }
 
     public function users(): BelongsToMany

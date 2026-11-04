@@ -60,4 +60,25 @@ class TenantContext
     {
         $this->tenant = null;
     }
+
+    /**
+     * Delegate static method calls to the singleton instance.
+     */
+    public static function __callStatic(string $method, array $arguments): mixed
+    {
+        return app(self::class)->$method(...$arguments);
+    }
+
+    /**
+     * Static accessors forwarding to the container singleton.
+     */
+    public static function getActiveTenant(): ?Tenant
+    {
+        return app(self::class)->getTenant();
+    }
+
+    public static function activeId(): ?string
+    {
+        return app(self::class)->getTenantId();
+    }
 }

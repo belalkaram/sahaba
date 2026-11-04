@@ -77,6 +77,7 @@ class AttendanceGateTest extends TestCase
             'slug' => 'alhikma',
             'type' => 'educational_center',
             'status' => 'active',
+            'brand_settings' => ['allow_static_student_code_scan' => true],
         ]);
         TenantDatabase::create([
             'tenant_id' => $tenantA->id,
@@ -194,6 +195,7 @@ class AttendanceGateTest extends TestCase
             'slug' => 'alrowad',
             'type' => 'educational_center',
             'status' => 'active',
+            'brand_settings' => ['allow_static_student_code_scan' => true],
         ]);
         TenantDatabase::create([
             'tenant_id' => $tenantB->id,

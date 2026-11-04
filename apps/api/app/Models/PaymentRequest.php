@@ -19,6 +19,7 @@ class PaymentRequest extends TenantModel
         'sender_phone',
         'reference_code',
         'proof_url',
+        'proof_path',
         'status',
         'rejection_reason',
         'reviewed_by_user_id',

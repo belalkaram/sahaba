@@ -12,10 +12,16 @@ class SchoolClass extends TenantModel
 
     protected $fillable = [
         'teacher_staff_id',
+        'branch_id',
         'name',
         'code',
         'status',
     ];
+
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class, 'branch_id');
+    }
 
     public function teacher(): BelongsTo
     {

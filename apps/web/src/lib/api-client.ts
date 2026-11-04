@@ -57,12 +57,16 @@ export interface RequestOptions extends Omit<RequestInit, "body"> {
   params?: Record<string, string | number | boolean | undefined | null>;
   tenant?: string;
   token?: string;
+  /** Do not run the global 401 handler (platform console has its own session). */
+  skipUnauthorizedHandler?: boolean;
 }
 
 export class ApiClient {
   private readonly baseUrl: string;
   private defaultTenant?: string;
   private authToken?: string;
+  /** Called when any request returns HTTP 401 */
+  private onUnauthorized?: () => void;
 
   constructor(baseUrl?: string, defaultTenant?: string, authToken?: string) {
     this.baseUrl = (
@@ -72,6 +76,11 @@ export class ApiClient {
     ).replace(/\/$/, "");
     this.defaultTenant = defaultTenant;
     this.authToken = authToken;
+  }
+
+  /** Register a callback invoked on every HTTP 401 response. */
+  public setUnauthorizedHandler(handler: () => void): void {
+    this.onUnauthorized = handler;
   }
 
   /**
@@ -130,14 +139,16 @@ export class ApiClient {
       requestHeaders.set("Accept", "application/json");
     }
 
-    if (body !== undefined && !requestHeaders.has("Content-Type")) {
+    const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
+
+    if (body !== undefined && !isFormData && !requestHeaders.has("Content-Type")) {
       requestHeaders.set("Content-Type", "application/json");
     }
 
     const response = await fetch(url, {
       ...restOptions,
       headers: requestHeaders,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: isFormData ? (body as FormData) : body !== undefined ? JSON.stringify(body) : undefined,
     });
 
     const requestId =
@@ -173,10 +184,34 @@ export class ApiClient {
       const details = errorData.error?.details;
       const resRequestId = errorData.meta?.request_id || requestId;
 
-      throw new ApiError(message, code, response.status, details, resRequestId);
+      const err = new ApiError(message, code, response.status, details, resRequestId);
+      if (response.status === 401 && this.onUnauthorized && !options.skipUnauthorizedHandler) {
+        this.onUnauthorized();
+      }
+      throw err;
     }
 
     return jsonResponse as ApiSuccessResponse<T>;
+  }
+
+  /** Fetch a binary resource (e.g. a private image) with the same auth/tenant headers. */
+  public async blob(endpoint: string, options: RequestOptions = {}): Promise<Blob> {
+    const url = endpoint.startsWith("http") ? endpoint : `${this.baseUrl}/${endpoint.replace(/^\//, "")}`;
+    const headers = new Headers(options.headers);
+    const tenantSlug = options.tenant || this.defaultTenant;
+    if (tenantSlug) headers.set("X-Tenant-Slug", tenantSlug);
+    const authToken = options.token || this.authToken;
+    if (authToken) headers.set("Authorization", `Bearer ${authToken}`);
+    const response = await fetch(url, { method: "GET", headers });
+    if (!response.ok) {
+      throw new ApiError(response.statusText || "Request failed", "HTTP_ERROR_" + response.status, response.status);
+    }
+    return response.blob();
+  }
+
+  /** Absolute URL for a path under the API base (used for <img src> on public pages). */
+  public url(endpoint: string): string {
+    return `${this.baseUrl}/${endpoint.replace(/^\//, "")}`;
   }
 
   public get<T>(endpoint: string, options?: RequestOptions): Promise<ApiSuccessResponse<T>> {

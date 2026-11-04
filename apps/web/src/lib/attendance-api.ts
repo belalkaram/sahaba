@@ -1,70 +1,188 @@
 /**
- * Attendance & Classroom Domain API Service
+ * Attendance & Offline Learning API Client (Phase R5)
+ * Adheres strictly to Master Spec and AGENTS.md.
  */
-import { apiClient } from './api-client';
-import type { SchoolClass, ClassSession, AttendanceRecord } from '../types';
 
-export interface RecordAttendancePayload {
+import { apiClient } from './api-client';
+import type {
+  AttendanceRecord,
+  AttendanceScanResult,
+  ClassSession,
+  SchoolClass,
+  StudentAttendanceSummary,
+  StudentQrTokenData,
+} from '../types';
+
+export interface ScanAttendancePayload {
+  token?: string;
+  qr_data?: string;
+}
+
+export interface RecordManualAttendancePayload {
   student_id: string;
   status: 'present' | 'absent' | 'late' | 'excused';
-  attendance_mode?: 'manual' | 'qr';
   notes?: string;
 }
 
+export interface CorrectAttendancePayload {
+  status: 'present' | 'absent' | 'late' | 'excused';
+  reason: string;
+}
+
+export interface CreateClassPayload {
+  name: string;
+  code?: string;
+  branch_id?: string;
+  teacher_staff_id?: string;
+  status?: 'active' | 'archived';
+}
+
+export interface CreateSessionPayload {
+  title?: string;
+  classroom_id?: string;
+  starts_at?: string;
+  ends_at?: string;
+  attendance_mode?: 'manual' | 'qr' | 'both';
+  timing_mode?: 'scheduled' | 'open';
+  grace_period_minutes?: number;
+  status?: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+}
+
+export interface SessionReportData {
+  session: {
+    id: string;
+    title: string;
+    starts_at?: string;
+    ends_at?: string;
+    status: string;
+    attendance_mode: string;
+    timing_mode?: string;
+    class?: { id: string; name: string } | null;
+  };
+  summary: {
+    total_enrolled: number;
+    present: number;
+    absent: number;
+    late: number;
+    excused: number;
+    attendance_rate_percentage: number;
+  };
+  records: AttendanceRecord[];
+}
+
 export const attendanceApi = {
-  /**
-   * Fetch all classes.
-   */
-  async getClasses(): Promise<SchoolClass[]> {
-    const res = await apiClient.get<{ classes: SchoolClass[] }>('/classes');
+  // --- Student QR & Card (R5-1, R5-5) ---
+  async getStudentQr(): Promise<StudentQrTokenData> {
+    const res = await apiClient.get<StudentQrTokenData>('/me/attendance-qr');
+    return res.data;
+  },
+
+  async getMyAttendance(): Promise<StudentAttendanceSummary> {
+    const res = await apiClient.get<StudentAttendanceSummary>('/me/attendance');
+    return res.data;
+  },
+
+  // --- Attendance Scanning & Recording (R5-2, R5-4) ---
+  async scanAttendance(sessionId: string, payload: ScanAttendancePayload): Promise<AttendanceScanResult> {
+    const res = await apiClient.post<AttendanceScanResult>(`/sessions/${sessionId}/attendance/scan`, payload);
+    return res.data;
+  },
+
+  async scanQr(sessionId: string, qrData: string): Promise<AttendanceScanResult> {
+    return this.scanAttendance(sessionId, qrData.includes('.') ? { token: qrData } : { qr_data: qrData });
+  },
+
+  async recordManual(sessionId: string, payload: RecordManualAttendancePayload): Promise<{ record: AttendanceRecord }> {
+    const res = await apiClient.post<{ record: AttendanceRecord }>(`/sessions/${sessionId}/attendance`, payload);
+    return res.data;
+  },
+
+  async recordAttendance(
+    sessionId: string,
+    payload: { student_id: string; status: 'present' | 'absent' | 'late' | 'excused'; attendance_mode?: string; notes?: string }
+  ): Promise<{ record: AttendanceRecord }> {
+    return this.recordManual(sessionId, {
+      student_id: payload.student_id,
+      status: payload.status,
+      notes: payload.notes,
+    });
+  },
+
+  async correctAttendance(recordId: string, payload: CorrectAttendancePayload): Promise<{ message: string; record: AttendanceRecord }> {
+    const res = await apiClient.put<{ message: string; record: AttendanceRecord }>(`/attendance-records/${recordId}`, payload);
+    return res.data;
+  },
+
+  async getSessionReport(sessionId: string): Promise<SessionReportData> {
+    const res = await apiClient.get<SessionReportData>(`/sessions/${sessionId}/attendance/report`);
+    return res.data;
+  },
+
+  // --- Sessions (R5-4, R5-7) ---
+  async getSessions(classIdOrParams?: string | { status?: string; from?: string; to?: string }): Promise<ClassSession[]> {
+    if (typeof classIdOrParams === 'string') {
+      const res = await apiClient.get<{ sessions: ClassSession[] }>(`/classes/${classIdOrParams}/sessions`);
+      return res.data.sessions ?? [];
+    }
+    const res = await apiClient.get<{ sessions: ClassSession[] }>('/sessions', { params: classIdOrParams });
+    return res.data.sessions ?? [];
+  },
+
+  async getSession(id: string): Promise<ClassSession> {
+    const res = await apiClient.get<{ session: ClassSession }>(`/sessions/${id}`);
+    return res.data.session;
+  },
+
+  async startSession(id: string): Promise<ClassSession> {
+    const res = await apiClient.post<{ session: ClassSession }>(`/sessions/${id}/start`);
+    return res.data.session;
+  },
+
+  async endSession(id: string): Promise<ClassSession> {
+    const res = await apiClient.post<{ session: ClassSession }>(`/sessions/${id}/end`);
+    return res.data.session;
+  },
+
+  async cancelSession(id: string): Promise<ClassSession> {
+    const res = await apiClient.post<{ session: ClassSession }>(`/sessions/${id}/cancel`);
+    return res.data.session;
+  },
+
+  async createSession(classId: string, payload: CreateSessionPayload): Promise<ClassSession> {
+    const res = await apiClient.post<{ session: ClassSession }>(`/classes/${classId}/sessions`, payload);
+    return res.data.session;
+  },
+
+  // --- Classes (R5-7) ---
+  async getClasses(params?: { branch_id?: string }): Promise<SchoolClass[]> {
+    const res = await apiClient.get<{ classes: SchoolClass[] }>('/classes', { params });
     return res.data.classes ?? [];
   },
 
-  /**
-   * Get single class with sessions and enrolled students.
-   */
   async getClass(id: string): Promise<SchoolClass> {
     const res = await apiClient.get<{ class: SchoolClass }>(`/classes/${id}`);
     return res.data.class;
   },
 
-  /**
-   * Fetch sessions for a class.
-   */
-  async getSessions(classId: string): Promise<ClassSession[]> {
-    const res = await apiClient.get<{ sessions: ClassSession[] }>(`/classes/${classId}/sessions`);
-    return res.data.sessions ?? [];
+  async createClass(payload: CreateClassPayload): Promise<SchoolClass> {
+    const res = await apiClient.post<{ class: SchoolClass }>('/classes', payload);
+    return res.data.class;
   },
 
-  /**
-   * Record attendance for a student in a session.
-   */
-  async recordAttendance(sessionId: string, payload: RecordAttendancePayload): Promise<AttendanceRecord> {
-    const res = await apiClient.post<{ attendance: AttendanceRecord }>(
-      `/sessions/${sessionId}/attendance`,
-      payload
-    );
-    return res.data.attendance;
+  async updateClass(id: string, payload: Partial<CreateClassPayload>): Promise<SchoolClass> {
+    const res = await apiClient.put<{ class: SchoolClass }>(`/classes/${id}`, payload);
+    return res.data.class;
   },
 
-  /**
-   * Fetch session attendance report.
-   */
-  async getSessionReport(sessionId: string): Promise<Record<string, unknown>> {
-    const res = await apiClient.get<{ report: Record<string, unknown> }>(
-      `/sessions/${sessionId}/attendance/report`
-    );
-    return res.data.report;
+  async deleteClass(id: string): Promise<void> {
+    await apiClient.delete(`/classes/${id}`);
   },
 
-  /**
-   * Record attendance via real QR code scan.
-   */
-  async scanQr(sessionId: string, qrData: string): Promise<{ record: AttendanceRecord; student: any }> {
-    const res = await apiClient.post<{ record: AttendanceRecord; student: any }>(
-      `/sessions/${sessionId}/attendance/scan`,
-      { qr_data: qrData }
-    );
-    return res.data;
+  async enrollStudent(classId: string, studentId: string): Promise<void> {
+    await apiClient.post(`/classes/${classId}/students`, { student_id: studentId });
+  },
+
+  async removeStudent(classId: string, studentId: string): Promise<void> {
+    await apiClient.delete(`/classes/${classId}/students/${studentId}`);
   },
 };

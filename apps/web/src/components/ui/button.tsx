@@ -1,51 +1,53 @@
+'use client';
+
 import React from 'react';
+import { Loader2 } from 'lucide-react';
+import { cn } from '../../lib/cn';
+import { buttonClasses, type ButtonSize, type ButtonVariant } from './button-styles';
+
+export { buttonClasses } from './button-styles';
+export type { ButtonVariant, ButtonSize } from './button-styles';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'danger' | 'ghost';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: ButtonVariant;
+  size?: ButtonSize;
   isLoading?: boolean;
+  /** Icon at the inline start (right in RTL). */
+  icon?: React.ReactNode;
+  /** Icon at the inline end (left in RTL), e.g. <IconNext />. */
+  iconEnd?: React.ReactNode;
+  fullWidth?: boolean;
 }
 
-export const Button: React.FC<ButtonProps> = ({
-  children,
-  variant = 'primary',
-  size = 'md',
-  isLoading = false,
-  className = '',
-  disabled,
-  ...props
-}) => {
-  let variantStyle = 'btn';
-  if (variant === 'primary') {
-    variantStyle = 'btn p';
-  } else if (variant === 'danger') {
-    variantStyle = 'btn';
-  } else if (variant === 'ghost') {
-    variantStyle = 'btn';
-  }
-
-  const sizes = {
-    sm: 'text-xs py-1.5 px-3',
-    md: 'text-sm py-2 px-4.5',
-    lg: 'text-base py-2.5 px-6',
-  };
-
-  const dangerStyle = variant === 'danger' ? 'border-[var(--red)] text-[var(--red)] hover:bg-[var(--red)] hover:text-white' : '';
-  const ghostStyle = variant === 'ghost' ? 'border-transparent text-[var(--mut)] hover:text-[var(--ink)] hover:bg-[var(--line)]' : '';
-
-  return (
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  (
+    {
+      children,
+      variant = 'primary',
+      size = 'md',
+      isLoading = false,
+      icon,
+      iconEnd,
+      fullWidth,
+      className = '',
+      disabled,
+      type = 'button',
+      ...props
+    },
+    ref,
+  ) => (
     <button
-      className={`${variantStyle} ${sizes[size]} ${dangerStyle} ${ghostStyle} ${className}`}
+      ref={ref}
+      type={type}
+      className={buttonClasses(variant, size, cn(fullWidth && 'w-full', className))}
       disabled={disabled || isLoading}
+      aria-busy={isLoading || undefined}
       {...props}
     >
-      {isLoading && (
-        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-current" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-        </svg>
-      )}
+      {isLoading ? <Loader2 size={16} className="animate-spin" aria-hidden /> : icon}
       {children}
+      {!isLoading && iconEnd}
     </button>
-  );
-};
+  ),
+);
+Button.displayName = 'Button';

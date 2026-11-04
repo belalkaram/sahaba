@@ -221,6 +221,7 @@ class EducationGateTest extends TestCase
             'code' => 'ALG-101',
             'description' => 'Introduction to Algebraic Expressions',
             'status' => 'published',
+            'is_free' => true,
         ]);
 
         $createCourseResp->assertStatus(200)

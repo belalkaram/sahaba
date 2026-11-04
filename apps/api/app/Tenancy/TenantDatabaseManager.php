@@ -22,7 +22,7 @@ class TenantDatabaseManager
             if ($identifier === ':memory:') {
                 $dbPath = ':memory:';
             } else {
-                $dir = database_path('tenants');
+                $dir = $this->tenantsDirectory();
                 if (! is_dir($dir)) {
                     mkdir($dir, 0755, true);
                 }
@@ -38,6 +38,16 @@ class TenantDatabaseManager
 
         DB::purge('tenant');
         DB::reconnect('tenant');
+    }
+
+    /**
+     * Where SQLite tenant databases live. Tests point this at a throwaway folder (phpunit.xml).
+     */
+    private function tenantsDirectory(): string
+    {
+        $configured = (string) config('database.tenants_path', '');
+
+        return $configured !== '' ? base_path($configured) : database_path('tenants');
     }
 
     /**
@@ -73,11 +83,23 @@ class TenantDatabaseManager
         $driver = config('database.connections.tenant.driver', 'sqlite');
 
         if ($driver === 'sqlite' && $identifier !== ':memory:') {
-            $dir = database_path('tenants');
+            $dir = $this->tenantsDirectory();
 
             return $dir.DIRECTORY_SEPARATOR.$identifier.'.sqlite';
         }
 
         return null;
+    }
+
+    /**
+     * Delete the database file for the tenant if sqlite.
+     */
+    public function deleteDatabase(Tenant $tenant): void
+    {
+        $this->purgeConnection();
+        $path = $this->getDatabasePath($tenant);
+        if ($path && file_exists($path)) {
+            @unlink($path);
+        }
     }
 }

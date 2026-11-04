@@ -1,250 +1,314 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import React, { Suspense, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { AlertCircle, Building2, ChevronDown, Eye, EyeOff, KeyRound, Mail, Ticket } from 'lucide-react';
 import { useAuth } from '../../context/auth-context';
+import { tokenStore } from '../../lib/token-store';
+import { DEMO_LOGIN_MODE } from '../../config/features';
+import { publicApi } from '../../lib/public-api';
+import { normalizeDigits } from '../../lib/format';
+import { Tabs } from '../../components/ui/tabs';
+import { BRAND } from '../../config/brand';
+import { BrandLockup } from '../../components/brand/brand-mark';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { ThemeSwitcher } from '../../components/layout/theme-switcher';
+import { IconNext } from '../../components/icons/directional';
+import { cn } from '../../lib/cn';
+import { gsap, useGSAP, prefersReducedMotion } from '../../lib/motion';
+import { AuthBrandPanel } from '../../features/auth/auth-brand-panel';
 
 interface DemoAccount {
-  roleName: string;
-  roleBadge: string;
+  role: string;
+  name: string;
   email: string;
   tenantSlug: string;
-  color: string;
 }
 
+/** OD-20: rendered only in development or when a platform admin enables it (fail-closed). */
 const DEMO_ACCOUNTS: DemoAccount[] = [
-  {
-    roleName: 'طالب (Student)',
-    roleBadge: 'عمر أحمد',
-    email: 'student@almustaqbal.edu',
-    tenantSlug: 'almustaqbal',
-    color: 'bg-primary/20 to-emerald-600/10 border-emerald-500/30 text-emerald-400',
-  },
-  {
-    roleName: 'معلم (Teacher)',
-    roleBadge: 'د. سارة عبد الله',
-    email: 'teacher@almustaqbal.edu',
-    tenantSlug: 'almustaqbal',
-    color: 'bg-turquoise/20 to-indigo-600/10 border-indigo-500/30 text-indigo-400',
-  },
-  {
-    roleName: 'ولي أمر (Parent)',
-    roleBadge: 'أحمد فاروق',
-    email: 'parent@almustaqbal.edu',
-    tenantSlug: 'almustaqbal',
-    color: 'bg-accent/20 to-purple-600/10 border-purple-500/30 text-purple-400',
-  },
-  {
-    roleName: 'مدير المنصة (Admin)',
-    roleBadge: 'Super Admin',
-    email: 'admin@almustaqbal.edu',
-    tenantSlug: 'almustaqbal',
-    color: 'from-amber-500/20 to-amber-600/10 border-amber-500/30 text-amber-400',
-  },
+  { role: 'طالب', name: 'عمر أحمد', email: 'student@almustaqbal.edu', tenantSlug: 'almustaqbal' },
+  { role: 'معلّم', name: 'د. سارة عبد الله', email: 'teacher@almustaqbal.edu', tenantSlug: 'almustaqbal' },
+  { role: 'ولي أمر', name: 'أحمد فاروق', email: 'parent@almustaqbal.edu', tenantSlug: 'almustaqbal' },
+  { role: 'مدير المؤسسة', name: 'إدارة الأكاديمية', email: 'admin@almustaqbal.edu', tenantSlug: 'almustaqbal' },
 ];
+const DEMO_PASSWORD = 'password123';
 
 function LoginForm() {
-  const { login, supportLogin, isLoading, error } = useAuth();
-
-  const [email, setEmail]           = useState('student@almustaqbal.edu');
-  const [password, setPassword]     = useState('password123');
-  const [tenantSlug, setTenantSlug] = useState('almustaqbal');
-  const [showPass, setShowPass]     = useState(false);
-
+  const { login, couponLogin, supportLogin, isLoading, error } = useAuth();
   const searchParams = useSearchParams();
-  const router = useRouter();
+
+  const [tenantSlug, setTenantSlug] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPass, setShowPass] = useState(false);
+  const [editTenant, setEditTenant] = useState(false);
+  const [demoOpen, setDemoOpen] = useState(false);
+  const exchangedCode = useRef<string | null>(null);
+  const [demoVisible, setDemoVisible] = useState(DEMO_LOGIN_MODE === 'on');
+  const [mode, setMode] = useState<'password' | 'code'>('password');
+  const [couponCode, setCouponCode] = useState('');
+  const [couponSecret, setCouponSecret] = useState('');
+
+  // OD-20: in production the platform-admin switch decides; any failure keeps it hidden.
+  useEffect(() => {
+    if (DEMO_LOGIN_MODE !== 'runtime') return;
+    publicApi
+      .getConfig()
+      .then((config) => setDemoVisible(config.demo_login_enabled === true))
+      .catch(() => setDemoVisible(false));
+  }, []);
+
+  // The academy code comes from the link (?tenant=) or the last academy used on this device.
+  useEffect(() => {
+    const fromUrl = searchParams?.get('tenant');
+    const remembered = tokenStore.getTenant();
+    const slug = fromUrl || remembered || '';
+    setTenantSlug(slug);
+    setEditTenant(!slug);
+  }, [searchParams]);
 
   useEffect(() => {
-    const supportToken = searchParams?.get('support_token');
-    const slugFromUrl = searchParams?.get('tenant') || tenantSlug;
-    if (supportToken) {
-      // Auto login with support token
-      supportLogin(supportToken, slugFromUrl);
+    const supportCode = searchParams?.get('support_code');
+    const slugFromUrl = searchParams?.get('tenant');
+    if (supportCode && slugFromUrl && exchangedCode.current !== supportCode) {
+      exchangedCode.current = supportCode; // single use: never submit it twice
+      supportLogin(supportCode, slugFromUrl);
     }
-  }, [searchParams]);
+  }, [searchParams, supportLogin]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await login(email, password, tenantSlug);
-  };
-
-  const handleSelectDemo = async (demo: DemoAccount, autoSubmit = false) => {
-    setEmail(demo.email);
-    setPassword('password123');
-    setTenantSlug(demo.tenantSlug);
-
-    if (autoSubmit) {
-      await login(demo.email, 'password123', demo.tenantSlug);
+    const slug = tenantSlug.trim().toLowerCase();
+    if (mode === 'code') {
+      await couponLogin(normalizeDigits(couponCode.trim()), normalizeDigits(couponSecret.trim()), slug);
+      return;
     }
+    await login(email.trim(), password, slug);
   };
+
+  const loginAsDemo = async (demo: DemoAccount) => {
+    setTenantSlug(demo.tenantSlug);
+    setEmail(demo.email);
+    setPassword(DEMO_PASSWORD);
+    await login(demo.email, DEMO_PASSWORD, demo.tenantSlug);
+  };
+
+  const formRef = useRef<HTMLDivElement>(null);
+  useGSAP(
+    () => {
+      if (prefersReducedMotion()) return;
+      gsap.from('[data-enter]', { autoAlpha: 0, y: 14, duration: 0.5, stagger: 0.06, ease: 'power3.out', clearProps: 'all' });
+    },
+    { scope: formRef },
+  );
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      {/* Background glow */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-turquoise/10 rounded-full blur-3xl" />
-      </div>
-
-      <div className="relative w-full max-w-lg">
-        {/* Logo / Brand */}
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-[20px] bg-primary/20 border border-primary/30 mb-3 shadow-lg shadow-emerald-500/10">
-            <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-white">منصة LMS التعليمية</h1>
-          <p className="text-secondary text-xs mt-1">سجّل الدخول إلى حسابك أو اختر حساباً تجريبياً فورياً</p>
+    <div className="grid min-h-screen bg-surface lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
+      {/* Form side (inline start = right in RTL) */}
+      <div ref={formRef} className="relative flex flex-col px-6 py-6 sm:px-10 lg:px-16">
+        <div className="flex items-center justify-between" data-enter>
+          <Link href="/">
+            <BrandLockup size={38} />
+          </Link>
+          <ThemeSwitcher />
         </div>
 
-        {/* Quick Demo Login Grid */}
-        <div className="mb-5 bg-card/60 backdrop-blur-md border border-border rounded-[20px] p-4">
-          <div className="flex items-center justify-between mb-3 px-1">
-            <span className="text-xs font-bold text-secondary">⚡ دخول سريع بحساب تجريبي جاهز:</span>
-            <span className="text-[10px] text-secondary font-mono">كلمة المرور: password123</span>
+        <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-10">
+          <div className="mb-8 space-y-2" data-enter>
+            <h1 className="font-display text-3xl text-fg sm:text-4xl">أهلاً بعودتك</h1>
+            <p className="text-base text-fg-muted">سجّل الدخول لمتابعة دروسك وحصصك وتقييماتك.</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            {DEMO_ACCOUNTS.map((demo) => (
-              <button
-                key={demo.email}
-                type="button"
-                onClick={() => handleSelectDemo(demo, true)}
-                disabled={isLoading}
-                className={`flex flex-col text-right p-3 rounded-[16px] border bg-gradient-to-br ${demo.color} hover:brightness-125 transition-all text-xs disabled:opacity-50`}
-              >
-                <div className="flex items-center justify-between w-full">
-                  <span className="font-bold text-white text-xs">{demo.roleName}</span>
-                  <span className="text-[10px] opacity-80">دخول ↵</span>
+          <div className="mb-5" data-enter>
+            <Tabs
+              tabs={[
+                { id: 'password', label: 'البريد وكلمة المرور' },
+                { id: 'code', label: 'كود الدخول' },
+              ]}
+              activeTab={mode}
+              onChange={(id) => setMode(id as 'password' | 'code')}
+            />
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+            {/* Academy (tenant) — a technical code, collapsed once known */}
+            <div data-enter>
+              {editTenant ? (
+                <Input
+                  label="رمز الأكاديمية"
+                  value={tenantSlug}
+                  onChange={(e) => setTenantSlug(e.target.value)}
+                  placeholder="مثال: almustaqbal"
+                  helperText="تجده في رسالة الترحيب أو لدى إدارة أكاديميتك."
+                  autoComplete="organization"
+                  dir="ltr"
+                  required
+                  inputSize="lg"
+                  iconPrefix={<Building2 size={18} strokeWidth={1.75} aria-hidden />}
+                />
+              ) : (
+                <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-surface-sunken px-4 py-3">
+                  <span className="flex min-w-0 items-center gap-3">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-sm bg-primary-subtle text-primary">
+                      <Building2 size={18} strokeWidth={1.75} aria-hidden />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-xs text-fg-muted">الأكاديمية</span>
+                      <span className="ltr-isolate block truncate text-sm font-semibold text-fg">{tenantSlug}</span>
+                    </span>
+                  </span>
+                  <button type="button" onClick={() => setEditTenant(true)} className="text-sm font-semibold text-primary hover:underline">
+                    تغيير
+                  </button>
                 </div>
-                <span className="text-[11px] opacity-90 mt-1 font-medium">{demo.roleBadge}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Form Card */}
-        <div className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-[20px] p-7 shadow-2xl">
-          <form onSubmit={handleSubmit} className="space-y-4">
-
-            {/* Tenant Slug */}
-            <div>
-              <label className="block text-xs font-medium text-secondary mb-1" htmlFor="tenant">
-                كود المؤسسة / المدرسة (Tenant Slug)
-              </label>
-              <input
-                id="tenant"
-                type="text"
-                value={tenantSlug}
-                onChange={e => setTenantSlug(e.target.value)}
-                placeholder="almustaqbal"
-                required
-                dir="ltr"
-                className="w-full bg-card/60 border-border/60 border border border-border/50 text-white placeholder-slate-500 rounded-[16px] px-4 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all font-mono"
-              />
+              )}
             </div>
 
-            {/* Email */}
-            <div>
-              <label className="block text-xs font-medium text-secondary mb-1" htmlFor="email">
-                البريد الإلكتروني
-              </label>
-              <input
-                id="email"
+            {mode === 'code' ? (
+              <>
+                <Input
+                  label="كود الدخول"
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value)}
+                  placeholder="الكود المطبوع على بطاقتك"
+                  autoComplete="off"
+                  dir="ltr"
+                  required
+                  inputSize="lg"
+                  iconPrefix={<Ticket size={18} strokeWidth={1.75} aria-hidden />}
+                />
+                <Input
+                  label="الرقم السري للكود"
+                  type="password"
+                  value={couponSecret}
+                  onChange={(e) => setCouponSecret(e.target.value)}
+                  helperText="يرتبط الكود بجهازك عند أول استخدام."
+                  autoComplete="off"
+                  dir="ltr"
+                  required
+                  inputSize="lg"
+                  iconPrefix={<KeyRound size={18} strokeWidth={1.75} aria-hidden />}
+                />
+              </>
+            ) : (
+              <>
+            <div data-enter>
+              <Input
+                label="البريد الإلكتروني"
                 type="email"
                 value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                required
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@example.com"
+                autoComplete="email"
                 dir="ltr"
-                className="w-full bg-card/60 border-border/60 border border border-border/50 text-white placeholder-slate-500 rounded-[16px] px-4 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all font-mono"
+                required
+                inputSize="lg"
+                iconPrefix={<Mail size={18} strokeWidth={1.75} aria-hidden />}
               />
             </div>
 
-            {/* Password */}
-            <div>
-              <label className="block text-xs font-medium text-secondary mb-1" htmlFor="password">
-                كلمة المرور
-              </label>
-              <div className="relative">
-                <input
-                  id="password"
-                  type={showPass ? 'text' : 'password'}
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  dir="ltr"
-                  className="w-full bg-card/60 border-border/60 border border border-border/50 text-white placeholder-slate-500 rounded-[16px] px-4 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all pr-12 font-mono"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPass(v => !v)}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary hover:text-foreground transition-colors"
-                >
-                  {showPass ? (
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                    </svg>
-                  ) : (
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                  )}
-                </button>
-              </div>
+            <div data-enter>
+              <Input
+                label="كلمة المرور"
+                type={showPass ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                dir="ltr"
+                required
+                inputSize="lg"
+                iconPrefix={<KeyRound size={18} strokeWidth={1.75} aria-hidden />}
+                iconSuffix={
+                  <button
+                    type="button"
+                    onClick={() => setShowPass((v) => !v)}
+                    className="grid h-8 w-8 place-items-center rounded-sm text-fg-subtle transition-colors hover:text-fg"
+                    aria-label={showPass ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+                  >
+                    {showPass ? <EyeOff size={18} strokeWidth={1.75} /> : <Eye size={18} strokeWidth={1.75} />}
+                  </button>
+                }
+              />
             </div>
 
-            {/* Error */}
+              </>
+            )}
+
             {error && (
-              <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-[16px] px-4 py-3">
-                <svg className="w-4 h-4 text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className="text-red-400 text-xs">{error}</p>
+              <div role="alert" className="flex items-start gap-2.5 rounded-md border border-danger/25 bg-danger-subtle px-4 py-3 text-sm text-danger-subtle-fg">
+                <AlertCircle size={18} className="mt-0.5 shrink-0" aria-hidden />
+                <span>{error}</span>
               </div>
             )}
 
-            {/* Submit */}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-primary hover:bg-primary disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-[16px] py-3 px-4 text-xs transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20"
-            >
-              {isLoading ? (
-                <>
-                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  جارٍ تسجيل الدخول...
-                </>
-              ) : (
-                'تسجيل الدخول'
-              )}
-            </button>
+            <div data-enter>
+              <Button type="submit" size="lg" fullWidth isLoading={isLoading}>
+                {isLoading ? 'جارٍ تسجيل الدخول…' : 'تسجيل الدخول'}
+              </Button>
+            </div>
           </form>
+
+          {demoVisible && (
+            <div className="mt-8 rounded-lg border border-dashed border-accent/40 bg-accent-subtle" data-enter>
+              <button
+                type="button"
+                onClick={() => setDemoOpen((v) => !v)}
+                aria-expanded={demoOpen}
+                className="flex w-full items-center justify-between gap-3 px-4 py-3 text-start"
+              >
+                <span>
+                  <span className="block text-sm font-semibold text-accent-subtle-fg">حسابات تجريبية</span>
+                  <span className="block text-xs text-fg-muted">للتجربة والعرض فقط</span>
+                </span>
+                <ChevronDown size={18} className={cn('text-fg-muted transition-transform duration-200', demoOpen && 'rotate-180')} aria-hidden />
+              </button>
+              {demoOpen && (
+                <div className="grid grid-cols-1 gap-2 px-4 pb-4 sm:grid-cols-2">
+                  {DEMO_ACCOUNTS.map((demo) => (
+                    <button
+                      key={demo.email}
+                      type="button"
+                      onClick={() => loginAsDemo(demo)}
+                      disabled={isLoading}
+                      className="flex items-center justify-between gap-2 rounded-md border border-border bg-surface px-3 py-2.5 text-start transition-colors hover:border-primary/40 hover:bg-primary-subtle disabled:opacity-50"
+                    >
+                      <span className="min-w-0">
+                        <span className="block text-sm font-semibold text-fg">{demo.role}</span>
+                        <span className="block truncate text-xs text-fg-muted">{demo.name}</span>
+                      </span>
+                      <IconNext size={16} className="shrink-0 text-fg-subtle" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <p className="mt-8 text-center text-sm text-fg-muted" data-enter>
+            مؤسسة تعليمية جديدة؟{' '}
+            <Link href="/register-school" className="font-semibold text-primary hover:underline">
+              سجّل أكاديميتك
+            </Link>
+          </p>
         </div>
 
-        {/* Footer */}
-        <p className="text-center text-secondary text-xs mt-6">
-          منصة التعليم وإدارة التعلم — جميع الحقوق محفوظة © 2026
+        <p className="text-center text-xs text-fg-subtle">
+          © {new Date().getFullYear()} {BRAND.nameAr} — {BRAND.taglineAr}
         </p>
       </div>
+
+      {/* Brand side (inline end = left in RTL), hidden on small screens */}
+      <AuthBrandPanel />
     </div>
   );
 }
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    }>
+    <Suspense fallback={<div className="min-h-screen bg-surface" />}>
       <LoginForm />
     </Suspense>
   );

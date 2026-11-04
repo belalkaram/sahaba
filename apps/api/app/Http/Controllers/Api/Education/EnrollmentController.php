@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Api\Education;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\Enrollment;
+use App\Models\Entitlement;
 use App\Models\Student;
 use App\Models\TenantUser;
 use App\Support\ApiResponse;
+use App\Support\Authorization\ScopeResolver;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,7 +18,7 @@ use Symfony\Component\HttpFoundation\Response;
 class EnrollmentController extends Controller
 {
     /**
-     * Enroll in a course (self-enrollment by student, or admin/teacher enrolling a student).
+     * Enroll in a course (self-enrollment for free/entitled courses, or staff with enrollments.create).
      */
     public function enroll(Request $request, string $courseId): JsonResponse
     {
@@ -37,9 +39,32 @@ class EnrollmentController extends Controller
 
             $studentId = $validated['student_id'];
         } else {
-            // Self-enrollment
+            // Self-enrollment (R3-2 / OD-15)
             if (! $user->student) {
-                return ApiResponse::error('INVALID_ENROLLMENT', 'Authenticated user does not have a student profile.', Response::HTTP_UNPROCESSABLE_ENTITY);
+                return ApiResponse::error(
+                    'INVALID_ENROLLMENT',
+                    'Authenticated user does not have a student profile.',
+                    Response::HTTP_UNPROCESSABLE_ENTITY
+                );
+            }
+
+            if (! $course->is_free) {
+                // Check if student has valid entitlement covering this course
+                $hasEntitlement = Entitlement::where('student_id', $user->student->id)
+                    ->whereIn('entitlement_key', ['course:'.$course->id, 'all_courses', 'ONLINE_ACCESS'])
+                    ->where('is_active', true)
+                    ->where(function ($query) {
+                        $query->whereNull('expires_at')->orWhere('expires_at', '>=', now());
+                    })
+                    ->exists();
+
+                if (! $hasEntitlement) {
+                    return ApiResponse::error(
+                        'ENROLLMENT_REQUIRES_PAYMENT',
+                        'This course requires an active subscription or package purchase to enroll.',
+                        Response::HTTP_FORBIDDEN
+                    );
+                }
             }
 
             $studentId = $user->student->id;
@@ -88,9 +113,8 @@ class EnrollmentController extends Controller
         $user = $request->user();
 
         $isSelf = $user->student && $user->student->id === $student->id;
-        $canView = $user->hasPermissionTo('students.view');
 
-        if (! $isSelf && ! $canView) {
+        if (! $isSelf && ! ScopeResolver::canAccess($user, 'students.view', $student)) {
             throw new AuthorizationException('You are not authorized to view student enrollment data.');
         }
 

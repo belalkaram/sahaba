@@ -313,6 +313,13 @@ class AssessmentGateTest extends TestCase
         $q1Resp->assertStatus(201);
         $q1Id = $q1Resp->json('data.question.id');
 
+        // Teacher Publishes Exam
+        $publishExamResp = $this->withHeaders([
+            'X-Tenant-Slug' => 'alibdaa',
+            'Authorization' => 'Bearer '.$teacherToken,
+        ])->postJson("/api/v1/courses/{$course->id}/exams/{$examId}/publish");
+        $publishExamResp->assertStatus(200);
+
         // 8. Exam Start
         $startExamResp = $this->withHeaders([
             'X-Tenant-Slug' => 'alibdaa',

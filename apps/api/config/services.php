@@ -2,6 +2,12 @@
 
 return [
 
+    'meetings' => [
+        'default' => env('MEETING_PROVIDER', 'manual'),
+        // Students may join this many minutes before the start and after the end.
+        'join_window_minutes' => (int) env('MEETING_JOIN_WINDOW_MINUTES', 15),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services

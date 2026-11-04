@@ -6,8 +6,11 @@ import { educationApi } from '../../../lib/education-api';
 import type { Meeting, Course } from '../../../types';
 import { Card } from '../../../components/ui/card';
 import { Badge } from '../../../components/ui/badge';
-import { ClockIcon, VideoIcon, CheckCircleIcon, BookOpenIcon } from '../../../components/icons';
+import { ClockIcon, VideoIcon, CheckCircleIcon } from '../../../components/icons';
 
+import { Check, Copy, Presentation, Video, X } from 'lucide-react';
+import { formatDateTime, formatNumber } from '../../../lib/format';
+import { partial } from '../../../lib/partial-failure';
 export default function TeacherMeetingsPage() {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -30,7 +33,7 @@ export default function TeacherMeetingsPage() {
       setLoading(true);
       const [meets, crs] = await Promise.all([
         integrationApi.getMeetings(),
-        educationApi.getCourses().catch(() => []),
+        educationApi.getCourses().catch(partial([])),
       ]);
       setMeetings(meets);
       setCourses(crs);
@@ -56,11 +59,11 @@ export default function TeacherMeetingsPage() {
       const created = await integrationApi.createMeeting({
         title: title.trim(),
         description: description.trim() || undefined,
-        provider: 'google_meet',
+        provider: 'manual',
         course_id: courseId || undefined,
         duration_minutes: Number(durationMinutes),
         start_time: startTime || undefined,
-        meet_url: customMeetUrl.trim() || undefined,
+        meet_url: customMeetUrl.trim(),
       });
 
       setMeetings((prev) => [created, ...prev]);
@@ -71,12 +74,12 @@ export default function TeacherMeetingsPage() {
       setIsCreating(false);
       setFeedbackMsg({
         type: 'success',
-        text: `تم إنشاء اجتماع Google Meet بنجاح! كود القاعة: ${created.external_meeting_id}`,
+        text: 'تم حفظ الحصة ورابطها.',
       });
     } catch {
       setFeedbackMsg({
         type: 'error',
-        text: 'حدث خطأ أثناء إنشاء جلسة Google Meet. يرجى المحاولة مرة أخرى.',
+        text: 'تعذّر حفظ الحصة. تأكد أن الرابط يبدأ بـ https://',
       });
     } finally {
       setIsSubmitting(false);
@@ -107,16 +110,12 @@ export default function TeacherMeetingsPage() {
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
-              <VideoIcon size={24} className="text-emerald-500" />
-              فصول Google Meet والبث التفاعلي المباشر
+              <VideoIcon size={24} className="text-primary" />
+              الحصص المباشرة
             </h1>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              Google Meet API مفعّل
-            </span>
           </div>
           <p className="text-sm text-secondary mt-1">
-            أنشئ وجدول حصص تفاعلية مباشرة مع الطلبة باستخدام Google Meet، مع إمكانية مشاركة الشاشة وتسجيل الحضور.
+            أنشئ رابط الاجتماع في Google Meet أو أي خدمة أخرى، ثم الصقه هنا ليظهر لطلابك.
           </p>
         </div>
 
@@ -125,40 +124,23 @@ export default function TeacherMeetingsPage() {
             setIsCreating((v) => !v);
             setFeedbackMsg(null);
           }}
-          className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold px-4 py-2.5 rounded-[16px] text-xs transition-all shadow-md shadow-emerald-600/20 active:scale-95"
+          className="inline-flex items-center gap-2 bg-primary hover:bg-primary-hover text-primary-fg font-semibold px-4 py-2.5 rounded-md text-xs transition-all shadow-xs"
         >
           <VideoIcon size={16} />
-          {isCreating ? 'إغلاق نموذج الاجتماع' : '+ إنشاء فصل Google Meet جديد'}
+          {isCreating ? 'إغلاق نموذج الاجتماع' : '+ إضافة حصة مباشرة'}
         </button>
       </div>
 
-      {/* Integration Info Banner */}
-      <div className="rounded-[20px] bg-gradient-to-r from-slate-900 to-slate-800 text-white p-4 border border-slate-700/60 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-[14px] bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xl shrink-0">
-            🎥
-          </div>
-          <div>
-            <div className="text-xs font-bold flex items-center gap-2">
-              <span>Google Meet Workspace Integration</span>
-              <Badge variant="success">متصل بالمنظومة</Badge>
-            </div>
-            <p className="text-[11px] text-slate-300 mt-0.5">
-              Client ID: <span className="font-mono text-emerald-400">978486739253-qb206lpih6c0upanrph3ed1lgvbl4ek4...</span>
-            </p>
-          </div>
-        </div>
-        <div className="text-[11px] text-slate-400 max-w-sm">
-          يتم إنشاء روابط غرف Google Meet بصيغة مشفرة معتمدة، ويتاح الانضمام السريع للطلبة والمعلم من أي جهاز.
-        </div>
+      <div className="rounded-md border border-border bg-surface-muted p-4 text-sm text-fg-muted">
+        ربط حساب Google غير متاح بعد، لذلك لا تُنشأ الاجتماعات تلقائياً. الروابط هنا تُحفظ كما تدخلها وتظهر بعلامة «رابط يدوي».
       </div>
 
       {feedbackMsg && (
         <div
           className={`p-4 rounded-[16px] text-xs font-semibold border ${
             feedbackMsg.type === 'success'
-              ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'
-              : 'bg-rose-500/10 text-rose-500 border-rose-500/30'
+              ? 'bg-primary/10 text-primary border-primary/30'
+              : 'bg-danger/10 text-danger border-danger/30'
           }`}
         >
           {feedbackMsg.text}
@@ -167,11 +149,11 @@ export default function TeacherMeetingsPage() {
 
       {/* Create Meeting Form */}
       {isCreating && (
-        <Card className="p-6 border-emerald-500/30 bg-[color-mix(in_srgb,var(--tq)_5%,transparent)] shadow-lg animate-in fade-in duration-200">
+        <Card className="p-6 border-primary/30 bg-[color-mix(in_srgb,var(--tq)_5%,transparent)] shadow-lg animate-in fade-in duration-200">
           <div className="flex items-center justify-between pb-4 border-b border-border mb-4">
             <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-              <span className="text-emerald-500">📹</span>
-              بيانات جلسة Google Meet الجديدة
+              <span className="text-primary"><Video size={16} strokeWidth={1.75} aria-hidden /></span>
+              بيانات الحصة المباشرة
             </h2>
             <span className="text-xs text-secondary">سيتم توليد رابط الاجتماع فوراً</span>
           </div>
@@ -180,7 +162,7 @@ export default function TeacherMeetingsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-secondary mb-1">
-                  عنوان الجلسة / المحاضرة <span className="text-rose-500">*</span>
+                  عنوان الجلسة / المحاضرة <span className="text-danger">*</span>
                 </label>
                 <input
                   type="text"
@@ -188,16 +170,16 @@ export default function TeacherMeetingsPage() {
                   placeholder="مثال: مراجعة نهائية - الفيزياء الحديثة"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full bg-background border border-border rounded-[14px] px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
+                  className="w-full bg-background border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary transition-all"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-secondary mb-1">المقرر الدراسي المرتبط</label>
-                <select
+                <select aria-label="المقرر الدراسي المرتبط"
                   value={courseId}
                   onChange={(e) => setCourseId(e.target.value)}
-                  className="w-full bg-background border border-border rounded-[14px] px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
+                  className="w-full bg-background border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary transition-all"
                 >
                   <option value="">-- اختياري: اختر المقرر المرتبط بالبث --</option>
                   {courses.map((crs) => (
@@ -212,20 +194,20 @@ export default function TeacherMeetingsPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-secondary mb-1">موعد البدء (تاريخ ووقت)</label>
-                <input
+                <input aria-label="موعد البدء (تاريخ ووقت)"
                   type="datetime-local"
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
-                  className="w-full bg-background border border-border rounded-[14px] px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
+                  className="w-full bg-background border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary transition-all"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-secondary mb-1">مدة الجلسة بالدقائق</label>
-                <select
+                <select aria-label="مدة الجلسة بالدقائق"
                   value={durationMinutes}
                   onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                  className="w-full bg-background border border-border rounded-[14px] px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
+                  className="w-full bg-background border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary transition-all"
                 >
                   <option value={30}>30 دقيقة (نصف ساعة)</option>
                   <option value={45}>45 دقيقة (حصة دراسية)</option>
@@ -237,26 +219,28 @@ export default function TeacherMeetingsPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-secondary mb-1">
-                  كود أو رابط مسبق (اختياري)
+                  رابط الاجتماع *
                 </label>
-                <input
+                <input aria-label="رابط الاجتماع"
                   type="text"
-                  placeholder="اتركه فارغاً للتوليد التلقائي أو ضع رابط Meet"
+                  placeholder="https://meet.google.com/abc-defg-hij"
+                  required
+                  dir="ltr"
                   value={customMeetUrl}
                   onChange={(e) => setCustomMeetUrl(e.target.value)}
-                  className="w-full bg-background border border-border rounded-[14px] px-3.5 py-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all font-mono"
+                  className="w-full bg-background border border-border rounded-lg px-3.5 py-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary transition-all font-mono"
                 />
               </div>
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-secondary mb-1">وصف الجلسة وملاحظات للطلبة</label>
-              <textarea
+              <textarea aria-label="وصف الجلسة وملاحظات للطلبة"
                 rows={2}
                 placeholder="تعليمات الدخول، الموضوعات المناقشة، الأدوات المطلوبة..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full bg-background border border-border rounded-[14px] px-3.5 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
+                className="w-full bg-background border border-border rounded-lg px-3.5 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary transition-all"
               />
             </div>
 
@@ -264,16 +248,16 @@ export default function TeacherMeetingsPage() {
               <button
                 type="button"
                 onClick={() => setIsCreating(false)}
-                className="px-4 py-2 rounded-[14px] border border-border text-xs text-secondary hover:text-foreground transition-colors"
+                className="px-4 py-2 rounded-lg border border-border text-xs text-secondary hover:text-foreground transition-colors"
               >
                 إلغاء
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-6 py-2.5 rounded-[14px] bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-md transition-all disabled:opacity-50"
+                className="px-6 py-2.5 rounded-md bg-primary hover:bg-primary-hover text-primary-fg font-semibold text-xs shadow-xs transition-all disabled:opacity-50"
               >
-                {isSubmitting ? 'جارٍ إنشاء الرابط...' : '✓ تأكيد وجدولة جلسة Google Meet'}
+                {isSubmitting ? 'جارٍ الحفظ...' : <><Check size={16} strokeWidth={1.75} aria-hidden /> حفظ الحصة</>}
               </button>
             </div>
           </form>
@@ -283,7 +267,7 @@ export default function TeacherMeetingsPage() {
       {/* Meetings List */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-bold text-foreground">الجلسات المجدولة والحالية ({meetings.length})</h2>
+          <h2 className="text-base font-bold text-foreground">الجلسات المجدولة والحالية ({formatNumber(meetings.length)})</h2>
           <span className="text-xs text-secondary">مرتبة بحسب أحدث الجلسات</span>
         </div>
 
@@ -291,26 +275,26 @@ export default function TeacherMeetingsPage() {
           <div className="py-16 text-center text-secondary text-sm">جارٍ تحميل الاجتماعات من الخادم...</div>
         ) : meetings.length === 0 ? (
           <Card className="p-12 text-center text-secondary">
-            لا توجد جلسات Google Meet مجدولة حالياً. انقر على &quot;+ إنشاء فصل Google Meet جديد&quot; لبدء بث مباشر.
+            لا توجد حصص مباشرة مجدولة. أضف حصة وألصق رابط الاجتماع.
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {meetings.map((meeting) => {
-              const isGoogleMeet = meeting.provider === 'google_meet';
+              const isManual = meeting.provider === 'manual';
               return (
                 <Card
                   key={meeting.id}
-                  className="p-5 border border-border hover:border-emerald-500/40 transition-all shadow-sm flex flex-col justify-between"
+                  className="p-5 border border-border hover:border-primary/40 transition-all shadow-sm flex flex-col justify-between"
                 >
                   <div>
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-                          <span>🎥</span>
-                          <span>{isGoogleMeet ? 'Google Meet' : meeting.provider}</span>
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
+                          <span><Video size={16} strokeWidth={1.75} aria-hidden /></span>
+                          <span>{isManual ? 'رابط يدوي' : meeting.provider}</span>
                         </span>
                         {meeting.external_meeting_id && (
-                          <span className="font-mono text-xs font-semibold text-secondary bg-background px-2 py-0.5 rounded border border-border">
+                          <span className="font-mono text-xs font-semibold text-secondary bg-background px-2 py-0.5 rounded-xs border border-border">
                             {meeting.external_meeting_id}
                           </span>
                         )}
@@ -334,7 +318,7 @@ export default function TeacherMeetingsPage() {
                       </span>
                       {meeting.start_time && (
                         <span>
-                          الموعد: {new Date(meeting.start_time).toLocaleString('ar-EG', { dateStyle: 'short', timeStyle: 'short' })}
+                          الموعد: {formatDateTime(meeting.start_time)}
                         </span>
                       )}
                     </div>
@@ -347,37 +331,38 @@ export default function TeacherMeetingsPage() {
                         href={meeting.host_url || meeting.join_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-[14px] bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs py-2.5 transition-all shadow-sm"
+                        className="flex-1 inline-flex items-center justify-center gap-2 rounded-md bg-primary hover:bg-primary-hover text-primary-fg font-semibold text-xs py-2.5 transition-all shadow-xs"
                       >
-                        <span>👨‍🏫 دخول كمعلم (Host)</span>
+                        <span><Presentation size={16} strokeWidth={1.75} aria-hidden /> دخول كمعلم (Host)</span>
                       </a>
 
                       {/* Copy Link */}
                       <button
-                        onClick={() => handleCopyLink(meeting.join_url, meeting.id)}
-                        className="px-3.5 py-2.5 rounded-[14px] border border-border hover:bg-background text-xs font-medium text-secondary hover:text-foreground transition-colors"
+                        onClick={() => handleCopyLink(meeting.join_url ?? '', meeting.id)}
+                        className="px-3.5 py-2.5 rounded-lg border border-border hover:bg-background text-xs font-medium text-secondary hover:text-foreground transition-colors"
                         title="نسخ رابط الطالب"
                       >
                         {copiedId === meeting.id ? (
-                          <span className="text-emerald-500 flex items-center gap-1">
+                          <span className="text-primary flex items-center gap-1">
                             <CheckCircleIcon size={14} /> تم النسخ
                           </span>
                         ) : (
-                          '📋 نسخ الرابط'
+                          <><Copy size={16} strokeWidth={1.75} aria-hidden /> نسخ الرابط</>
                         )}
                       </button>
 
                       {/* Cancel */}
                       <button
                         onClick={() => handleCancelMeeting(meeting.id)}
-                        className="px-3 py-2.5 rounded-[14px] border border-rose-500/20 text-rose-400 hover:bg-rose-500/10 text-xs transition-colors"
+                        className="px-3 py-2.5 rounded-lg border border-danger/20 text-danger hover:bg-danger/10 text-xs transition-colors"
                         title="إلغاء الجلسة"
-                      >
-                        ✕
-                      </button>
+                       aria-label="إغلاق">
+                        
+ <X size={16} strokeWidth={1.75} aria-hidden />
+ </button>
                     </div>
 
-                    <span className="text-[10px] text-secondary truncate font-mono text-center opacity-70">
+                    <span className="text-xs text-secondary truncate font-mono text-center opacity-70">
                       {meeting.join_url}
                     </span>
                   </div>

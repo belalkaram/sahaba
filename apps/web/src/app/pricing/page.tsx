@@ -4,8 +4,11 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { Card } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
-import { CheckCircleIcon } from '../../components/icons';
 
+
+import { Check } from 'lucide-react';
+import { IconNext } from '../../components/icons/directional';
+import { PublicPage } from '../../components/layout/public-chrome';
 export default function PricingPage() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly');
 
@@ -71,49 +74,42 @@ export default function PricingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background text-foreground selection:bg-primary selection:text-white py-12 px-6 relative overflow-hidden" dir="rtl">
+    <PublicPage>
+      <div className="py-12 px-6 relative overflow-hidden">
       {/* Background glow */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-primary/10 rounded-full blur-[160px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto relative z-10">
         {/* Navigation back */}
-        <div className="flex items-center justify-between mb-12">
-          <Link href="/" className="inline-flex items-center gap-2 text-xs text-secondary hover:text-white transition-colors">
-            <span>←</span>
-            <span>العودة للرئيسية</span>
-          </Link>
-          <div className="flex items-center gap-2">
-            <span className="text-xl">🎓</span>
-            <span className="font-bold text-white text-sm">منصة LMS التعليمية</span>
-          </div>
-        </div>
+        
 
         {/* Heading */}
         <div className="text-center max-w-3xl mx-auto mb-12">
           <Badge variant="success" size="sm" className="mb-3">باقات واضحة وعادلة</Badge>
-          <h1 className="text-3xl sm:text-5xl font-black text-white">خطط أسعار تناسب حجم مؤسستك</h1>
+          <h1 className="text-3xl sm:text-5xl font-black text-fg">خطط أسعار تناسب حجم مؤسستك</h1>
           <p className="text-sm text-secondary mt-3 leading-relaxed">
             كل باقة تشتمل على عزل سحابي كامل لقاعدة البيانات وضمان عدم تداخل البيانات، مع تجربة مجانية لمدة 14 يوماً.
           </p>
 
           {/* Billing cycle toggle */}
-          <div className="mt-8 inline-flex items-center bg-card border border-border p-1.5 rounded-[20px]">
+          <div className="mt-8 inline-flex items-center bg-card border border-border p-1.5 rounded-xl">
             <button
               onClick={() => setBillingCycle('yearly')}
               className={`px-4 py-2 rounded-[16px] text-xs font-semibold transition-all ${
                 billingCycle === 'yearly'
-                  ? 'bg-emerald-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-primary text-primary-fg shadow-md'
+                  : 'text-fg-muted hover:text-fg'
               }`}
             >
-              دفع سنوي (خصم 20%) 🎁
-            </button>
+              
+ دفع سنوي (خصم 20%) 
+ </button>
             <button
               onClick={() => setBillingCycle('monthly')}
               className={`px-4 py-2 rounded-[16px] text-xs font-semibold transition-all ${
                 billingCycle === 'monthly'
-                  ? 'bg-emerald-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-primary text-primary-fg shadow-md'
+                  : 'text-fg-muted hover:text-fg'
               }`}
             >
               دفع شهري
@@ -128,20 +124,20 @@ export default function PricingPage() {
               key={p.id}
               className={`p-8 relative flex flex-col justify-between transition-all ${
                 p.popular
-                  ? 'border-emerald-500/60 bg-[color-mix(in_srgb,var(--pri)_15%,transparent)] shadow-2xl shadow-emerald-500/10 scale-105'
-                  : 'border-slate-800 bg-card/40 hover:border-slate-700'
+                  ? 'border-primary/60 bg-[color-mix(in_srgb,var(--pri)_15%,transparent)] shadow-xl shadow-primary/10 scale-105'
+                  : 'border-border-strong bg-card/40 hover:border-border-strong'
               }`}
             >
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <Badge variant={p.popular ? 'success' : 'neutral'}>{p.badge}</Badge>
                 </div>
-                <h3 className="text-lg font-bold text-white">{p.name}</h3>
+                <h3 className="text-lg font-bold text-fg">{p.name}</h3>
                 <p className="text-xs text-secondary mt-1 min-h-[32px]">{p.description}</p>
 
                 <div className="mt-6 mb-6 pb-6 border-b border-border">
                   <div className="flex items-baseline gap-1">
-                    <span className="text-3xl sm:text-4xl font-black text-white">
+                    <span className="text-3xl sm:text-4xl font-black text-fg">
                       {billingCycle === 'yearly' ? p.yearlyPrice : p.monthlyPrice}
                     </span>
                     {p.yearlyPrice !== 'مخصص' && (
@@ -149,17 +145,17 @@ export default function PricingPage() {
                     )}
                   </div>
                   {billingCycle === 'yearly' && p.yearlyPrice !== 'مخصص' && (
-                    <span className="text-[11px] text-primary block mt-1">تُدفع سنوياً مع شهرين مجاناً</span>
+                    <span className="text-xs text-primary block mt-1">تُدفع سنوياً مع شهرين مجاناً</span>
                   )}
                 </div>
 
                 <div className="space-y-3">
-                  <span className="text-[11px] font-bold text-secondary uppercase tracking-wider block">
+                  <span className="text-xs font-bold text-secondary uppercase tracking-wider block">
                     المميزات المضمنة:
                   </span>
                   {p.features.map((f, i) => (
                     <div key={i} className="flex items-start gap-2.5 text-xs text-secondary">
-                      <span className="text-primary text-sm mt-0.5">✓</span>
+                      <span className="text-primary text-sm mt-0.5"><Check size={16} strokeWidth={1.75} aria-hidden /></span>
                       <span>{f}</span>
                     </div>
                   ))}
@@ -171,17 +167,18 @@ export default function PricingPage() {
                   href="/register-school"
                   className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-[16px] font-bold text-xs transition-all active:scale-95 ${
                     p.popular
-                      ? 'bg-gradient-to-r bg-primary to-teal-600 hover:bg-primary hover:to-teal-500 text-white shadow-lg shadow-emerald-600/30'
-                      : 'bg-slate-800 hover:bg-background hover:border-border hover:border text-white'
+                      ? 'bg-primary hover:bg-primary-hover text-primary-fg shadow-lg shadow-primary/30'
+                      : 'bg-surface-muted hover:bg-background hover:border-border hover:border text-fg'
                   }`}
                 >
-                  {p.ctaText} ←
-                </Link>
+                  {p.ctaText}  <IconNext size={16} />
+ </Link>
               </div>
             </Card>
           ))}
         </div>
       </div>
     </div>
+    </PublicPage>
   );
 }

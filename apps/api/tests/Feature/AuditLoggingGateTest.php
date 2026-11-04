@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\AuditLog;
+use App\Models\Permission;
+use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\TenantDatabase;
 use App\Models\TenantDomain;
@@ -17,6 +19,19 @@ use Tests\TestCase;
 class AuditLoggingGateTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected string $platformToken = 'audit-gate-platform-token-secret';
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        config(['platform.admin_token' => $this->platformToken]);
+    }
+
+    protected function platformHeaders(): array
+    {
+        return ['Authorization' => 'Bearer '.$this->platformToken];
+    }
 
     public function test_audit_logger_records_event_accurately()
     {
@@ -45,7 +60,7 @@ class AuditLoggingGateTest extends TestCase
             'type' => 'school',
         ];
 
-        $res = $this->postJson('/api/v1/tenants', $payload);
+        $res = $this->withHeaders($this->platformHeaders())->postJson('/api/v1/tenants', $payload);
         $res->assertStatus(201);
         $tenantId = $res->json('data.tenant.id');
 
@@ -56,7 +71,7 @@ class AuditLoggingGateTest extends TestCase
         ]);
 
         // Now update
-        $updateRes = $this->putJson("/api/v1/tenants/{$tenantId}", [
+        $updateRes = $this->withHeaders($this->platformHeaders())->putJson("/api/v1/tenants/{$tenantId}", [
             'name' => 'Updated Audit Academy',
             'primary_color' => '#123456',
         ]);
@@ -89,7 +104,7 @@ class AuditLoggingGateTest extends TestCase
             'created_at' => now(),
         ]);
 
-        $res = $this->getJson('/api/v1/platform/audit-logs?action=test.action.one');
+        $res = $this->withHeaders($this->platformHeaders())->getJson('/api/v1/platform/audit-logs?action=test.action.one');
         $res->assertStatus(200)
             ->assertJsonPath('data.pagination.total', 1)
             ->assertJsonPath('data.audit_logs.0.action', 'test.action.one');
@@ -132,7 +147,13 @@ class AuditLoggingGateTest extends TestCase
             'created_at' => now(),
         ]);
 
-        // Authenticate a user in Tenant A
+        // Authenticate a user in Tenant A with audit.view permission (R0-4)
+        $perm = Permission::firstOrCreate(['name' => 'audit.view'], ['module' => 'audit']);
+        $role = Role::firstOrCreate(['name' => 'auditor'], ['label' => 'Auditor', 'is_system' => true]);
+        if (! $role->permissions()->where('permissions.id', $perm->id)->exists()) {
+            $role->permissions()->attach($perm->id);
+        }
+
         $user = TenantUser::create([
             'name' => 'Admin User A',
             'email' => 'admin@tenant-a.local',
@@ -140,10 +161,11 @@ class AuditLoggingGateTest extends TestCase
             'type' => 'staff',
             'status' => 'active',
         ]);
+        $user->roles()->attach($role->id);
         $tokenData = TenantToken::createTokenFor($user, 'test_token');
 
         $res = $this->withHeaders([
-            'X-Tenant' => 'tenant-a',
+            'X-Tenant-Slug' => 'tenant-a',
             'Authorization' => "Bearer {$tokenData['plainTextToken']}",
         ])->getJson('/api/v1/audit-logs');
 

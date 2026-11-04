@@ -74,10 +74,12 @@ return new class extends Migration
         Schema::connection('tenant')->create('entitlements', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('student_id')->constrained('students')->cascadeOnDelete();
-            $table->foreignUuid('subscription_id')->constrained('subscriptions')->cascadeOnDelete();
+            $table->foreignUuid('subscription_id')->nullable()->constrained('subscriptions')->cascadeOnDelete();
             $table->string('entitlement_key');
             $table->boolean('is_active')->default(true);
             $table->timestamp('expires_at')->nullable();
+            $table->string('reason')->nullable();
+            $table->foreignUuid('granted_by_user_id')->nullable()->constrained('tenant_users')->nullOnDelete();
             $table->timestamps();
         });
     }

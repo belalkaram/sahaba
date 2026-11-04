@@ -1,231 +1,234 @@
 'use client';
 
+/**
+ * R7-0b — Design system gallery (development only; 404 in production builds).
+ * Visual reference for tokens, typography, primitives, motion and RTL arrow rules.
+ */
+
 import React, { useState } from 'react';
+import { notFound } from 'next/navigation';
+import { Download, Plus, Search, Settings, Trash2, Users } from 'lucide-react';
+import { Button } from '../../components/ui/button';
+import { Badge } from '../../components/ui/badge';
+import { Card, CardHeader } from '../../components/ui/card';
+import { Input } from '../../components/ui/input';
+import { Select } from '../../components/ui/select';
+import { KpiCard } from '../../components/ui/kpi-card';
+import { Tabs } from '../../components/ui/tabs';
+import { Modal } from '../../components/ui/modal';
+import { Drawer } from '../../components/ui/drawer';
+import { EmptyState } from '../../components/ui/empty-state';
+import { PageHeader } from '../../components/ui/page-header';
+import { ThemeSwitcher } from '../../components/layout/theme-switcher';
+import { BrandLockup } from '../../components/brand/brand-mark';
 import {
-  BookOpenIcon,
-  GraduationCapIcon,
-  VideoIcon,
-  CalendarIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  AwardIcon,
-  ShieldIcon,
-  UsersIcon,
-  BarChartIcon,
-  BellIcon,
-  FireIcon,
-  StarIcon,
-  CheckIcon,
-  BuildingIcon,
-  WalletIcon,
-  TaskIcon,
-  MessageIcon,
-  SettingsIcon,
-  EditIcon,
-  TrashIcon,
-  PinIcon,
-  PlayIcon,
-} from '../../components/icons';
+  IconBack,
+  IconChevronNext,
+  IconChevronPrev,
+  IconExpand,
+  IconExternal,
+  IconNext,
+} from '../../components/icons/directional';
+import { formatCurrency, formatDual, formatPercent, formatRelative } from '../../lib/format';
 
-export default function ComponentLibraryPage() {
-  const [switch1, setSwitch1] = useState(true);
-  const [switch2, setSwitch2] = useState(false);
-  const [showToast, setShowToast] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [inputValue, setInputValue] = useState('');
+const SWATCHES = [
+  ['surface', 'bg-surface'],
+  ['surface-sunken', 'bg-surface-sunken'],
+  ['surface-muted', 'bg-surface-muted'],
+  ['primary', 'bg-primary'],
+  ['primary-subtle', 'bg-primary-subtle'],
+  ['accent', 'bg-accent'],
+  ['accent-subtle', 'bg-accent-subtle'],
+  ['success', 'bg-success'],
+  ['warning', 'bg-warning'],
+  ['danger', 'bg-danger'],
+  ['info', 'bg-info'],
+  ['brand gradient', 'bg-gradient-brand'],
+] as const;
 
-  const triggerToast = () => {
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 2400);
-  };
+const ARROWS = [
+  { use: 'التالي / متابعة / عرض الكل', icon: <IconNext />, name: 'IconNext' },
+  { use: 'رجوع / السابق', icon: <IconBack />, name: 'IconBack' },
+  { use: 'صفحة تالية، مسار التنقل', icon: <IconChevronNext />, name: 'IconChevronNext' },
+  { use: 'صفحة سابقة', icon: <IconChevronPrev />, name: 'IconChevronPrev' },
+  { use: 'فتح / طي (لا يُعكس)', icon: <IconExpand />, name: 'IconExpand' },
+  { use: 'رابط خارجي', icon: <IconExternal />, name: 'IconExternal' },
+];
 
-  const iconsList = [
-    { name: 'book', icon: <BookOpenIcon size={24} /> },
-    { name: 'grad', icon: <GraduationCapIcon size={24} /> },
-    { name: 'video', icon: <VideoIcon size={24} /> },
-    { name: 'calendar', icon: <CalendarIcon size={24} /> },
-    { name: 'check-circle', icon: <CheckCircleIcon size={24} /> },
-    { name: 'clock', icon: <ClockIcon size={24} /> },
-    { name: 'award', icon: <AwardIcon size={24} /> },
-    { name: 'shield', icon: <ShieldIcon size={24} /> },
-    { name: 'users', icon: <UsersIcon size={24} /> },
-    { name: 'chart', icon: <BarChartIcon size={24} /> },
-    { name: 'bell', icon: <BellIcon size={24} /> },
-    { name: 'fire', icon: <FireIcon size={24} /> },
-    { name: 'star', icon: <StarIcon size={24} /> },
-    { name: 'check', icon: <CheckIcon size={24} /> },
-    { name: 'building', icon: <BuildingIcon size={24} /> },
-    { name: 'wallet', icon: <WalletIcon size={24} /> },
-    { name: 'task', icon: <TaskIcon size={24} /> },
-    { name: 'message', icon: <MessageIcon size={24} /> },
-    { name: 'settings', icon: <SettingsIcon size={24} /> },
-    { name: 'edit', icon: <EditIcon size={24} /> },
-    { name: 'trash', icon: <TrashIcon size={24} /> },
-    { name: 'pin', icon: <PinIcon size={24} /> },
-    { name: 'play', icon: <PlayIcon size={24} /> },
-  ];
+export default function DesignSystemGallery() {
+  const [tab, setTab] = useState('a');
+  const [modal, setModal] = useState(false);
+  const [drawer, setDrawer] = useState(false);
+  if (process.env.NODE_ENV === 'production') notFound();
 
   return (
-    <div style={{ maxWidth: '1240px', margin: 'auto', padding: '16px', display: 'grid', gap: '14px' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-        <div>
-          <h2>مكتبة المكوّنات (Madar Design System)</h2>
-          <small className="mut">جميع العناصر والأنماط والألوان المستخدمة في الهوية البصرية الموحدة</small>
-        </div>
-        <button className="btn p" onClick={() => setShowModal(true)}>
-          افتح نافذة تجريبية
-        </button>
-      </div>
+    <div className="min-h-screen bg-surface-sunken">
+      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-surface/90 px-6 py-3 backdrop-blur-md">
+        <BrandLockup size={34} />
+        <ThemeSwitcher />
+      </header>
+      <main className="mx-auto max-w-[var(--content-max)] space-y-10 p-6 lg:p-10">
+        <PageHeader
+          eyebrow="R7 — Design System"
+          title="مكتبة مكوّنات سحابة"
+          description="مرجع بصري للتوكنز والطباعة والمكوّنات والحركة وقواعد الأسهم في RTL. متاحة في بيئة التطوير فقط."
+          breadcrumbs={[{ label: 'الرئيسية', href: '/' }, { label: 'نظام التصميم' }]}
+          actions={
+            <>
+              <Button variant="secondary" icon={<Download size={16} />}>
+                تصدير
+              </Button>
+              <Button icon={<Plus size={16} />}>إجراء أساسي</Button>
+            </>
+          }
+        />
 
-      <div className="g two">
-        {/* Buttons & Chips */}
-        <div className="c">
-          <h3>الأزرار والشارات (Buttons & Badges)</h3>
-          <p style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <button className="btn p">زر أساسي (.btn.p)</button>
-            <button className="btn">زر ثانوي (.btn)</button>
-            <button className="btn" style={{ borderColor: 'var(--red)', color: 'var(--red)' }}>
-              زر خطر
-            </button>
-          </p>
-          <p style={{ marginTop: '14px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <span className="ch ok">نجاح (.ok)</span>
-            <span className="ch wn">تنبيه (.wn)</span>
-            <span className="ch er">خطأ (.er)</span>
-            <span className="ch in">معلومة (.in)</span>
-          </p>
-        </div>
-
-        {/* Inputs & Switches */}
-        <div className="c">
-          <h3>الحقول والمفاتيح (Inputs & Switches)</h3>
-          <input
-            className="in2"
-            placeholder="اسم الطالب أو المعلم (.in2)"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            style={{ marginTop: '8px' }}
-          />
-          <div style={{ margin: '14px 0', display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <button
-              className={`sw ${switch1 ? 'on' : ''}`}
-              onClick={() => setSwitch1(!switch1)}
-              aria-label="تفعيل المفتاح 1"
-            />
-            <small className="mut">مفتاح 1 ({switch1 ? 'مفعل' : 'معطل'})</small>
-
-            <button
-              className={`sw ${switch2 ? 'on' : ''}`}
-              onClick={() => setSwitch2(!switch2)}
-              aria-label="تفعيل المفتاح 2"
-              style={{ marginInlineStart: '12px' }}
-            />
-            <small className="mut">مفتاح 2 ({switch2 ? 'مفعل' : 'معطل'})</small>
+        <Card>
+          <CardHeader title="الألوان الدلالية" description="القيم من styles/tokens.css وتتبدّل تلقائياً مع الثيم." />
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+            {SWATCHES.map(([name, cls]) => (
+              <div key={name} className="overflow-hidden rounded-md border border-border">
+                <div className={`h-16 ${cls}`} />
+                <p className="ltr-isolate px-2 py-1.5 text-xs text-fg-muted">{name}</p>
+              </div>
+            ))}
           </div>
-          <button className="btn" onClick={triggerToast}>
-            أظهر إشعار فوري (Toast)
-          </button>
-        </div>
+        </Card>
 
-        {/* Progress & Conic Rings */}
-        <div className="c">
-          <h3>التقدّم والصور الرمزية (Progress & Avatars)</h3>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', margin: '12px 0' }}>
-            <span className="ring" style={{ '--p': 72, '--x': 'var(--acc)' } as React.CSSProperties}>
-              <b>72%</b>
-            </span>
-            <span className="ring" style={{ '--p': 40, '--x': 'var(--red)' } as React.CSSProperties}>
-              <b>40%</b>
-            </span>
-            <span className="ring" style={{ '--p': 90, '--x': 'var(--tq)' } as React.CSSProperties}>
-              <b>90%</b>
-            </span>
-            <span className="av">س</span>
-            <span className="av" style={{ background: 'var(--pri)', color: '#fff' }}>ع</span>
+        <Card>
+          <CardHeader title="الطباعة" description="Liftaswash للعناوين العربية الكبرى فقط، وIBM Plex Sans Arabic لبقية الواجهة." />
+          <div className="space-y-3">
+            <p className="font-display text-5xl text-fg">سحابة تعليمية</p>
+            <h1 className="text-3xl text-fg">عنوان صفحة رئيسي</h1>
+            <h2 className="text-2xl text-fg">عنوان قسم</h2>
+            <h3 className="text-xl font-bold text-fg">عنوان بطاقة</h3>
+            <p className="text-base text-fg">نص أساسي للقراءة بارتفاع سطر مريح للعربية.</p>
+            <p className="text-sm text-fg-muted">نص وصفي ثانوي.</p>
+            <p className="text-xs text-fg-subtle">نص صغير — الحد الأدنى ١٢ بكسل.</p>
+            <p className="text-sm text-fg">
+              {formatDual('2026-11-12T16:30:00')} · {formatPercent(85)} · {formatCurrency(399)} · {formatRelative(new Date(Date.UTC(2026, 10, 1)))}
+            </p>
           </div>
-          <div style={{ marginTop: '16px' }}>
-            <small className="mut">شريط التقدم (.pb): 60%</small>
-            <div className="pb">
-              <i style={{ '--p': 60, '--x': 'var(--tq)' } as React.CSSProperties} />
+        </Card>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card>
+            <CardHeader title="الأزرار" />
+            <div className="flex flex-wrap gap-3">
+              <Button>أساسي</Button>
+              <Button variant="secondary">ثانوي</Button>
+              <Button variant="outline">محدّد</Button>
+              <Button variant="subtle">هادئ</Button>
+              <Button variant="ghost">شفاف</Button>
+              <Button variant="danger" icon={<Trash2 size={16} />}>
+                حذف
+              </Button>
+              <Button isLoading>جارٍ الحفظ</Button>
+              <Button variant="link">رابط</Button>
+              <Button size="icon" variant="secondary" aria-label="الإعدادات">
+                <Settings size={18} />
+              </Button>
+              <Button iconEnd={<IconNext size={16} />}>التالي</Button>
+              <Button variant="secondary" icon={<IconBack size={16} />}>
+                رجوع
+              </Button>
             </div>
-          </div>
+          </Card>
+          <Card>
+            <CardHeader title="الشارات والتبويبات" />
+            <div className="flex flex-wrap gap-2">
+              {(['neutral', 'brand', 'success', 'warning', 'danger', 'info', 'accent'] as const).map((v) => (
+                <Badge key={v} variant={v} dot>
+                  {v}
+                </Badge>
+              ))}
+            </div>
+            <div className="mt-5 space-y-4">
+              <Tabs tabs={[{ id: 'a', label: 'نظرة عامة' }, { id: 'b', label: 'الطلاب', badge: 24 }, { id: 'c', label: 'الإعدادات' }]} activeTab={tab} onChange={setTab} />
+              <Tabs variant="underline" tabs={[{ id: 'a', label: 'المنهج' }, { id: 'b', label: 'التقييمات' }, { id: 'c', label: 'الحضور' }]} activeTab={tab} onChange={setTab} />
+            </div>
+          </Card>
         </div>
 
-        {/* Sadu Heritage & Brand Colors */}
-        <div className="c">
-          <h3>شريط السدو التراثي وألوان الهوية</h3>
-          <div className="sadu" style={{ borderRadius: '6px', margin: '10px 0' }} />
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', textAlign: 'center', fontSize: '11px', marginTop: '14px' }}>
-            <div style={{ background: 'var(--pri)', color: '#fff', padding: '12px 4px', borderRadius: '8px' }}>
-              --pri / --ink<br />كحلي ملكي
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card>
+            <CardHeader title="الحقول" />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Input label="الاسم" placeholder="اكتب الاسم" required />
+              <Input label="البحث" placeholder="ابحث…" iconPrefix={<Search size={16} />} />
+              <Input label="رقم الجوال" type="tel" dir="ltr" placeholder="05xxxxxxxx" helperText="يقبل الأرقام العربية والإنجليزية." />
+              <Input label="البريد" error="صيغة البريد غير صحيحة" defaultValue="name@" dir="ltr" />
+              <Select label="الشعبة" options={[{ value: '1', label: 'الرياضيات أ' }, { value: '2', label: 'الفيزياء ب' }]} />
             </div>
-            <div style={{ background: 'var(--acc)', color: '#181C45', padding: '12px 4px', borderRadius: '8px', fontWeight: 600 }}>
-              --acc<br />ذهبي مدار
-            </div>
-            <div style={{ background: 'var(--red)', color: '#fff', padding: '12px 4px', borderRadius: '8px' }}>
-              --red<br />سدو طيني
-            </div>
-            <div style={{ background: 'var(--tq)', color: '#fff', padding: '12px 4px', borderRadius: '8px' }}>
-              --tq<br />أزرق تركواز
-            </div>
-          </div>
+          </Card>
+          <Card>
+            <CardHeader title="الأسهم في RTL" description="مكوّنات دلالية: تنعكس تلقائياً داخل منطقة LTR." />
+            <table className="w-full text-sm">
+              <tbody className="divide-y divide-border">
+                {ARROWS.map((a) => (
+                  <tr key={a.name}>
+                    <td className="py-2.5 text-fg">{a.use}</td>
+                    <td className="py-2.5 text-primary">{a.icon}</td>
+                    <td className="py-2.5 text-primary" dir="ltr">
+                      {a.icon}
+                    </td>
+                    <td className="ltr-isolate py-2.5 text-xs text-fg-subtle">{a.name}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Card>
         </div>
-      </div>
 
-      {/* Icons Grid */}
-      <div className="c">
-        <h3>أيقونات المنصة (Icons Grid)</h3>
-        <div className="ig" style={{ marginTop: '14px' }}>
-          {iconsList.map((item) => (
-            <div key={item.name} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-              {item.icon}
-              <span>{item.name}</span>
-            </div>
-          ))}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <KpiCard label="الطلاب المسجّلون" value={1284} icon={<Users size={20} />} delta={{ value: '١٢٪', isPositive: true, label: 'عن الشهر الماضي' }} />
+          <KpiCard label="نسبة الحضور" value={92} unit="percent" tone="success" hint="آخر ٣٠ يوماً" />
+          <KpiCard label="مدفوعات معلّقة" value={7} tone="warning" />
+          <KpiCard label="الإيرادات" value={formatCurrency(48250)} tone="accent" />
         </div>
-      </div>
 
-      {/* Interactive Modal (.mod) */}
-      {showModal && (
-        <div className="mod" onClick={() => setShowModal(false)}>
-          <div className="c" onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ margin: 0 }}>نافذة إدخال جديدة</h2>
-              <button
-                style={{ background: 'none', border: 0, color: 'var(--ink)', fontSize: '20px', cursor: 'pointer' }}
-                onClick={() => setShowModal(false)}
-                aria-label="إغلاق"
-              >
-                ✕
-              </button>
-            </div>
-            <input className="in2" placeholder="الاسم أو العنوان" defaultValue="مقرر الرياضيات التفاعلي" />
-            <select className="in2">
-              <option>ثالث ثانوي / 2 علمي</option>
-              <option>ثالث ثانوي / 4 علمي</option>
-            </select>
-            <textarea className="in2" rows={3} placeholder="ملاحظات إضافية (اختياري)"></textarea>
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '6px' }}>
-              <button className="btn" onClick={() => setShowModal(false)}>
-                إلغاء
-              </button>
-              <button
-                className="btn p"
-                onClick={() => {
-                  setShowModal(false);
-                  triggerToast();
-                }}
-              >
-                حفظ البيانات
-              </button>
-            </div>
-          </div>
+        <div className="grid gap-6 lg:grid-cols-3">
+          <Card variant="brand" className="lg:col-span-2">
+            <h3 className="font-display text-2xl">بطاقة الهوية (brand)</h3>
+            <p className="mt-2 text-white/75">للمواضع المميزة فقط: «تابع التعلّم» والـ Hero.</p>
+          </Card>
+          <Card variant="interactive">
+            <h3 className="text-base font-bold text-fg">بطاقة تفاعلية</h3>
+            <p className="mt-1 text-sm text-fg-muted">ترتفع قليلاً عند المرور.</p>
+          </Card>
         </div>
-      )}
 
-      {/* Floating Toast Notification (.ts) */}
-      {showToast && <div className="ts">تم حفظ التغييرات بنجاح ✓</div>}
+        <EmptyState title="لا توجد واجبات بعد" description="عندما يضيف معلمك واجباً سيظهر هنا مع موعد التسليم." action={{ label: 'استعراض المقررات', onClick: () => undefined }} />
+
+        <div className="flex gap-3">
+          <Button variant="secondary" onClick={() => setModal(true)}>
+            فتح نافذة
+          </Button>
+          <Button variant="secondary" onClick={() => setDrawer(true)}>
+            فتح لوحة جانبية
+          </Button>
+        </div>
+      </main>
+
+      <Modal
+        isOpen={modal}
+        onClose={() => setModal(false)}
+        title="تأكيد الإجراء"
+        subtitle="نافذة مركزية على الديسكتوب وورقة سفلية على الجوال."
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setModal(false)}>
+              إلغاء
+            </Button>
+            <Button onClick={() => setModal(false)}>تأكيد</Button>
+          </>
+        }
+      >
+        <Input label="سبب الإجراء" />
+      </Modal>
+      <Drawer isOpen={drawer} onClose={() => setDrawer(false)} title="تفاصيل الطلب" subtitle="تنزلق من بداية السطر (اليمين).">
+        <p className="text-sm text-fg-muted">محتوى اللوحة الجانبية.</p>
+      </Drawer>
     </div>
   );
 }

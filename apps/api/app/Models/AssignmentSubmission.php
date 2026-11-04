@@ -11,7 +11,12 @@ class AssignmentSubmission extends TenantModel
     protected $fillable = [
         'assignment_id',
         'student_id',
+        'attempt_number',
         'content',
+        'file_path',
+        'file_name',
+        'file_size',
+        'mime_type',
         'submitted_at',
         'is_late',
         'score',
@@ -23,6 +28,8 @@ class AssignmentSubmission extends TenantModel
     ];
 
     protected $casts = [
+        'attempt_number' => 'integer',
+        'file_size' => 'integer',
         'submitted_at' => 'datetime',
         'is_late' => 'boolean',
         'score' => 'decimal:2',
@@ -43,5 +50,10 @@ class AssignmentSubmission extends TenantModel
     public function gradedBy(): BelongsTo
     {
         return $this->belongsTo(TenantUser::class, 'graded_by_user_id');
+    }
+
+    public function hasFile(): bool
+    {
+        return ! empty($this->file_path);
     }
 }

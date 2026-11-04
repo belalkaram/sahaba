@@ -12,11 +12,14 @@ class ExamAnswer extends TenantModel
         'attempt_id',
         'question_id',
         'answer_text',
+        'selected_options',
         'is_correct',
         'awarded_points',
+        'feedback',
     ];
 
     protected $casts = [
+        'selected_options' => 'array',
         'is_correct' => 'boolean',
         'awarded_points' => 'decimal:2',
     ];

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Meeting;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\Staff;
@@ -120,7 +121,7 @@ class GoogleServicesIntegrationTest extends TestCase
         $this->assertStringContainsString('GOCSPX-', $clientSecret);
     }
 
-    public function test_google_meet_creation_auto_code(): void
+    public function test_google_meet_without_a_link_is_refused_and_no_code_is_generated(): void
     {
         $setup = $this->setupTenant();
 
@@ -130,14 +131,8 @@ class GoogleServicesIntegrationTest extends TestCase
             'duration_minutes' => 60,
         ], $setup['headers']);
 
-        $res->assertStatus(201);
-        $meeting = $res->json('data.meeting');
-
-        $this->assertEquals('google_meet', $meeting['provider']);
-        $this->assertNotEmpty($meeting['external_meeting_id']);
-        $this->assertMatchesRegularExpression('/^[a-z]{3}-[a-z]{4}-[a-z]{3}$/', $meeting['external_meeting_id']);
-        $this->assertEquals("https://meet.google.com/{$meeting['external_meeting_id']}", $meeting['join_url']);
-        $this->assertStringContainsString('authuser=host', $meeting['host_url']);
+        $res->assertStatus(422)->assertJsonPath('error.code', 'GOOGLE_NOT_CONNECTED');
+        $this->assertSame(0, Meeting::count());
     }
 
     public function test_google_meet_creation_with_custom_code_or_url(): void
@@ -154,6 +149,7 @@ class GoogleServicesIntegrationTest extends TestCase
         $res->assertStatus(201);
         $meeting = $res->json('data.meeting');
 
+        $this->assertEquals('manual', $meeting['provider']);
         $this->assertEquals('xyz-pqrs-uvw', $meeting['external_meeting_id']);
         $this->assertEquals('https://meet.google.com/xyz-pqrs-uvw', $meeting['join_url']);
     }

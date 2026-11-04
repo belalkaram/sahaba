@@ -2,17 +2,18 @@
 
 namespace App\Http\Controllers\Api\Platform;
 
+use App\Domain\Platform\PlatformMetricsService;
 use App\Http\Controllers\Controller;
+use App\Models\SupportAccessLog;
 use App\Models\Tenant;
-use App\Models\TenantDatabase;
-use App\Models\TenantDomain;
+use App\Models\TenantFeature;
 use App\Support\ApiResponse;
 use App\Support\Audit\AuditLogger;
-use App\Tenancy\TenantDatabaseManager;
+use App\Tenancy\TenantProvisioningService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 
 class TenantController extends Controller
 {
@@ -21,7 +22,7 @@ class TenantController extends Controller
      */
     public function index(): JsonResponse
     {
-        $tenants = Tenant::with(['domains', 'databaseConfig'])->get();
+        $tenants = Tenant::with(['domains', 'databaseConfig', 'features'])->get();
 
         return ApiResponse::success(['tenants' => $tenants]);
     }
@@ -31,15 +32,15 @@ class TenantController extends Controller
      */
     public function show(string $id): JsonResponse
     {
-        $tenant = Tenant::with(['domains', 'databaseConfig'])->findOrFail($id);
+        $tenant = Tenant::with(['domains', 'databaseConfig', 'features'])->findOrFail($id);
 
         return ApiResponse::success(['tenant' => $tenant]);
     }
 
     /**
-     * Provision a new tenant.
+     * Provision a new tenant using the atomic provisioning service.
      */
-    public function store(Request $request, TenantDatabaseManager $dbManager): JsonResponse
+    public function store(Request $request, TenantProvisioningService $provisioningService): JsonResponse
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -51,58 +52,26 @@ class TenantController extends Controller
             'secondary_color' => 'nullable|string|max:30',
             'brand_tagline' => 'nullable|string|max:255',
             'brand_settings' => 'nullable|array',
+            'modules' => 'nullable|array',
+            'modules.*' => 'string',
+            'owner' => 'nullable|array',
+            'owner.name' => 'required_with:owner|string|max:255',
+            'owner.email' => 'required_with:owner|email|max:255',
+            'owner.phone' => 'nullable|string|max:30',
+            'owner.password' => 'required_with:owner|string|min:6',
         ]);
 
         try {
-            DB::beginTransaction();
-
-            $tenant = Tenant::create([
-                'name' => $validated['name'],
-                'slug' => $validated['slug'],
-                'type' => $validated['type'],
-                'auth_mode' => $validated['auth_mode'] ?? 'hybrid',
-                'status' => 'active',
-                'logo_url' => $validated['logo_url'] ?? null,
-                'primary_color' => $validated['primary_color'] ?? '#04c3c9',
-                'secondary_color' => $validated['secondary_color'] ?? '#0284c7',
-                'brand_tagline' => $validated['brand_tagline'] ?? null,
-                'brand_settings' => $validated['brand_settings'] ?? null,
-            ]);
-
-            TenantDatabase::create([
-                'tenant_id' => $tenant->id,
-                'connection_identifier' => 'tenant_'.$tenant->slug,
-                'status' => 'ready',
-            ]);
-
-            TenantDomain::create([
-                'tenant_id' => $tenant->id,
-                'domain' => $tenant->slug.'.localhost',
-                'active' => true,
-            ]);
-
-            DB::commit();
-
-            // Run migrations for the new tenant
-            $dbManager->migrateTenant($tenant);
-
-            $tenant->load(['domains', 'databaseConfig']);
-
-            AuditLogger::log(
-                action: 'tenant.created',
-                tenantId: $tenant->id,
-                entityType: 'Tenant',
-                entityId: $tenant->id,
-                payload: ['name' => $tenant->name, 'slug' => $tenant->slug, 'type' => $tenant->type],
-                actorType: 'platform_admin'
+            $tenant = $provisioningService->provision(
+                $validated,
+                actorType: 'platform_admin',
+                actorId: (string) ($request->user()?->id ?? 'admin')
             );
 
             return ApiResponse::success(['tenant' => $tenant], Response::HTTP_CREATED);
-        } catch (\Exception $e) {
-            DB::rollBack();
-
+        } catch (Throwable $e) {
             return ApiResponse::error(
-                'TENANT_CREATION_FAILED',
+                'TENANT_PROVISIONING_FAILED',
                 'Failed to provision tenant: '.$e->getMessage(),
                 Response::HTTP_INTERNAL_SERVER_ERROR
             );
@@ -144,5 +113,120 @@ class TenantController extends Controller
             'tenant' => $tenant,
             'message' => 'Tenant branding and details updated successfully',
         ]);
+    }
+
+    /**
+     * Suspend a tenant.
+     */
+    public function suspend(Request $request, string $id): JsonResponse
+    {
+        $tenant = Tenant::findOrFail($id);
+        $tenant->update(['status' => 'suspended']);
+
+        AuditLogger::log(
+            action: 'tenant.suspended',
+            tenantId: $tenant->id,
+            entityType: 'Tenant',
+            entityId: $tenant->id,
+            payload: ['status' => 'suspended'],
+            actorType: 'platform_admin'
+        );
+
+        return ApiResponse::success([
+            'tenant' => $tenant->fresh(['domains', 'databaseConfig', 'features']),
+            'message' => 'Tenant suspended successfully.',
+        ]);
+    }
+
+    /**
+     * Activate a tenant.
+     */
+    public function activate(Request $request, string $id): JsonResponse
+    {
+        $tenant = Tenant::findOrFail($id);
+        $tenant->update(['status' => 'active']);
+
+        AuditLogger::log(
+            action: 'tenant.activated',
+            tenantId: $tenant->id,
+            entityType: 'Tenant',
+            entityId: $tenant->id,
+            payload: ['status' => 'active'],
+            actorType: 'platform_admin'
+        );
+
+        return ApiResponse::success([
+            'tenant' => $tenant->fresh(['domains', 'databaseConfig', 'features']),
+            'message' => 'Tenant activated successfully.',
+        ]);
+    }
+
+    /**
+     * Update enabled modules for a tenant.
+     */
+    public function updateModules(Request $request, string $id): JsonResponse
+    {
+        $tenant = Tenant::findOrFail($id);
+
+        $validated = $request->validate([
+            'modules' => 'required|array',
+            'modules.*' => 'string',
+        ]);
+
+        $allConfiguredModules = array_keys(config('authorization.modules', []));
+        $enabledModules = $validated['modules'];
+
+        foreach ($allConfiguredModules as $moduleKey) {
+            $isEnabled = in_array($moduleKey, $enabledModules, true);
+            TenantFeature::updateOrCreate(
+                ['tenant_id' => $tenant->id, 'feature_key' => $moduleKey],
+                ['enabled' => $isEnabled]
+            );
+        }
+
+        AuditLogger::log(
+            action: 'tenant.modules_updated',
+            tenantId: $tenant->id,
+            entityType: 'Tenant',
+            entityId: $tenant->id,
+            payload: ['modules' => $enabledModules],
+            actorType: 'platform_admin'
+        );
+
+        return ApiResponse::success([
+            'tenant' => $tenant->fresh(['domains', 'databaseConfig', 'features']),
+            'message' => 'Tenant modules updated successfully.',
+        ]);
+    }
+
+    /**
+     * Aggregate metrics across the platform (Master §51: counts only, no raw tenant data).
+     */
+    public function metrics(PlatformMetricsService $metrics): JsonResponse
+    {
+        return ApiResponse::success($metrics->summary());
+    }
+
+    /**
+     * POST /platform/metrics/refresh — recompute now instead of waiting for the hourly job.
+     */
+    public function refreshMetrics(PlatformMetricsService $metrics): JsonResponse
+    {
+        $metrics->refreshAll();
+
+        return ApiResponse::success($metrics->summary());
+    }
+
+    /**
+     * List all platform support sessions.
+     */
+    public function supportSessions(): JsonResponse
+    {
+        $sessions = SupportAccessLog::with(['tenant', 'user'])
+            ->orderBy('created_at', 'desc')
+            ->limit(100)
+            ->get();
+
+        return ApiResponse::success(['support_sessions' => $sessions]);
     }
 }

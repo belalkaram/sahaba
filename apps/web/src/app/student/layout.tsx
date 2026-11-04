@@ -1,138 +1,18 @@
 'use client';
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useAuth } from '../../context/auth-context';
-import { Navbar } from '../../components/layout/navbar';
-import {
-  BarChartIcon,
-  BookOpenIcon,
-  CalendarIcon,
-  CheckCircleIcon,
-  FileTextIcon,
-  GraduationCapIcon,
-  VideoIcon,
-} from '../../components/icons';
+/**
+ * R7A — Student Experience Layout
+ * Protected by ExperienceGuard(student) and wrapped in unified AppShell.
+ */
 
-interface NavItem {
-  href: string;
-  label: string;
-  icon: React.ReactNode;
-}
-
-const navItems: NavItem[] = [
-  { href: '/student/dashboard', label: 'الرئيسية', icon: <BarChartIcon size={18} /> },
-  { href: '/student/courses', label: 'موادي الدراسية', icon: <BookOpenIcon size={18} /> },
-  { href: '/student/assignments', label: 'واجباتي', icon: <CheckCircleIcon size={18} /> },
-  { href: '/student/exams', label: 'اختباراتي', icon: <GraduationCapIcon size={18} /> },
-  { href: '/student/attendance', label: 'سجل الحضور', icon: <CalendarIcon size={18} /> },
-  { href: '/student/meetings', label: 'الحصص المباشرة', icon: <VideoIcon size={18} /> },
-  { href: '/student/grades', label: 'درجاتي وشهاداتي', icon: <FileTextIcon size={18} /> },
-];
+import React from 'react';
+import { AppShell } from '../../components/layout/app-shell';
+import { ExperienceGuard } from '../../components/guards/ExperienceGuard';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const { user } = useAuth();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  const studentName = user?.name || 'سلطان الغامدي';
-
-  const renderNavLinks = (onItemClick?: () => void) => (
-    <nav className="mt-2 space-y-1">
-      {navItems.map((item) => {
-        const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={onItemClick}
-            className={`flex w-full items-center gap-3 rounded-[12px] px-3 py-2.5 text-sm transition-all ${
-              isActive
-                ? 'bg-white/10 text-white font-semibold'
-                : 'text-white/80 hover:bg-white/5 hover:text-white'
-            }`}
-          >
-            <span className={isActive ? 'text-white' : 'text-white/70'}>
-              {item.icon}
-            </span>
-            <span>{item.label}</span>
-          </Link>
-        );
-      })}
-    </nav>
-  );
-
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground">
-      <Navbar
-        onToggleSidebar={() => setIsMobileMenuOpen((prev) => !prev)}
-        isSidebarOpen={isMobileMenuOpen}
-      />
-      <div className="flex-1 w-full flex md:grid md:grid-cols-[260px_1fr] gap-4 p-4 md:gap-6 md:p-6 max-w-[1600px] mx-auto">
-        {/* Desktop Sidebar */}
-        <aside className="hidden md:flex flex-col justify-between bg-sidebar text-white rounded-[26px] p-0 shadow-xl overflow-hidden self-start sticky top-[80px] h-[calc(100vh-100px)]">
-          <div>
-            <div className="sadu w-full"></div>
-            <div className="p-4 space-y-4">
-              <div className="flex items-center gap-3 px-2">
-                <div className="w-10 h-10 rounded-[14px] bg-accent text-sidebar flex items-center justify-center font-bold text-lg">
-                  {studentName.charAt(0)}
-                </div>
-                <div>
-                  <span className="text-sm font-bold block">{studentName}</span>
-                  <span className="text-xs opacity-70">ثالث ثانوي / 2 — جدة</span>
-                </div>
-              </div>
-              <div className="pt-2">
-                {renderNavLinks()}
-              </div>
-            </div>
-          </div>
-
-          <div className="p-4">
-            <div className="rounded-[16px] bg-white/5 p-4 text-center">
-              <p className="text-sm font-medium text-white">منصة مدار التعليمية</p>
-              <p className="text-xs text-white/70">حساب الطالب</p>
-            </div>
-          </div>
-        </aside>
-
-        {/* Mobile Drawer */}
-        {isMobileMenuOpen && (
-          <div className="fixed inset-0 z-40 flex md:hidden" dir="rtl">
-            <div
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
-              onClick={() => setIsMobileMenuOpen(false)}
-            />
-            <div className="relative z-50 w-72 max-w-[80vw] bg-sidebar border-l border-white/10 p-0 flex flex-col shadow-2xl h-full animate-in slide-in-from-right overflow-hidden">
-              <div className="sadu w-full"></div>
-              <div className="p-5 flex-1 overflow-y-auto">
-                <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-accent text-sidebar flex items-center justify-center font-bold text-sm">
-                      {studentName.charAt(0)}
-                    </div>
-                    <span className="text-sm font-bold text-white">{studentName}</span>
-                  </div>
-                  <button
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="p-1 rounded-lg text-white/70 hover:text-white"
-                  >
-                    ✕
-                  </button>
-                </div>
-                {renderNavLinks(() => setIsMobileMenuOpen(false))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Page Content */}
-        <main className="flex-1 min-w-0 flex flex-col">
-          {children}
-        </main>
-      </div>
-    </div>
+    <ExperienceGuard allow="student">
+      <AppShell experienceOverride="student">{children}</AppShell>
+    </ExperienceGuard>
   );
-};
+}

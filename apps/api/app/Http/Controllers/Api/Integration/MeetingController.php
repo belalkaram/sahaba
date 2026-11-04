@@ -2,19 +2,29 @@
 
 namespace App\Http\Controllers\Api\Integration;
 
+use App\Domain\Billing\Services\ContentAccessPolicy;
 use App\Domain\Integrations\DTOs\MeetingRequest;
 use App\Domain\Integrations\Exceptions\ProviderException;
 use App\Domain\Integrations\Exceptions\ProviderTimeoutException;
 use App\Domain\Integrations\Meetings\MeetingProviderManager;
 use App\Http\Controllers\Controller;
+use App\Models\ClassSession;
+use App\Models\Enrollment;
 use App\Models\Meeting;
+use App\Models\TenantUser;
 use App\Support\ApiResponse;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\Response;
 
 class MeetingController extends Controller
 {
+    /** Never returned to students or parents outside the join endpoint. */
+    private const PRIVATE_FIELDS = ['join_url', 'host_url', 'passcode', 'metadata', 'idempotency_key'];
+
     /**
      * List scheduled or active meetings.
      */
@@ -34,7 +44,20 @@ class MeetingController extends Controller
             $query->where('status', $request->query('status'));
         }
 
+        /** @var TenantUser $user */
+        $user = $request->user();
+        $isStaff = $this->isStaff($user);
+
+        if (! $isStaff) {
+            $this->limitToOwnMeetings($query, $user);
+        }
+
         $meetings = $query->orderBy('start_time', 'asc')->get();
+
+        // Links are issued by the join endpoint, after the access check.
+        if (! $isStaff) {
+            $meetings->each(fn (Meeting $meeting) => $meeting->makeHidden(self::PRIVATE_FIELDS));
+        }
 
         return ApiResponse::success(['meetings' => $meetings]);
     }
@@ -47,7 +70,7 @@ class MeetingController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'provider' => 'nullable|string|in:google_meet,zoom,mock',
+            'provider' => ['nullable', 'string', Rule::in($this->allowedProviders())],
             'start_time' => 'nullable|date',
             'duration_minutes' => 'nullable|integer|min:5|max:480',
             'idempotency_key' => 'nullable|string|max:128',
@@ -79,8 +102,28 @@ class MeetingController extends Controller
         }
 
         $meetingRequest = MeetingRequest::fromArray($validated);
-        $providerName = $validated['provider'] ?? 'mock';
-        $enableFailover = $validated['enable_failover'] ?? false;
+        $hasLink = ! empty($validated['meeting_code']) || ! empty($validated['meet_url']);
+        $requested = $validated['provider'] ?? 'manual';
+
+        // A pasted link is always a manual meeting, whatever provider was asked for (OD-5).
+        $providerName = $hasLink ? 'manual' : $requested;
+        $enableFailover = $this->simulatedProvidersAllowed() && ($validated['enable_failover'] ?? false);
+
+        if ($providerName === 'google_meet') {
+            return ApiResponse::error(
+                'GOOGLE_NOT_CONNECTED',
+                'حساب Google غير مربوط بعد. الصق رابط الاجتماع يدوياً.',
+                Response::HTTP_UNPROCESSABLE_ENTITY
+            );
+        }
+
+        if ($providerName === 'manual' && ! $hasLink) {
+            return ApiResponse::error(
+                'MEETING_LINK_REQUIRED',
+                'أدخل رابط الاجتماع.',
+                Response::HTTP_UNPROCESSABLE_ENTITY
+            );
+        }
 
         try {
             if ($enableFailover) {
@@ -127,21 +170,41 @@ class MeetingController extends Controller
     {
         $meeting = Meeting::with(['course', 'session', 'host'])->findOrFail($id);
 
+        if (! $this->isStaff(request()->user())) {
+            $meeting->makeHidden(self::PRIVATE_FIELDS);
+        }
+
         return ApiResponse::success(['meeting' => $meeting]);
     }
 
     /**
      * Get dynamic join URL for the meeting.
      */
-    public function joinUrl(Request $request, string $id, MeetingProviderManager $providerManager): JsonResponse
+    public function joinUrl(Request $request, string $id, MeetingProviderManager $providerManager, ContentAccessPolicy $policy): JsonResponse
     {
-        $meeting = Meeting::findOrFail($id);
+        $meeting = Meeting::with('course')->findOrFail($id);
 
+        /** @var TenantUser $user */
         $user = $request->user();
-        $role = ($user && $user->staff) ? 'host' : 'attendee';
+        $isStaff = $this->isStaff($user);
 
-        $provider = $providerManager->provider($meeting->provider);
-        $joinUrl = $provider->getJoinUrl($meeting->external_meeting_id, ['role' => $role]);
+        if ($meeting->status === 'cancelled') {
+            return ApiResponse::error('MEETING_CANCELLED', 'تم إلغاء هذه الحصة.', Response::HTTP_CONFLICT);
+        }
+
+        $decision = $policy->canJoinMeeting($user, $meeting);
+        if (! $decision->allowed) {
+            return ApiResponse::error('MEETING_ACCESS_DENIED', 'ليس لديك صلاحية دخول هذه الحصة.', Response::HTTP_FORBIDDEN);
+        }
+
+        if (! $isStaff && ! $this->withinJoinWindow($meeting)) {
+            return ApiResponse::error('MEETING_NOT_OPEN', 'لم يحن موعد الدخول إلى هذه الحصة بعد أو انتهى.', Response::HTTP_FORBIDDEN);
+        }
+
+        // Manual links are stored as given; simulated providers exist only in tests.
+        $joinUrl = $meeting->provider === 'manual'
+            ? $meeting->join_url
+            : $providerManager->provider($meeting->provider)->getJoinUrl($meeting->external_meeting_id, ['role' => $isStaff ? 'host' : 'attendee']);
 
         return ApiResponse::success([
             'meeting_id' => $meeting->id,
@@ -173,5 +236,62 @@ class MeetingController extends Controller
             'meeting' => $meeting,
             'message' => 'Meeting cancelled successfully.',
         ]);
+    }
+
+    /**
+     * Mock and Zoom providers fabricate links, so they are only available to automated tests.
+     */
+    private function simulatedProvidersAllowed(): bool
+    {
+        return app()->environment('testing');
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function allowedProviders(): array
+    {
+        return $this->simulatedProvidersAllowed()
+            ? ['manual', 'google_meet', 'zoom', 'mock']
+            : ['manual', 'google_meet'];
+    }
+
+    private function isStaff(?TenantUser $user): bool
+    {
+        return $user !== null && ($user->staff !== null || $user->type === 'staff' || $user->hasPermissionTo('meetings.manage'));
+    }
+
+    /**
+     * Students see their enrolled courses and classes; parents their children's.
+     */
+    private function limitToOwnMeetings(Builder $query, TenantUser $user): void
+    {
+        $studentIds = collect([$user->student?->id])
+            ->merge($user->parentProfile?->students()->pluck('students.id') ?? [])
+            ->filter();
+
+        $courseIds = Enrollment::whereIn('student_id', $studentIds)->where('status', 'active')->pluck('course_id');
+        $sessionIds = ClassSession::whereHas('schoolClass.students', fn ($q) => $q->whereIn('students.id', $studentIds))->pluck('id');
+
+        $query->where(function ($q) use ($courseIds, $sessionIds) {
+            $q->whereIn('course_id', $courseIds)
+                ->orWhereIn('session_id', $sessionIds)
+                ->orWhere(fn ($open) => $open->whereNull('course_id')->whereNull('session_id'));
+        });
+    }
+
+    private function withinJoinWindow(Meeting $meeting): bool
+    {
+        if (! $meeting->start_time) {
+            return true;
+        }
+
+        $start = Carbon::parse($meeting->start_time);
+        $grace = (int) config('services.meetings.join_window_minutes', 15);
+
+        return now()->between(
+            $start->copy()->subMinutes($grace),
+            $start->copy()->addMinutes(($meeting->duration_minutes ?? 60) + $grace)
+        );
     }
 }

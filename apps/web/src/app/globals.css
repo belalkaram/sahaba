@@ -1,72 +1,305 @@
 @import "tailwindcss";
+@import "../styles/tokens.css";
 
-@theme {
-  --font-sans: 'IBM Plex Sans Arabic', 'IBM Plex Sans', Tahoma, sans-serif;
-  
-  --color-primary: var(--brand-primary, var(--pri));
-  --color-primary-foreground: var(--on);
-  --color-secondary: var(--mut);
-  --color-accent: var(--acc);
-  --color-destructive: var(--red);
-  --color-sidebar: var(--sb);
-  --color-turquoise: var(--tq);
+/* Dark variant follows the data-theme attribute set by ThemeProvider (system/light/dark). */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
-  --color-background: var(--bg);
-  --color-foreground: var(--ink);
-  --color-card: var(--card);
-  --color-border: var(--line);
-  --color-muted: var(--mut-bg);
-  --color-muted-foreground: var(--mut);
+/*
+ * `inline` so utilities reference the semantic variables directly — theme switches and
+ * tenant brand overrides resolve at the element, not at :root.
+ */
+@theme inline {
+  --font-sans: "IBM Plex Sans Arabic", "IBM Plex Sans", system-ui, sans-serif;
+  /* Display face is Arabic-only (unicode-range); Latin falls back to Plex. */
+  --font-display: var(--font-display-ar), "IBM Plex Sans Arabic", system-ui, sans-serif;
+  /* Numbers/codes use Plex with tabular figures (Arabic-Indic digits render correctly). */
+  --font-mono: "IBM Plex Sans Arabic", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  /* Type scale — taller line-heights for Arabic */
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.125rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.375rem;
+  --text-base: 0.9375rem;
+  --text-base--line-height: 1.625rem;
+  --text-lg: 1.0625rem;
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.875rem;
+  --text-2xl: 1.625rem;
+  --text-2xl--line-height: 2.25rem;
+  --text-3xl: 2.125rem;
+  --text-3xl--line-height: 2.875rem;
+  --text-4xl: 2.75rem;
+  --text-4xl--line-height: 3.5rem;
+  --text-5xl: 3.25rem;
+  --text-5xl--line-height: 4rem;
+
+  /* Surfaces */
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-overlay: var(--surface-overlay);
+  --color-surface-brand: var(--surface-brand);
+  --color-surface-brand-fg: var(--surface-brand-fg);
+
+  /* Text */
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
+  --color-fg-inverse: var(--fg-inverse);
+
+  /* Borders */
+  --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+
+  /* Brand */
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-fg: var(--primary-fg);
+  --color-primary-subtle: var(--primary-subtle);
+  --color-primary-subtle-fg: var(--primary-subtle-fg);
+
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-subtle: var(--accent-subtle);
+  --color-accent-subtle-fg: var(--accent-subtle-fg);
+
+  /* Feedback */
+  --color-success: var(--success);
+  --color-success-hover: var(--success-hover);
+  --color-success-fg: var(--success-fg);
+  --color-success-subtle: var(--success-subtle);
+  --color-success-subtle-fg: var(--success-subtle-fg);
+
+  --color-warning: var(--warning);
+  --color-warning-hover: var(--warning-hover);
+  --color-warning-fg: var(--warning-fg);
+  --color-warning-subtle: var(--warning-subtle);
+  --color-warning-subtle-fg: var(--warning-subtle-fg);
+
+  --color-danger: var(--danger);
+  --color-danger-hover: var(--danger-hover);
+  --color-danger-fg: var(--danger-fg);
+  --color-danger-subtle: var(--danger-subtle);
+  --color-danger-subtle-fg: var(--danger-subtle-fg);
+
+  --color-info: var(--info);
+  --color-info-hover: var(--info-hover);
+  --color-info-fg: var(--info-fg);
+  --color-info-subtle: var(--info-subtle);
+  --color-info-subtle-fg: var(--info-subtle-fg);
+
+  /* Radius */
+  --radius-xs: var(--radius-xs);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-2xl);
+
+  /* Shadows */
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+
+  /*
+   * Legacy aliases (pre-R7 class names still used by pages).
+   * `text-secondary` historically meant "muted text" (690 uses) — keep that meaning.
+   * Removed once scripts/design-codemods has migrated every page.
+   */
+  --color-secondary: var(--fg-muted);
+  --color-secondary-fg: var(--secondary-fg);
+  --color-primary-foreground: var(--primary-fg);
+  --color-destructive: var(--danger);
+  --color-sidebar: var(--surface);
+  --color-turquoise: var(--primary);
+  --color-background: var(--surface-sunken);
+  --color-foreground: var(--fg);
+  --color-card: var(--surface);
+  --color-muted: var(--surface-muted);
+  --color-muted-foreground: var(--fg-muted);
 }
 
 @layer base {
-  :root {
-    --bg: #F8FAFC;
-    --card: #FFFFFF;
-    --ink: #0F172A;
-    --mut: #64748B;
-    --mut-bg: #F1F5F9;
-    --pri: #04C3C9;
-    --sb: #FFFFFF;
-    --acc: #F59E0B;
-    --red: #EF4444;
-    --tq: #0284C7;
-    --line: #E2E8F0;
-    --on: #FFFFFF;
-  }
-
-  [data-theme="dark"] {
-    --bg: #0B132B;
-    --card: #1C2541;
-    --ink: #F8FAFC;
-    --mut: #94A3B8;
-    --mut-bg: #1E293B;
-    --pri: #04C3C9;
-    --sb: #111D4A;
-    --acc: #F59E0B;
-    --red: #F87171;
-    --tq: #38BDF8;
-    --line: #334155;
-    --on: #0B132B;
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
   }
 
   body {
-    background-color: var(--bg);
-    color: var(--ink);
+    background-color: var(--surface-sunken);
+    color: var(--fg);
     font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
     overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
   }
 
   * {
-    border-color: var(--line);
+    border-color: var(--border);
+  }
+
+  /* Display face for large Arabic headings only (never < 20px, never in forms/tables). */
+  :is(h1, h2):is(.text-xl, .text-2xl, .text-3xl, .text-4xl, .text-5xl),
+  .font-display {
+    font-family: var(--font-display);
+    font-weight: 800;
+    letter-spacing: 0;
+  }
+
+  ::selection {
+    background: var(--primary-subtle);
+    color: var(--primary-subtle-fg);
+  }
+
+  :focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  ::placeholder {
+    color: var(--fg-subtle);
+    opacity: 1;
+  }
+
+  /* Numbers line up in tables, KPIs and timers */
+  table,
+  .tabular,
+  .font-mono {
+    font-variant-numeric: tabular-nums;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
   }
 }
 
+/* ---------------------------------------------------------------------------
+ * Gulf design language utilities
+ * ------------------------------------------------------------------------- */
+
+/* Refined Sadu ribbon: thin triangle weave in sand + emerald (replaces the old red/gold band). */
 @utility sadu {
-  height: 14px;
-  background: linear-gradient(135deg, var(--red) 25%, transparent 25%) -7px 0,
-              linear-gradient(225deg, var(--red) 25%, transparent 25%) -7px 0,
-              linear-gradient(315deg, var(--acc) 25%, transparent 25%),
-              linear-gradient(45deg, var(--acc) 25%, transparent 25%);
-  background-size: 14px 14px;
+  height: 4px;
+  background:
+    linear-gradient(135deg, var(--accent) 25%, transparent 25%) -4px 0 / 8px 8px,
+    linear-gradient(225deg, var(--accent) 25%, transparent 25%) -4px 0 / 8px 8px,
+    linear-gradient(315deg, var(--primary) 25%, transparent 25%) 0 0 / 8px 8px,
+    linear-gradient(45deg, var(--primary) 25%, transparent 25%) 0 0 / 8px 8px;
+  opacity: 0.85;
+}
+
+/* Eight-point star (khatam) lattice, tinted with the theme pattern stroke. Decorative only. */
+@utility pattern-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-color: var(--pattern-stroke);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='black' stroke-width='1'%3E%3Cpath d='M28 8l6 14 14 6-14 6-6 14-6-14-14-6 14-6z'/%3E%3Crect x='17' y='17' width='22' height='22' transform='rotate(45 28 28)'/%3E%3C/g%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='black' stroke-width='1'%3E%3Cpath d='M28 8l6 14 14 6-14 6-6 14-6-14-14-6 14-6z'/%3E%3Crect x='17' y='17' width='22' height='22' transform='rotate(45 28 28)'/%3E%3C/g%3E%3C/svg%3E");
+  -webkit-mask-size: 56px 56px;
+  mask-size: 56px 56px;
+}
+
+/* Gulf architectural arch for images, avatars and illustrations. */
+@utility arch {
+  border-radius: 999px 999px var(--radius-lg) var(--radius-lg);
+}
+
+/* Kashida-style accent under display headings. */
+@utility heading-accent {
+  position: relative;
+  padding-bottom: 0.625rem;
+  &::after {
+    content: "";
+    position: absolute;
+    inset-inline-start: 0;
+    bottom: 0;
+    width: 2rem;
+    height: 3px;
+    border-radius: 3px;
+    background: var(--accent);
+  }
+}
+
+@utility bg-gradient-brand {
+  background-image: var(--gradient-brand);
+}
+
+/* ---------------------------------------------------------------------------
+ * RTL helpers
+ * ------------------------------------------------------------------------- */
+
+/*
+ * Directional icons are authored for RTL (e.g. "next" = arrow-left) and mirror
+ * automatically inside an LTR region. Non-directional icons never use this.
+ */
+@utility icon-dir {
+  &:dir(ltr) {
+    transform: scaleX(-1);
+  }
+}
+
+/* Isolate LTR fragments (emails, codes, slugs, phone numbers) inside Arabic text. */
+@utility ltr-isolate {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* ---------------------------------------------------------------------------
+ * Motion
+ * ------------------------------------------------------------------------- */
+
+/* Applied for ~250ms only while switching theme (never a permanent transition). */
+.theme-transition,
+.theme-transition *,
+.theme-transition *::before,
+.theme-transition *::after {
+  transition:
+    background-color 250ms ease,
+    border-color 250ms ease,
+    color 250ms ease,
+    fill 250ms ease,
+    box-shadow 250ms ease !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Report print view: only the report content goes to paper / PDF. */
+@media print {
+  body:has([data-print-area]) * {
+    visibility: hidden;
+  }
+
+  [data-print-area],
+  [data-print-area] * {
+    visibility: visible;
+  }
+
+  [data-print-area] {
+    position: absolute;
+    inset: 0;
+  }
 }

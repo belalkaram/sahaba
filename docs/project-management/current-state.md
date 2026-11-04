@@ -1,12 +1,18 @@
 # Current Project State
 
+> ⚠️ **AUDIT NOTICE — 2026-10-30**
+> A full code-vs-documentation audit found P0 security gaps, a broken authorization model, and simulated integrations.
+> **Effective mode: `RECOVERY — NOT PRODUCTION READY`.** The `PRODUCTION_READY` claims below are retained as history and are superseded.
+> Source of truth for gaps, real status and the ordered plan: [`docs/audit/2026-10-30-system-gap-analysis/`](../audit/2026-10-30-system-gap-analysis/README.md).
+> Next task: **R0 — Security containment** (see `05-recovery-plan.md`).
+
 Planning/documentation phases A–K have been approved.
 All milestones M0 through M14 have been successfully implemented and verified.
 M0 (Repository Bootstrap), M1 (Runtime Foundation Core), M2 (Tenancy Foundation), M3 (Identity / Authentication / Authorization), M4 (Education Core), M5 (Classroom & Attendance Core), M6 (Assessment Domain), M7 (Billing, Packages & Entitlements), M8 (Credentials & Devices), M9 (Integrations & Media Abstraction), M10 (Analytics & Reporting), M11 (Frontend Foundation & Core Integration), M12 (Full System Verification & End-to-End Gates), M13 (Production Hardening), M14 (Production Readiness).
 
 ## Current Mode
 
-PRODUCTION_READY
+RECOVERY — NOT PRODUCTION READY (was: PRODUCTION_READY — superseded by 2026-10-30 audit)
 
 ## Current Milestone
 

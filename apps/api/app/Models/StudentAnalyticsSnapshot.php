@@ -18,6 +18,8 @@ class StudentAnalyticsSnapshot extends TenantModel
         'assignment_completion_rate',
         'exam_average',
         'overall_score',
+        'lesson_completion_rate',
+        'last_activity_at',
         'custom_metrics_summary',
         'last_calculated_at',
     ];
@@ -27,6 +29,8 @@ class StudentAnalyticsSnapshot extends TenantModel
         'assignment_completion_rate' => 'decimal:2',
         'exam_average' => 'decimal:2',
         'overall_score' => 'decimal:2',
+        'lesson_completion_rate' => 'decimal:2',
+        'last_activity_at' => 'datetime',
         'custom_metrics_summary' => 'array',
         'last_calculated_at' => 'datetime',
     ];

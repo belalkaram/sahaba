@@ -82,6 +82,72 @@ class TenantUser extends Authenticatable
         return $this->getAllPermissions()->contains($permission);
     }
 
+    public const SCOPE_HIERARCHY = [
+        'self' => 1,
+        'linked' => 2,
+        'own' => 3,
+        'assigned' => 4,
+        'branch' => 5,
+        'tenant' => 6,
+    ];
+
+    /**
+     * Get the highest resource scope granted to this user for the specified permission.
+     * Hierarchy: tenant > branch > assigned > own > linked > self.
+     * Returns null if user does not possess the permission.
+     */
+    public function permissionScope(string $permission): ?string
+    {
+        $this->loadMissing('roles.permissions');
+
+        $highestScope = null;
+        $highestRank = 0;
+
+        foreach ($this->roles as $role) {
+            foreach ($role->permissions as $perm) {
+                if ($perm->name === $permission) {
+                    $scope = $perm->pivot->scope ?? 'tenant';
+                    $rank = self::SCOPE_HIERARCHY[$scope] ?? 0;
+                    if ($rank > $highestRank) {
+                        $highestRank = $rank;
+                        $highestScope = $scope;
+                    }
+                }
+            }
+        }
+
+        return $highestScope;
+    }
+
+    /**
+     * Get all permissions with their highest resolved scope.
+     *
+     * @return array<string, string> Map of permission name => highest scope
+     */
+    public function getPermissionsWithScope(): array
+    {
+        $this->loadMissing('roles.permissions');
+
+        $result = [];
+
+        foreach ($this->roles as $role) {
+            foreach ($role->permissions as $perm) {
+                $name = $perm->name;
+                $scope = $perm->pivot->scope ?? 'tenant';
+                $rank = self::SCOPE_HIERARCHY[$scope] ?? 0;
+
+                $existingScope = $result[$name] ?? null;
+                $existingRank = $existingScope ? (self::SCOPE_HIERARCHY[$existingScope] ?? 0) : 0;
+
+                if ($rank > $existingRank) {
+                    $result[$name] = $scope;
+                }
+            }
+        }
+
+        return $result;
+    }
+
     /**
      * Get all unique permissions granted to this user through assigned roles.
      *

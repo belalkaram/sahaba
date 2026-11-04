@@ -3,15 +3,17 @@
 namespace App\Http\Controllers\Api\Billing;
 
 use App\Domain\Billing\Services\PaymentReviewService;
+use App\Domain\Communication\NotificationCatalog;
+use App\Domain\Communication\NotificationService;
 use App\Http\Controllers\Controller;
-use App\Models\Entitlement;
 use App\Models\Package;
 use App\Models\PaymentRequest;
-use App\Models\Subscription;
 use App\Models\TenantUser;
 use App\Support\ApiResponse;
+use App\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\Response;
 
 class PaymentRequestController extends Controller
@@ -40,9 +42,9 @@ class PaymentRequestController extends Controller
     }
 
     /**
-     * Student submits a payment request.
+     * Student submits a payment request with optional multipart proof file.
      */
-    public function store(Request $request): JsonResponse
+    public function store(Request $request, TenantContext $tenantContext): JsonResponse
     {
         /** @var TenantUser $user */
         $user = $request->user();
@@ -61,8 +63,16 @@ class PaymentRequestController extends Controller
             'payment_method' => 'required|string|in:instapay,cash,bank_transfer',
             'sender_phone' => 'nullable|string|max:30',
             'reference_code' => 'nullable|string|max:100',
+            'proof' => 'nullable|file|mimes:jpeg,jpg,png,pdf|max:5120',
             'proof_url' => 'nullable|string|max:500',
         ]);
+
+        $proofPath = null;
+        if ($request->hasFile('proof')) {
+            $tenant = $tenantContext->getTenant();
+            $tenantSlug = $tenant ? $tenant->slug : 'default';
+            $proofPath = $request->file('proof')->store('tenants/'.$tenantSlug.'/proofs', 'local');
+        }
 
         $package = Package::findOrFail($validated['package_id']);
 
@@ -75,9 +85,18 @@ class PaymentRequestController extends Controller
             'sender_phone' => $validated['sender_phone'] ?? null,
             'reference_code' => $validated['reference_code'] ?? null,
             'proof_url' => $validated['proof_url'] ?? null,
+            'proof_path' => $proofPath,
             'status' => 'pending',
             'submitted_at' => now(),
         ]);
+
+        $notifier = app(NotificationService::class);
+        $notifier->send(
+            NotificationCatalog::PAYMENT_SUBMITTED,
+            $notifier->usersWithPermission('payments.approve'),
+            ['student' => $user->name, 'package' => $package->name],
+            '/teacher/payments'
+        );
 
         return ApiResponse::success([
             'payment_request' => $paymentRequest->load(['student.user', 'package']),
@@ -87,7 +106,7 @@ class PaymentRequestController extends Controller
     /**
      * Show payment request details.
      */
-    public function show(string $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         $paymentRequest = PaymentRequest::with([
             'student.user',
@@ -97,17 +116,67 @@ class PaymentRequestController extends Controller
             'subscription.entitlements',
         ])->findOrFail($id);
 
+        /** @var TenantUser $user */
+        $user = $request->user();
+
+        $isOwner = $user->student
+            && $user->student->id === $paymentRequest->student_id;
+
+        $isStaffReviewer = ($user->staff || $user->type === 'staff')
+            && ($user->hasPermissionTo('payments.view')
+                || $user->hasPermissionTo('payments.approve')
+                || $user->hasPermissionTo('payments.reject'));
+
+        if (! $isOwner && ! $isStaffReviewer) {
+            return ApiResponse::error(
+                'FORBIDDEN',
+                'You do not have permission to view this payment request.',
+                Response::HTTP_FORBIDDEN
+            );
+        }
+
         return ApiResponse::success(['payment_request' => $paymentRequest]);
     }
 
     /**
+     * View or download the uploaded proof file for a payment request.
+     */
+    public function proof(Request $request, string $id)
+    {
+        $paymentRequest = PaymentRequest::findOrFail($id);
+
+        /** @var TenantUser $user */
+        $user = $request->user();
+
+        $isOwner = $user->student
+            && $user->student->id === $paymentRequest->student_id;
+
+        $isStaffReviewer = ($user->staff || $user->type === 'staff')
+            && ($user->hasPermissionTo('payments.view')
+                || $user->hasPermissionTo('payments.approve')
+                || $user->hasPermissionTo('payments.reject'));
+
+        if (! $isOwner && ! $isStaffReviewer) {
+            return ApiResponse::error(
+                'FORBIDDEN',
+                'You do not have permission to view this payment proof.',
+                Response::HTTP_FORBIDDEN
+            );
+        }
+
+        if (! $paymentRequest->proof_path || ! Storage::disk('local')->exists($paymentRequest->proof_path)) {
+            return ApiResponse::error(
+                'PROOF_NOT_FOUND',
+                'No payment proof file was uploaded for this request.',
+                Response::HTTP_NOT_FOUND
+            );
+        }
+
+        return Storage::disk('local')->response($paymentRequest->proof_path);
+    }
+
+    /**
      * Approve payment request.
-     * Enforces:
-     * - Requires 'payments.approve'
-     * - Prevents duplicate approval
-     * - Activates Subscription (Payment ≠ Subscription)
-     * - Grants Entitlements (Subscription ≠ Entitlement)
-     * - Records Audit Log
      */
     public function approve(Request $request, string $id, PaymentReviewService $reviewService): JsonResponse
     {
@@ -120,6 +189,7 @@ class PaymentRequestController extends Controller
                 'payment_request' => $result['payment_request'],
                 'subscription' => $result['subscription'],
                 'entitlements' => $result['entitlements'],
+                'enrollments' => $result['enrollments'] ?? [],
                 'message' => 'Payment approved, subscription activated, and entitlements granted successfully.',
             ]);
         } catch (\DomainException $e) {

@@ -5,6 +5,9 @@ use Pdo\Mysql;
 
 return [
 
+    // Relative to the app root. Empty = database/tenants.
+    'tenants_path' => env('TENANTS_PATH', ''),
+
     /*
     |--------------------------------------------------------------------------
     | Default Database Connection Name

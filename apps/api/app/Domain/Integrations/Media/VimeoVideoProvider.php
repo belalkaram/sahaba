@@ -5,6 +5,7 @@ namespace App\Domain\Integrations\Media;
 use App\Domain\Integrations\Contracts\VideoProviderInterface;
 use App\Domain\Integrations\DTOs\VideoUploadRequest;
 use App\Domain\Integrations\DTOs\VideoUploadResponse;
+use App\Domain\Integrations\Exceptions\ProviderException;
 
 class VimeoVideoProvider implements VideoProviderInterface
 {
@@ -20,7 +21,12 @@ class VimeoVideoProvider implements VideoProviderInterface
 
     public function uploadVideo(VideoUploadRequest $request): VideoUploadResponse
     {
-        $id = $request->externalId ?: (string) rand(100000000, 999999999);
+        if (! $request->externalId) {
+            throw new ProviderException('Vimeo media needs an existing video link.');
+        }
+
+        // Accepts a bare id or a vimeo.com / player.vimeo.com link.
+        $id = preg_match('#(\d{6,})#', $request->externalId, $m) ? $m[1] : $request->externalId;
 
         return new VideoUploadResponse(
             externalVideoId: $id,
@@ -28,8 +34,8 @@ class VimeoVideoProvider implements VideoProviderInterface
             playbackUrl: "https://vimeo.com/{$id}",
             status: 'ready',
             provider: 'vimeo',
-            durationSeconds: 120,
-            sizeBytes: 5242880,
+            durationSeconds: null,
+            sizeBytes: null,
             rawPayload: [
                 'uri' => "/videos/{$id}",
                 'name' => $request->title,

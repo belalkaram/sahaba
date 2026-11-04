@@ -391,7 +391,7 @@ class EndToEndLifecycleGateTest extends TestCase
             'requested_by_user_id' => $studentUser->id,
             'status' => 'queued',
             'format' => 'json',
-            'parameters' => ['academic_year' => 2026],
+            'parameters' => ['type' => 'student', 'student_id' => $studentOmar->id],
         ]);
 
         $reportingService = app(ReportGenerationService::class);

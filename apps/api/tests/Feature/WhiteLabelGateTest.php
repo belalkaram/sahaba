@@ -13,6 +13,19 @@ class WhiteLabelGateTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected string $platformToken = 'whitelabel-gate-platform-token-secret';
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        config(['platform.admin_token' => $this->platformToken]);
+    }
+
+    protected function platformHeaders(): array
+    {
+        return ['Authorization' => 'Bearer '.$this->platformToken];
+    }
+
     public function test_can_provision_tenant_with_custom_branding()
     {
         $payload = [
@@ -29,7 +42,7 @@ class WhiteLabelGateTest extends TestCase
             ],
         ];
 
-        $response = $this->postJson('/api/v1/tenants', $payload);
+        $response = $this->withHeaders($this->platformHeaders())->postJson('/api/v1/tenants', $payload);
 
         $response->assertStatus(201)
             ->assertJsonPath('data.tenant.logo_url', 'https://assets.example.com/logos/al-noor.png')
@@ -70,7 +83,7 @@ class WhiteLabelGateTest extends TestCase
             'brand_tagline' => 'الريادة في تعليم المستقبل',
         ];
 
-        $response = $this->putJson("/api/v1/tenants/{$tenant->id}", $updatePayload);
+        $response = $this->withHeaders($this->platformHeaders())->putJson("/api/v1/tenants/{$tenant->id}", $updatePayload);
 
         $response->assertStatus(200)
             ->assertJsonPath('data.tenant.name', 'Updated Academy Name')
@@ -112,7 +125,7 @@ class WhiteLabelGateTest extends TestCase
         ]);
 
         $response = $this->withHeaders([
-            'X-Tenant' => 'branded-school',
+            'X-Tenant-Slug' => 'branded-school',
         ])->getJson('/api/v1/tenant/current');
 
         $response->assertStatus(200)

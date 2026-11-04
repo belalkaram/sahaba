@@ -1,0 +1,105 @@
+# Progress Tracker — Recovery Program
+
+> Claude Code updates this file after every task. Status values: `TODO`, `IN_PROGRESS`, `DONE`, `PARTIAL`, `BLOCKED (<reason>)`, `DEFERRED (<ADR/OD>)`, `ALREADY_FIXED`.
+> Evidence = path to report section, test name, or commit.
+> **Next task = first row that is not DONE / DEFERRED / ALREADY_FIXED, in order.**
+
+| Phase | Task | Title | Closes | Status | Evidence |
+|---|---|---|---|---|---|
+| R0 | R0-1 | Protect platform endpoints | T-SEC-01, T-QA-02 | DONE | `SecurityContainmentR0Test::test_platform_list_tenants_returns_401_without_token`, `PlatformTenantApiTest` |
+| R0 | R0-2 | Stop leaking exam answers | T-SEC-04 | DONE | `SecurityContainmentR0Test::test_student_exam_list_does_not_expose_correct_answer` |
+| R0 | R0-3 | Payment request IDOR | T-SEC-05 | DONE | `SecurityContainmentR0Test::test_student_cannot_view_another_students_payment_request` |
+| R0 | R0-4 | Tenant audit log permission | T-SEC-06 | DONE | `SecurityContainmentR0Test::test_student_cannot_view_audit_logs`, `tenant.can:audit.view` |
+| R0 | R0-5 | Support token via one-time code | T-SEC-03 | DONE | `SecurityContainmentR0Test::test_support_exchange_code_can_only_be_redeemed_once`, `SupportAccessGateTest` |
+| R0 | R0-6 | Device replacement fix | T-SEC-12 | DONE | `CredentialLifecycleService::unbindDevice()`, `CredentialController::replaceDevice()` unbind mode |
+| R0 | R0-7 | Honest platform health | T-FEAT-27b | DONE | `platform/dashboard/page.tsx` + `platform-api.ts` error handling (no fallback) |
+| R0 | R0-8 | Blocking CI audits | T-SEC-14 | DONE | `.github/workflows/ci.yml` (removed `\|\| true`), Composer & npm audit exit 0 |
+| R0 | R0-9 | Secret hygiene | T-SEC-16 | DONE | Verified no client secrets in web/src, gitignore covers sqlite databases |
+| R1A | R1-A1 | ADR access model | C-01..C-06 | DONE | `docs/decisions/ADR-001-access-model.md` |
+| R1A | R1-A2 | Permission catalog + integrity test | T-RBAC-01, 13, T-QA-01 | DONE | `config/authorization.php`, `PermissionCatalogIntegrityTest` (4 tests, 796 assertions PASS) |
+| R1A | R1-A3 | System roles + synchronizer | T-RBAC-02, 03, 11 | DONE | `RoleSynchronizer`, `lms:sync-roles`, 8 roles synced, seeder + tenant provisioning updated |
+| R1A | R1-A4 | Scopes everywhere | T-SEC-08, 09, T-RBAC-08 | DONE | `ScopeResolver`, `TenantUser::permissionScope`, `ScopeEnforcementTest` (3 tests, 9 assertions PASS) |
+| R1A | R1-A5 | Module middleware | T-RBAC-12 | DONE | `TenantModuleMiddleware`, routes grouped, `ModuleEnforcementTest` (4 tests, 8 assertions PASS) |
+| R1A | R1-A6 | `/auth/me` contract | T-RBAC-06 | DONE | `AuthPayloadBuilder`, `MeController`, `LoginController`, `AuthMeContractTest` (6 tests, 66 assertions PASS) |
+| R1A | R1-A7 | Roles management API | T-RBAC-10 | DONE | `RoleController` (/permissions, /roles, /users/{id}/roles), `RoleManagementApiTest` (7 tests, 21 assertions PASS) |
+| R1A | R1-A8 | "My" endpoints | T-RBAC-09 | DONE | `MyResourceController` (/me/children, /me/courses, /me/classes, /me/students, /me/sessions), `MyEndpointsTest` (3 tests, 16 assertions PASS) |
+| R1A | R1-A9 | Platform identity + support sessions | C-03, T-SEC-02 | DONE | `PlatformUser`, `PlatformToken`, `PlatformAuthenticate`, `PlatformAuthController`, `PlatformIdentityTest` (6 tests, 23 assertions PASS) |
+| R1B | R1-B1 | Types from contract | C-10 | DONE | `src/types/auth.ts` canonical types |
+| R1B | R1-B2 | Auth context rewrite | T-RBAC-04, T-SEC-15 | DONE | `src/context/auth-context.tsx`, consumes `/auth/me` payload, 401 redirect |
+| R1B | R1-B3 | Navigation registry + `/staff` `/admin` | T-RBAC-07 | DONE | `src/config/navigation-registry.ts`, `src/components/layout/sidebar-nav.tsx` |
+| R1B | R1-B4 | Route guards + 403 | T-RBAC-05 | DONE | `src/middleware.ts`, `ExperienceGuard.tsx` explicit 403 |
+| R1B | R1-B5 | `useCan` / `<Can>` | T-RBAC-07 | DONE | `useCan.ts`, `Can.tsx`, `permission-gate.tsx` |
+| R1B | R1-B6 | Data-state layer, remove swallowed errors | T-UX-01 | DONE | `src/components/ui/data-state.tsx` standard states |
+| R1B | R1-B7 | 401 handling | T-SEC-13 | DONE | `src/lib/api-client.ts`, `token-store.ts` cookie mirror |
+| R1B | R1-B8 | Role management screens | FR-AUTHZ-004 | DONE | `src/app/admin/roles/page.tsx`, `src/app/admin/layout.tsx` |
+| R1B | R1-B9 | Playwright + role navigation tests | T-QA-03 | DONE | `apps/web/tests/access-model.test.ts` (7 tests PASS), `support-session-banner.tsx` |
+| R2 | R2-1 | Users API | T-FEAT-34 | DONE | `UserManagementApiTest` |
+| R2 | R2-2 | CSV import | — | DONE | `StudentImportTest` |
+| R2 | R2-3 | Branches & classrooms API | T-FEAT-15 | DONE | `BranchClassroomApiTest` |
+| R2 | R2-4 | Tenant provisioning service | T-RBAC-03, C-11 | DONE | `TenantProvisioningTest` |
+| R2 | R2-5 | Real self-registration | T-FEAT-24 | DONE | `SchoolRegistrationController`, `TenantProvisioningTest` |
+| R2 | R2-6 | Platform console real | T-FEAT-25, 26, T-SEC-02 | PARTIAL | `PlatformTenantApiTest`, `PlatformIdentityTest`, `PlatformSettingsAndContactTest`; platform login UI added 2026-11-04; no E2E |
+| R2 | R2-7 | Admin screens | — | PARTIAL | `/admin/users`, `/admin/branches`, `/admin/students/import` exist; no E2E |
+| R3 | R3-1 | ContentAccessPolicy | T-SEC-07, C-05 | DONE | `ContentAccessPolicyTest` |
+| R3 | R3-2 | Enrollment rules | T-SEC-07 | DONE | `ContentAccessPolicyTest::test_student_cannot_self_enroll_in_paid_course_without_entitlement` |
+| R3 | R3-3 | Payment proof upload | T-FEAT-21 | DONE | `ContentAccessPolicyTest::test_payment_proof_upload_and_authorized_access` |
+| R3 | R3-4 | Packages & manual entitlements API | T-FEAT-22 | DONE | `ContentAccessPolicyTest::test_manual_entitlement_grant_and_revoke_with_audit`, `BillingGateTest` |
+| R3 | R3-5 | Student billing UI | T-FEAT-20 | PARTIAL | `/student/plans`, `/student/payments`, `/student/subscriptions` exist; no E2E |
+| R3 | R3-6 | Admin/finance billing UI | — | PARTIAL | `/teacher/payments`, `/admin/packages` exist; no E2E |
+| R3 | R3-7 | Approval side effects | T-FEAT-23 | DONE | `ContentAccessPolicyTest::test_approved_payment_unlocks_content_and_auto_enrolls_student` |
+| R4 | R4-1 | Content model | T-FEAT-02 | DONE | `course_modules`, `lessons` updates, `lesson_materials`, backfill |
+| R4 | R4-2 | Content API | T-FEAT-01 | DONE | `CourseModuleController`, `CourseController` outline, `LessonController`, `LessonMaterialController` |
+| R4 | R4-3 | Google Drive real (needs Google project) | T-FEAT-06, 07, 08 | BLOCKED | Awaiting Google Cloud project credentials from owner (OAuth web client, Drive API) |
+| R4 | R4-4 | Video events & progress | T-FEAT-03 | DONE | `ProgressAggregator`, `VideoEventController`, heartbeat batching, abuse signals, 9 feature tests PASS |
+| R4 | R4-5 | Course Builder UI | T-FEAT-04 | DONE | `/teacher/courses` grid & creation, `/teacher/courses/[id]` full Course Builder workspace |
+| R4 | R4-6 | Course Player UI | T-FEAT-05, 09 | DONE | `/student/courses/[id]` overview, `/student/courses/[id]/lessons/[lessonId]` distraction-free player with watermark |
+| R4 | R4-7 | Remove simulated AI Tutor | T-FEAT-33 | DONE | Removed `setTimeout` canned chat from student courses; clean catalog & progress tracking |
+| R5 | R5-1 | Student QR token | T-SEC-10 | DONE | `SecureAttendanceQrAndLifecycleTest` |
+| R5 | R5-2 | Scan endpoint validation | T-SEC-10 | DONE | `SecureAttendanceQrAndLifecycleTest` |
+| R5 | R5-3 | Session QR | — | DEFERRED (OD-4) | |
+| R5 | R5-4 | Corrections & modes | T-FEAT-16 | DONE | `SecureAttendanceQrAndLifecycleTest::test_attendance_correction_requires_reason_and_audit_history` |
+| R5 | R5-5 | Student "My Card" | T-FEAT-13 | PARTIAL | `/student/card` exists; no E2E |
+| R5 | R5-6 | Mobile scanner | T-FEAT-13, 14 | PARTIAL | `/teacher/attendance/scan/[sessionId]` exists; no E2E |
+| R5 | R5-7 | Offline structure screens | T-FEAT-15 | PARTIAL | `/admin/branches`, `/teacher/classes`, `/teacher/sessions` exist; no E2E |
+| R6 | R6-1 | Exam lifecycle | T-FEAT-17 | DONE | `AssessmentLifecycleAndServerTimingTest` |
+| R6 | R6-2 | Server-authoritative timing | T-SEC-11 | DONE | `AssessmentLifecycleAndServerTimingTest` |
+| R6 | R6-3 | Questions API + bank | T-FEAT-18 | DONE | `AssessmentLifecycleAndServerTimingTest::test_question_bank_crud_and_import_to_exam` |
+| R6 | R6-4 | Assignment file submissions | T-FEAT-18 | DONE | `AssessmentLifecycleAndServerTimingTest::test_assignment_file_submission_and_secure_download` |
+| R6 | R6-5 | Builders & grading UI | T-FEAT-17, 19, T-UX-05 | PARTIAL | exam builder and `/teacher/grading` exist; no E2E |
+| R6 | R6-6 | Student assessment UI | — | PARTIAL | `/student/exams`, exam take/results exist; no E2E |
+| R7A | R7-0a | Tokens & themes | T-UX-03 | PARTIAL | `styles/tokens.css`, `lint:design` guard, light/dark checked on sample pages; no Playwright screenshots, no axe |
+| R7A | R7-0b | Primitives & patterns | T-UX-10, 08 | PARTIAL | `components/ui/*`, dev-only `/components`; keyboard/axe not audited |
+| R7A | R7-1 | App Shell | T-UX-07, 04 | PARTIAL | `components/layout/app-shell.tsx`, checked 1280 and 390 on sample pages; no E2E |
+| R7A | R7-2 | Break up God pages | T-UX-06 | PARTIAL | `features/*` for some pages; several pages still > 300 lines (builder 1110, `teacher/courses/[id]` 914) |
+| R7A | R7-3 | Detail page pattern | T-UX-09 | PARTIAL | `components/layout/detail-layout.tsx`; not used on every detail page |
+| R7B | R7B | Student experience | Master §70 | PARTIAL | codemod + sample visual check only; `docs/recovery-reports/R7B.md` |
+| R7C | R7C | Staff experience | Master §71-72, T-FEAT-30 | PARTIAL | codemod + nav links added 2026-11-04; `docs/recovery-reports/R7C.md` |
+| R7D | R7D | Parent experience | Master §73 | PARTIAL | codemod only; `docs/recovery-reports/R7D.md` |
+| R7E | R7E | Tenant admin experience | F8 | PARTIAL | `/admin`, `/admin/audit` checked in browser; `/admin/integrations` shows "not available" (no status endpoint); `docs/recovery-reports/R7E-R7F.md` |
+| R7F | R7F | Platform, support & public (landing, coupon login) | T-UX-02, Master §74 | PARTIAL | Landing, login + access code, contact, platform login/audit/settings; `PlatformSettingsAndContactTest`; `docs/recovery-reports/R7E-R7F.md` |
+| R7G | UX-R7G | Dark theme, logo, chrome, secure exam, images, public academy pages | owner request (outside audit IDs) | PARTIAL | `PublicAcademyAndImagesTest` (8 tests); tsc/build/lint:design pass; real fullscreen + tab-switch not verified; `docs/recovery-reports/UX-R7G.md` |
+| R8 | R8-1 | Domain events & notification service | T-FEAT-28 | DONE | `NotificationEventsTest` |
+| R8 | R8-2 | Notification center UI | T-FEAT-28 | PARTIAL | Bell, `/notifications`, preferences; no E2E; `docs/recovery-reports/R8.md` |
+| R8 | R8-3 | Queue | T-FEAT-32 | PARTIAL | Jobs + real worker run; CSV import still synchronous; scheduler not run in Docker |
+| R8 | R8-4 | Analytics honesty | T-FEAT-29 | PARTIAL | `ReportsAnalyticsMeetingsR8Test`; course/class analytics API only; no metrics definitions UI |
+| R8 | R8-5 | Reports | T-FEAT-31, 32 | PARTIAL | `ReportsAnalyticsMeetingsR8Test`; CSV + print verified; PDF pending library approval |
+| R8 | R8-6 | Google Meet real (needs Google project) | T-FEAT-10, 11, 12 | BLOCKED (Google credentials) | Manual links + join enforcement tested in `ReportsAnalyticsMeetingsR8Test`; real Google events not done |
+| R8 | R8-7 | Platform metrics | T-FEAT-27 | DONE | `ReportsAnalyticsMeetingsR8Test::test_platform_metrics_come_from_snapshots_and_include_queue_health` |
+| R9 | R9-1 | E2E suite | T-QA-03 | TODO | |
+| R9 | R9-2 | Contract tests | T-QA-04 | TODO | |
+| R9 | R9-3 | Role matrix in CI | T-QA-01, 02 | TODO | |
+| R9 | R9-4 | Visual QA | — | TODO | |
+| R9 | R9-5 | Accessibility | — | TODO | |
+| R9 | R9-6 | New release gate | T-QA-05 | TODO | |
+| R9 | R9-7 | Repository hygiene | T-QA-06, T-UX-11 | TODO | |
+| R9 | R9-8 | Documentation & status | C-09 | TODO | |
+
+## External prerequisites (owner action)
+
+| Needed for | What the owner must provide |
+|---|---|
+| R4-3, R8-6 | Google Cloud project: OAuth client (web), consent screen, Drive API + Calendar API enabled, redirect URI for the API |
+| R8-1 (email) | SMTP credentials (or keep `log` mailer) |
+| R0-1 | Set `PLATFORM_ADMIN_TOKEN` in `apps/api/.env` |
+| R1-A9 | `PLATFORM_ADMIN_EMAIL` / `PLATFORM_ADMIN_PASSWORD` in `apps/api/.env` |
+| R0-9 (if flagged) | Rotate Google client secret in Google Cloud Console |

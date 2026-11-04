@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Tenant } from '../types';
 import { apiClient } from '../lib/api-client';
 import { platformApi } from '../lib/platform-api';
+import { readableBrandColor } from '../lib/brand-color';
 
 interface TenantContextType {
   currentTenant: Tenant | null;
@@ -20,36 +21,24 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [availableTenants, setAvailableTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Apply White-Label dynamic branding to CSS variables whenever currentTenant changes
+  // Tenant (academy) branding: only override the brand color when the tenant defines one.
+  // The platform default (Sahaba emerald) comes from styles/tokens.css.
   useEffect(() => {
-    if (typeof window !== 'undefined' && currentTenant) {
-      const primary = currentTenant.primary_color || '#04c3c9';
-      const secondary = currentTenant.secondary_color || '#0284c7';
-      document.documentElement.style.setProperty('--brand-primary', primary);
-      document.documentElement.style.setProperty('--brand-secondary', secondary);
-      if (currentTenant.name) {
-        document.title = `${currentTenant.name} — مدار للتعليم`;
-      }
+    if (typeof window === 'undefined') return;
+    const root = document.documentElement;
+    const color = readableBrandColor(currentTenant?.primary_color);
+    if (color) {
+      root.style.setProperty('--brand-primary', color);
+    } else {
+      root.style.removeProperty('--brand-primary');
     }
   }, [currentTenant]);
 
+  // R7-1: the active tenant comes from the auth session (`useAuth().tenant`). This provider no
+  // longer fetches the platform tenant list (a platform-only endpoint) or switches the API
+  // client to the first tenant it returns — that could override the signed-in tenant.
   useEffect(() => {
-    const fetchTenants = async () => {
-      try {
-        setLoading(true);
-        const tenants = await platformApi.getTenants();
-        setAvailableTenants(tenants);
-        if (tenants.length > 0) {
-            setCurrentTenant(tenants[0]);
-            apiClient.setTenant(tenants[0].slug);
-        }
-      } catch {
-        // Fallback or handle error
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchTenants();
+    setLoading(false);
   }, []);
 
   const setTenantSlug = (slug: string) => {

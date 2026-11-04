@@ -16,6 +16,8 @@ class ClassSession extends TenantModel
         'starts_at',
         'ends_at',
         'attendance_mode',
+        'timing_mode',
+        'grace_period_minutes',
         'status',
     ];
 

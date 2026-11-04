@@ -5,7 +5,7 @@ import React from 'react';
 export const Skeleton: React.FC<{ className?: string }> = ({ className = '' }) => {
   return (
     <div
-      className={`animate-pulse rounded-[16px] bg-card/60 border-border/60 border ${className}`}
+      className={`animate-pulse rounded-md bg-surface-muted ${className}`}
       aria-hidden="true"
     />
   );
@@ -16,7 +16,7 @@ export const TableSkeleton: React.FC<{ rows?: number; cols?: number }> = ({
   cols = 4,
 }) => {
   return (
-    <div className="space-y-3 w-full" dir="rtl">
+    <div className="space-y-3 w-full">
       {/* Header skeleton */}
       <div className="flex gap-4 pb-2 border-b border-border">
         {Array.from({ length: cols }).map((_, i) => (
@@ -36,4 +36,8 @@ export const TableSkeleton: React.FC<{ rows?: number; cols?: number }> = ({
 };
 
 export const SkeletonTable = TableSkeleton;
+
+export const SkeletonCard: React.FC<{ className?: string }> = ({ className = 'h-64' }) => {
+  return <Skeleton className={`w-full ${className}`} />;
+};
 

@@ -15,12 +15,28 @@ class Course extends TenantModel
         'title',
         'code',
         'description',
+        'cover_path',
+        'level',
         'status',
+        'is_free',
+        'is_public',
+        'published_at',
+    ];
+
+    protected $casts = [
+        'is_free' => 'boolean',
+        'is_public' => 'boolean',
+        'published_at' => 'datetime',
     ];
 
     public function teacher(): BelongsTo
     {
         return $this->belongsTo(Staff::class, 'teacher_staff_id');
+    }
+
+    public function modules(): HasMany
+    {
+        return $this->hasMany(CourseModule::class, 'course_id')->orderBy('sort_order', 'asc');
     }
 
     public function lessons(): HasMany
@@ -48,5 +64,10 @@ class Course extends TenantModel
     public function exams(): HasMany
     {
         return $this->hasMany(Exam::class, 'course_id');
+    }
+
+    public function questionBanks(): HasMany
+    {
+        return $this->hasMany(QuestionBank::class, 'course_id');
     }
 }

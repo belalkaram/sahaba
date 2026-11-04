@@ -14,6 +14,8 @@ class Entitlement extends TenantModel
         'entitlement_key',
         'is_active',
         'expires_at',
+        'reason',
+        'granted_by_user_id',
     ];
 
     protected $casts = [

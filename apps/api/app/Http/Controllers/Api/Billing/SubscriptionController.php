@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Student;
 use App\Models\TenantUser;
 use App\Support\ApiResponse;
+use App\Support\Authorization\ScopeResolver;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -23,9 +24,8 @@ class SubscriptionController extends Controller
         $user = $request->user();
 
         $isSelf = $user->student && $user->student->id === $student->id;
-        $canView = $user->hasPermissionTo('subscriptions.view');
 
-        if (! $isSelf && ! $canView) {
+        if (! $isSelf && ! ScopeResolver::canAccess($user, 'subscriptions.view', $student)) {
             throw new AuthorizationException('You are not authorized to view student subscription records.');
         }
 

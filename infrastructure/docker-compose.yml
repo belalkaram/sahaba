@@ -104,6 +104,37 @@ services:
         max-size: "20m"
         max-file: "5"
 
+  # R8: runs lms:notify-scheduled, lms:compute-analytics, lms:refresh-platform-metrics
+  scheduler:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/api/Dockerfile
+    container_name: lms_scheduler
+    restart: unless-stopped
+    command: ["php", "artisan", "schedule:work"]
+    environment:
+      APP_ENV:          ${APP_ENV:-production}
+      APP_KEY:          ${APP_KEY}
+      DB_HOST:          mysql
+      DB_PORT:          3306
+      DB_DATABASE:      ${DB_DATABASE:-lms_control}
+      DB_USERNAME:      ${DB_USERNAME:-lms}
+      DB_PASSWORD:      ${DB_PASSWORD}
+      REDIS_HOST:       redis
+      QUEUE_CONNECTION: redis
+      LOG_CHANNEL:      stderr
+      LOG_LEVEL:        ${LOG_LEVEL:-warning}
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - lms_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+
   # ── Next.js Frontend ──────────────────────────────────────────────────────
   web:
     build:

@@ -2,6 +2,9 @@
 
 namespace App\Domain\Billing\Services;
 
+use App\Domain\Communication\NotificationCatalog;
+use App\Domain\Communication\NotificationService;
+use App\Models\Enrollment;
 use App\Models\Entitlement;
 use App\Models\PaymentRequest;
 use App\Models\PaymentReviewLog;
@@ -29,7 +32,7 @@ class PaymentReviewService
             throw new \DomainException('This payment request has already been processed (current status: '.$paymentRequest->status.').');
         }
 
-        return DB::transaction(function () use ($paymentRequest, $reviewer, $notes) {
+        $result = DB::transaction(function () use ($paymentRequest, $reviewer, $notes) {
             // 1. Update PaymentRequest
             $paymentRequest->update([
                 'status' => 'approved',
@@ -69,7 +72,25 @@ class PaymentReviewService
                 ]);
             }
 
-            // 5. Centralized Audit Log
+            // 5. Auto-Enrollment Side Effect for Entitled Courses (R3-7)
+            $createdEnrollments = [];
+            foreach ($grantedEntitlements as $ent) {
+                if (str_starts_with($ent->entitlement_key, 'course:')) {
+                    $courseId = substr($ent->entitlement_key, 7);
+                    $createdEnrollments[] = Enrollment::firstOrCreate(
+                        [
+                            'student_id' => $paymentRequest->student_id,
+                            'course_id' => $courseId,
+                        ],
+                        [
+                            'status' => 'active',
+                            'enrolled_at' => now(),
+                        ]
+                    );
+                }
+            }
+
+            // 6. Centralized Audit Log
             AuditLogger::log(
                 action: 'payment.approved',
                 entityType: 'PaymentRequest',
@@ -79,6 +100,7 @@ class PaymentReviewService
                     'package_id' => $paymentRequest->package_id,
                     'subscription_id' => $subscription->id,
                     'entitlements_count' => count($grantedEntitlements),
+                    'enrollments_count' => count($createdEnrollments),
                 ],
                 actorType: 'staff',
                 actorId: $reviewer->id
@@ -88,8 +110,20 @@ class PaymentReviewService
                 'payment_request' => $paymentRequest->fresh(),
                 'subscription' => $subscription,
                 'entitlements' => $grantedEntitlements,
+                'enrollments' => $createdEnrollments,
             ];
         });
+
+        // After commit: a notification failure must not undo the approval.
+        $paymentRequest->loadMissing('student', 'package');
+        app(NotificationService::class)->sendToStudent(
+            NotificationCatalog::PAYMENT_APPROVED,
+            $paymentRequest->student,
+            ['package' => $paymentRequest->package?->name],
+            '/student/subscriptions'
+        );
+
+        return $result;
     }
 
     /**
@@ -103,7 +137,7 @@ class PaymentReviewService
             throw new \DomainException('This payment request has already been processed (current status: '.$paymentRequest->status.').');
         }
 
-        return DB::transaction(function () use ($paymentRequest, $reviewer, $reason) {
+        $result = DB::transaction(function () use ($paymentRequest, $reviewer, $reason) {
             $paymentRequest->update([
                 'status' => 'rejected',
                 'rejection_reason' => $reason,
@@ -130,5 +164,15 @@ class PaymentReviewService
 
             return $paymentRequest->fresh();
         });
+
+        $paymentRequest->loadMissing('student', 'package');
+        app(NotificationService::class)->sendToStudent(
+            NotificationCatalog::PAYMENT_REJECTED,
+            $paymentRequest->student,
+            ['package' => $paymentRequest->package?->name, 'reason' => $reason],
+            '/student/payments'
+        );
+
+        return $result;
     }
 }

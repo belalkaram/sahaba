@@ -2,15 +2,18 @@
 
 namespace App\Http\Controllers\Api\Integration;
 
+use App\Domain\Billing\Services\ContentAccessPolicy;
 use App\Domain\Integrations\DTOs\VideoUploadRequest;
 use App\Domain\Integrations\Exceptions\ProviderException;
 use App\Domain\Integrations\Exceptions\ProviderTimeoutException;
 use App\Domain\Integrations\Media\VideoProviderManager;
 use App\Http\Controllers\Controller;
 use App\Models\MediaAsset;
+use App\Models\TenantUser;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\Response;
 
 class MediaController extends Controller
@@ -46,7 +49,7 @@ class MediaController extends Controller
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'provider' => 'nullable|string|in:google_drive,vimeo,mock',
+            'provider' => ['nullable', 'string', Rule::in($this->allowedProviders())],
             'external_id' => 'nullable|string|max:1000',
             'media_type' => 'nullable|string|in:video,audio,document',
             'course_id' => 'nullable|uuid|exists:tenant.courses,id',
@@ -56,8 +59,16 @@ class MediaController extends Controller
         ]);
 
         $uploadRequest = VideoUploadRequest::fromArray($validated);
-        $providerName = $validated['provider'] ?? 'mock';
-        $enableFailover = $validated['enable_failover'] ?? false;
+        $providerName = $validated['provider'] ?? 'google_drive';
+        $enableFailover = $this->simulatedProvidersAllowed() && ($validated['enable_failover'] ?? false);
+
+        if ($providerName !== 'mock' && empty($validated['external_id'])) {
+            return ApiResponse::error(
+                'MEDIA_LINK_REQUIRED',
+                'أدخل رابط الفيديو.',
+                Response::HTTP_UNPROCESSABLE_ENTITY
+            );
+        }
 
         try {
             if ($enableFailover) {
@@ -105,11 +116,41 @@ class MediaController extends Controller
     }
 
     /**
-     * Get embed URL for player.
+     * Get embed URL for player with ContentAccessPolicy enforcement.
      */
-    public function embedUrl(string $id, VideoProviderManager $providerManager): JsonResponse
-    {
-        $media = MediaAsset::findOrFail($id);
+    public function embedUrl(
+        Request $request,
+        string $id,
+        VideoProviderManager $providerManager,
+        ContentAccessPolicy $policy
+    ): JsonResponse {
+        $media = MediaAsset::with(['course', 'lesson'])->findOrFail($id);
+
+        /** @var TenantUser $user */
+        $user = $request->user();
+
+        // Check content access policy on parent lesson or course
+        if ($media->lesson) {
+            $decision = $policy->canAccessLesson($user, $media->lesson);
+            if (! $decision->isAllowed()) {
+                return ApiResponse::error(
+                    'ACCESS_REQUIRES_SUBSCRIPTION',
+                    'Access to stream this media requires an active subscription.',
+                    Response::HTTP_FORBIDDEN,
+                    ['reason' => $decision->reason, 'required_package_ids' => $decision->requiredPackageIds]
+                );
+            }
+        } elseif ($media->course) {
+            $decision = $policy->canAccessCourse($user, $media->course);
+            if (! $decision->isAllowed()) {
+                return ApiResponse::error(
+                    'ACCESS_REQUIRES_SUBSCRIPTION',
+                    'Access to stream this media requires an active subscription.',
+                    Response::HTTP_FORBIDDEN,
+                    ['reason' => $decision->reason, 'required_package_ids' => $decision->requiredPackageIds]
+                );
+            }
+        }
 
         $provider = $providerManager->provider($media->provider);
         $embedUrl = $provider->getEmbedUrl($media->external_media_id);
@@ -121,5 +162,20 @@ class MediaController extends Controller
             'embed_url' => $embedUrl,
             'status' => $media->status,
         ]);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function allowedProviders(): array
+    {
+        return $this->simulatedProvidersAllowed()
+            ? ['google_drive', 'vimeo', 'mock']
+            : ['google_drive', 'vimeo'];
+    }
+
+    private function simulatedProvidersAllowed(): bool
+    {
+        return app()->environment('testing');
     }
 }

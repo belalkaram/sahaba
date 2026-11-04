@@ -80,4 +80,24 @@ class RateLimitingGateTest extends TestCase
         $rateLimitedResponse->assertStatus(429)
             ->assertJsonPath('error.code', 'RATE_LIMIT_EXCEEDED');
     }
+
+    /**
+     * A dashboard load issues many requests: an authenticated user must not hit the anonymous
+     * per-IP limit (a 429 on /auth/me used to log the user out).
+     */
+    public function test_authenticated_traffic_is_limited_per_token_not_per_ip()
+    {
+        $tenantHeader = ['X-Tenant' => 'throttle-test'];
+
+        for ($i = 0; $i < 61; $i++) {
+            $response = $this->getJson('/api/v1/auth/me', [...$tenantHeader, 'Authorization' => 'Bearer not-a-real-token-but-a-token']);
+            $this->assertNotEquals(429, $response->getStatusCode(), "Request {$i} was throttled");
+        }
+
+        for ($i = 0; $i < 60; $i++) {
+            $this->getJson('/api/v1/auth/me', $tenantHeader);
+        }
+
+        $this->getJson('/api/v1/auth/me', $tenantHeader)->assertStatus(429);
+    }
 }

@@ -88,7 +88,7 @@ All tenant-scoped models extend `App\Models\TenantModel`:
 
 ## 6. Verification & The Tenant Gate
 
-The **Tenant Gate** defined in Phase J §15 is fully verified by [TenantIsolationTest.php](file:///c:/Users/FAGR/Desktop/lms/lms_ai_project_ai_package_full/apps/api/tests/Feature/TenantIsolationTest.php):
+The **Tenant Gate** defined in Phase J §15 is fully verified by [TenantIsolationTest.php](../../../apps/api/tests/Feature/TenantIsolationTest.php):
 - **Tenant A request → Tenant A data only.**
 - **Tenant B request → Tenant B data only.**
 - **Tenant A request for Tenant B resource → Denied (not found / null).**

@@ -1,0 +1,330 @@
+/**
+ * Sahaba (سحابة) Design Tokens
+ * Identity: modern Gulf education SaaS — Deep Emerald-Teal + Sand, warm neutrals.
+ * RTL-first, Arabic-first. Spec: docs/design/UI-UX-REDESIGN-PLAN.md §2–§8.
+ *
+ * Layers:
+ *   1. Primitives (raw scales)       — never used directly in app/feature code
+ *   2. Semantic tokens (light/dark)  — the only colors components may reference
+ *   3. Non-color tokens              — radius, shadow, motion, z-index
+ */
+
+/* ---------------------------------------------------------------------------
+ * 1. Primitives
+ * ------------------------------------------------------------------------- */
+:root {
+  --emerald-50: #EEFBF7;
+  --emerald-100: #D3F4EA;
+  --emerald-200: #A8E8D6;
+  --emerald-300: #6FD4BC;
+  --emerald-400: #36B89D;
+  --emerald-500: #149C84;
+  --emerald-600: #0C7F6D;
+  --emerald-700: #0B6659;
+  --emerald-800: #0D5249;
+  --emerald-900: #0E443D;
+  --emerald-950: #04201C;
+
+  --sand-50: #FBF7F0;
+  --sand-100: #F4EBDA;
+  --sand-200: #E9D6B4;
+  --sand-300: #DBBB86;
+  --sand-400: #CDA061;
+  --sand-500: #B98545;
+  --sand-600: #9C6B36;
+  --sand-700: #7D532E;
+  --sand-800: #5F3F25;
+  --sand-900: #3F2A19;
+
+  --neutral-0: #FFFFFF;
+  --neutral-50: #F8F8F6;
+  --neutral-100: #F0F0EC;
+  --neutral-200: #E3E3DD;
+  --neutral-300: #CACBC3;
+  --neutral-400: #9BA19A;
+  --neutral-500: #5F6761;
+  --neutral-600: #525B56;
+  --neutral-700: #3A423E;
+  --neutral-800: #232B28;
+  --neutral-850: #18221F;
+  --neutral-900: #121A18;
+  --neutral-950: #0B1110;
+  --neutral-1000: #080D0C;
+}
+
+/* ---------------------------------------------------------------------------
+ * 2a. Semantic tokens — Light (default)
+ * ------------------------------------------------------------------------- */
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* Surfaces */
+  --surface: var(--neutral-0);
+  --surface-raised: var(--neutral-0);
+  --surface-sunken: var(--neutral-50);
+  --surface-muted: var(--neutral-100);
+  --surface-overlay: rgba(11, 17, 16, 0.48);
+  --surface-brand: var(--emerald-700);
+  --surface-brand-fg: #FFFFFF;
+
+  /* Text */
+  --fg: var(--neutral-900);
+  --fg-muted: var(--neutral-600);
+  --fg-subtle: var(--neutral-500);
+  --fg-inverse: #FFFFFF;
+
+  /* Borders */
+  --border: var(--neutral-200);
+  --border-subtle: var(--neutral-100);
+  --border-strong: var(--neutral-300);
+
+  /* Brand — Deep Emerald-Teal (overridable by tenant branding) */
+  --primary: var(--brand-primary, var(--emerald-600));
+  --primary-hover: var(--emerald-700);
+  --primary-fg: #FFFFFF;
+  --primary-subtle: var(--emerald-50);
+  --primary-subtle-fg: var(--emerald-800);
+  --primary-ring: rgba(12, 127, 109, 0.35);
+
+  /* Secondary actions (neutral) */
+  --secondary: var(--neutral-100);
+  --secondary-hover: var(--neutral-200);
+  --secondary-fg: var(--neutral-800);
+  --secondary-subtle: var(--neutral-50);
+
+  /* Accent — Sand */
+  --accent: var(--sand-700);
+  --accent-fg: #FFFFFF;
+  --accent-subtle: var(--sand-50);
+  --accent-subtle-fg: var(--sand-800);
+
+  /* Feedback */
+  --success: #15803D;
+  --success-hover: #166534;
+  --success-fg: #FFFFFF;
+  --success-subtle: #ECFDF3;
+  --success-subtle-fg: #14532D;
+
+  --warning: #B45309;
+  --warning-hover: #92400E;
+  --warning-fg: #FFFFFF;
+  --warning-subtle: #FFF8EB;
+  --warning-subtle-fg: #78350F;
+
+  --danger: #DC2626;
+  --danger-hover: #B91C1C;
+  --danger-fg: #FFFFFF;
+  --danger-subtle: #FEF2F2;
+  --danger-subtle-fg: #7F1D1D;
+
+  --info: #0369A1;
+  --info-hover: #075985;
+  --info-fg: #FFFFFF;
+  --info-subtle: #F0F9FF;
+  --info-subtle-fg: #0C4A6E;
+
+  /* Brand gradient — allowed only on hero / continue-learning / featured progress */
+  --gradient-brand: linear-gradient(135deg, var(--emerald-800) 0%, var(--emerald-600) 55%, var(--emerald-500) 100%);
+  --gradient-sand: linear-gradient(135deg, var(--sand-100) 0%, var(--sand-50) 100%);
+
+  /* Gulf pattern stroke */
+  --pattern-stroke: rgba(12, 127, 109, 0.10);
+
+  /* Elevation — warm green-tinted shadows */
+  --shadow-xs: 0 1px 2px rgba(16, 40, 35, 0.05);
+  --shadow-sm: 0 1px 2px rgba(16, 40, 35, 0.06), 0 1px 3px rgba(16, 40, 35, 0.06);
+  --shadow-md: 0 4px 8px -2px rgba(16, 40, 35, 0.08), 0 2px 4px -2px rgba(16, 40, 35, 0.06);
+  --shadow-lg: 0 12px 24px -6px rgba(16, 40, 35, 0.12), 0 4px 8px -4px rgba(16, 40, 35, 0.06);
+  --shadow-xl: 0 24px 48px -12px rgba(16, 40, 35, 0.18);
+
+  --focus-ring: 0 0 0 3px var(--primary-ring);
+
+  /* Logo colors (approved brand SVG) */
+  --logo-frame: #037161;
+  --logo-pages: #03A591;
+  --logo-arch: #D8AB71;
+
+  /* Chrome (sidebar + top bars): warm cream in light mode */
+  --chrome-bg: #FBF9F4;
+  --chrome-fg: var(--neutral-900);
+  --chrome-fg-muted: var(--neutral-600);
+  --chrome-fg-subtle: var(--neutral-500);
+  --chrome-border: var(--neutral-200);
+  --chrome-hover: rgba(18, 26, 24, 0.05);
+  --chrome-field: #FFFFFF;
+  --chrome-active-bg: var(--primary-subtle);
+  --chrome-active-fg: var(--primary-subtle-fg);
+  --chrome-primary: var(--primary);
+  --chrome-primary-hover: var(--primary-hover);
+  --chrome-primary-fg: var(--primary-fg);
+}
+
+/* ---------------------------------------------------------------------------
+ * 2b. Semantic tokens — Dark (designed, not inverted)
+ * ------------------------------------------------------------------------- */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Deep saturated emerald: dark without feeling gloomy (near-black), vivid without looking washed out (grey). */
+  --surface: #16322C;
+  --surface-raised: #1C3D35;
+  --surface-sunken: #0F2622;
+  --surface-muted: #22483F;
+  --surface-overlay: rgba(10, 16, 14, 0.62);
+  --surface-brand: #0E3A33;
+  --surface-brand-fg: #F4F0E6;
+
+  --fg: #FBF8F0;
+  --fg-muted: #D3DDD2;
+  --fg-subtle: #A9BBAF;
+  --fg-inverse: var(--neutral-950);
+
+  --border: #34594F;
+  --border-subtle: #274A41;
+  --border-strong: #4F7A6E;
+
+  --primary: var(--brand-primary-dark, #2FD3B1);
+  --primary-hover: #5CE3C6;
+  --primary-fg: var(--emerald-950);
+  --primary-subtle: rgba(47, 211, 177, 0.18);
+  --primary-subtle-fg: #A9F0DF;
+  --primary-ring: rgba(47, 211, 177, 0.5);
+
+  --secondary: #22483F;
+  --secondary-hover: #2A564B;
+  --secondary-fg: #F3EFE4;
+  --secondary-subtle: #16322C;
+
+  --accent: #E8C88F;
+  --accent-fg: var(--sand-900);
+  --accent-subtle: rgba(232, 200, 143, 0.16);
+  --accent-subtle-fg: #F4E0BB;
+
+  --success: #4ADE80;
+  --success-hover: #86EFAC;
+  --success-fg: #052E16;
+  --success-subtle: rgba(74, 222, 128, 0.16);
+  --success-subtle-fg: #BBF7D0;
+
+  --warning: #FBBF24;
+  --warning-hover: #FCD34D;
+  --warning-fg: #451A03;
+  --warning-subtle: rgba(251, 191, 36, 0.16);
+  --warning-subtle-fg: #FDE68A;
+
+  --danger: #FC9A9A;
+  --danger-hover: #FDB9B9;
+  --danger-fg: #450A0A;
+  --danger-subtle: rgba(252, 154, 154, 0.16);
+  --danger-subtle-fg: #FECACA;
+
+  --info: #4CC6FA;
+  --info-hover: #7DD3FC;
+  --info-fg: #082F49;
+  --info-subtle: rgba(76, 198, 250, 0.16);
+  --info-subtle-fg: #BAE6FD;
+
+  --gradient-brand: linear-gradient(135deg, #0A5247 0%, #0C7262 55%, #0F8F7A 100%);
+  --gradient-sand: linear-gradient(135deg, rgba(232, 200, 143, 0.16) 0%, rgba(232, 200, 143, 0.06) 100%);
+
+  --pattern-stroke: rgba(92, 227, 198, 0.09);
+
+  /* Dark elevation: lighter surfaces + subtle top edge instead of heavy shadow */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  --shadow-md: 0 4px 10px -2px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --shadow-lg: 0 12px 28px -6px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --shadow-xl: 0 24px 56px -12px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+  /* Logo keeps its approved colors on beige chrome; on dark surfaces the frame lifts to a lighter teal. */
+  --logo-frame: #4FC3AB;
+  --logo-pages: #2FD0B6;
+  --logo-arch: #E3B97D;
+
+  /* Chrome: beige sidebar + top bar with dark ink — the warm anchor of the dark theme. */
+  --chrome-bg: #FAF5E9;
+  --chrome-fg: #1A150C;
+  --chrome-fg-muted: #433A2A;
+  --chrome-fg-subtle: #615746;
+  --chrome-border: #DCCDAE;
+  --chrome-hover: rgba(42, 36, 26, 0.07);
+  --chrome-field: #FFFCF4;
+  --chrome-active-bg: rgba(5, 64, 58, 0.18);
+  --chrome-active-fg: #03322D;
+  --chrome-primary: #05403A;
+  --chrome-primary-hover: #0A5A50;
+  --chrome-primary-fg: #FBF8F0;
+}
+
+/* ---------------------------------------------------------------------------
+ * 3. Non-color tokens
+ * ------------------------------------------------------------------------- */
+:root {
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 28px;
+  --radius-full: 9999px;
+
+  --motion-fast: 150ms cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-normal: 250ms cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-slow: 450ms cubic-bezier(0.22, 1, 0.36, 1);
+
+  --z-sticky: 20;
+  --z-sidebar: 30;
+  --z-topbar: 40;
+  --z-dropdown: 50;
+  --z-overlay: 60;
+  --z-modal: 70;
+  --z-toast: 80;
+  --z-tooltip: 90;
+
+  --shell-sidebar: 264px;
+  --shell-sidebar-collapsed: 76px;
+  --shell-topbar: 64px;
+  --content-max: 1320px;
+
+  /* Legacy compatibility variables (pre-R7 code). Do not use in new code. */
+  --bg: var(--surface-sunken);
+  --card: var(--surface);
+  --ink: var(--fg);
+  --mut: var(--fg-muted);
+  --mut-bg: var(--surface-muted);
+  --pri: var(--primary);
+  --on: var(--primary-fg);
+  --line: var(--border);
+  --red: var(--danger);
+  --acc: var(--accent);
+  --tq: var(--info);
+  --sb: var(--surface);
+}
+
+/*
+ * Chrome surfaces (sidebar, top bars, public header). Remaps the semantic tokens locally so every
+ * nested component (theme switcher, bell, avatar, menus) adapts without per-component work.
+ */
+.chrome-surface {
+  --surface: var(--chrome-bg);
+  --surface-raised: var(--chrome-field);
+  --surface-sunken: var(--chrome-field);
+  --surface-muted: var(--chrome-hover);
+  --fg: var(--chrome-fg);
+  --fg-muted: var(--chrome-fg-muted);
+  --fg-subtle: var(--chrome-fg-subtle);
+  --border: var(--chrome-border);
+  --border-subtle: var(--chrome-border);
+  --border-strong: var(--chrome-border);
+  --primary: var(--chrome-primary);
+  --primary-hover: var(--chrome-primary-hover);
+  --primary-fg: var(--chrome-primary-fg);
+  --primary-subtle: var(--chrome-active-bg);
+  --primary-subtle-fg: var(--chrome-active-fg);
+  --logo-frame: #037161;
+  --logo-pages: #03A591;
+  --logo-arch: #D8AB71;
+  background-color: var(--chrome-bg);
+  color: var(--chrome-fg);
+}

@@ -6,8 +6,11 @@ import { educationApi } from '../../../lib/education-api';
 import type { MediaAsset, Course, Lesson } from '../../../types';
 import { Card } from '../../../components/ui/card';
 import { Badge } from '../../../components/ui/badge';
-import { VideoIcon, CheckCircleIcon, BookOpenIcon } from '../../../components/icons';
+import { VideoIcon, BookOpenIcon } from '../../../components/icons';
 
+import { Check, Folder, Lightbulb, Link, Play } from 'lucide-react';
+import { formatDate, formatNumber } from '../../../lib/format';
+import { partial } from '../../../lib/partial-failure';
 export default function TeacherMediaPage() {
   const [mediaList, setMediaList] = useState<MediaAsset[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -27,7 +30,7 @@ export default function TeacherMediaPage() {
       setLoading(true);
       const [media, crs] = await Promise.all([
         integrationApi.getMedia(),
-        educationApi.getCourses().catch(() => []),
+        educationApi.getCourses().catch(partial([])),
       ]);
       setMediaList(media);
       setCourses(crs);
@@ -105,11 +108,11 @@ export default function TeacherMediaPage() {
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
-              <VideoIcon size={24} className="text-sky-500" />
+              <VideoIcon size={24} className="text-info" />
               مكتبة فيديوهات Google Drive للطلبة
             </h1>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-sky-500/10 text-sky-600 border border-sky-500/20">
-              <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-info/10 text-info border border-info/20">
+              <span className="w-2 h-2 rounded-full bg-info animate-pulse" />
               Google Drive API مفعّل
             </span>
           </div>
@@ -123,7 +126,7 @@ export default function TeacherMediaPage() {
             setIsAdding((v) => !v);
             setFeedbackMsg(null);
           }}
-          className="inline-flex items-center gap-2 bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-semibold px-4 py-2.5 rounded-[16px] text-xs transition-all shadow-md shadow-sky-600/20 active:scale-95"
+          className="inline-flex items-center gap-2 bg-primary hover:bg-primary-hover text-primary-fg font-semibold px-4 py-2.5 rounded-md text-xs transition-all shadow-xs"
         >
           <VideoIcon size={16} />
           {isAdding ? 'إغلاق نموذج الإضافة' : '+ ربط فيديو درس من Google Drive'}
@@ -131,22 +134,23 @@ export default function TeacherMediaPage() {
       </div>
 
       {/* Integration Info Banner */}
-      <div className="rounded-[20px] bg-gradient-to-r from-slate-900 to-slate-800 text-white p-4 border border-slate-700/60 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="rounded-lg bg-surface text-fg p-4 border border-border shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-[14px] bg-sky-500/20 text-sky-400 flex items-center justify-center font-bold text-xl shrink-0">
-            📁
-          </div>
+          <div className="w-10 h-10 rounded-lg bg-info/20 text-info flex items-center justify-center font-bold text-xl shrink-0">
+            
+ <Folder size={24} strokeWidth={1.75} aria-hidden />
+ </div>
           <div>
             <div className="text-xs font-bold flex items-center gap-2">
               <span>Google Drive Video Storage API</span>
               <Badge variant="success">مفعل للطلبة</Badge>
             </div>
-            <p className="text-[11px] text-slate-300 mt-0.5">
-              Client ID: <span className="font-mono text-sky-400">978486739253-qb206lpih6c0upanrph3ed1lgvbl4ek4...</span>
+            <p className="text-xs text-fg mt-0.5">
+              Client ID: <span className="font-mono text-info">978486739253-qb206lpih6c0upanrph3ed1lgvbl4ek4...</span>
             </p>
           </div>
         </div>
-        <div className="text-[11px] text-slate-400 max-w-sm">
+        <div className="text-xs text-fg-muted max-w-sm">
           يتم تحويل روابط مشاركة Google Drive تلقائياً لمشغلات آمنة ومتجاوبة مضمنة في صفحات دروس الطلبة.
         </div>
       </div>
@@ -155,8 +159,8 @@ export default function TeacherMediaPage() {
         <div
           className={`p-4 rounded-[16px] text-xs font-semibold border ${
             feedbackMsg.type === 'success'
-              ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'
-              : 'bg-rose-500/10 text-rose-500 border-rose-500/30'
+              ? 'bg-primary/10 text-primary border-primary/30'
+              : 'bg-danger/10 text-danger border-danger/30'
           }`}
         >
           {feedbackMsg.text}
@@ -165,10 +169,10 @@ export default function TeacherMediaPage() {
 
       {/* Add Google Drive Video Form */}
       {isAdding && (
-        <Card className="p-6 border-sky-500/30 bg-[color-mix(in_srgb,var(--pri)_5%,transparent)] shadow-lg animate-in fade-in duration-200">
+        <Card className="p-6 border-info/30 bg-[color-mix(in_srgb,var(--pri)_5%,transparent)] shadow-lg animate-in fade-in duration-200">
           <div className="flex items-center justify-between pb-4 border-b border-border mb-4">
             <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-              <span className="text-sky-500">▶</span>
+              <span className="text-info"><Play size={16} strokeWidth={1.75} aria-hidden /></span>
               إضافة فيديو درس من Google Drive
             </h2>
             <span className="text-xs text-secondary">دعم كامل لروابط Google Drive المباشرة</span>
@@ -178,7 +182,7 @@ export default function TeacherMediaPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-secondary mb-1">
-                  عنوان الفيديو / المحاضرة <span className="text-rose-500">*</span>
+                  عنوان الفيديو / المحاضرة <span className="text-danger">*</span>
                 </label>
                 <input
                   type="text"
@@ -186,19 +190,19 @@ export default function TeacherMediaPage() {
                   placeholder="مثال: شرح الباب الأول - الكيمياء العضوية"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full bg-background border border-border rounded-[14px] px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-sky-500 transition-all"
+                  className="w-full bg-background border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-info transition-all"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-secondary mb-1">المقرر الدراسي المرتبط</label>
-                <select
+                <select aria-label="المقرر الدراسي المرتبط"
                   value={courseId}
                   onChange={(e) => {
                     setCourseId(e.target.value);
                     setLessonId('');
                   }}
-                  className="w-full bg-background border border-border rounded-[14px] px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-sky-500 transition-all"
+                  className="w-full bg-background border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-info transition-all"
                 >
                   <option value="">-- اختياري: اختر المقرر المرتبط --</option>
                   {courses.map((crs) => (
@@ -215,11 +219,11 @@ export default function TeacherMediaPage() {
                 <label className="block text-xs font-semibold text-secondary mb-1">
                   الدرس المرتبط بالمقرر
                 </label>
-                <select
+                <select aria-label="الدرس المرتبط بالمقرر"
                   value={lessonId}
                   onChange={(e) => setLessonId(e.target.value)}
                   disabled={!selectedCourse || !selectedCourse.lessons || selectedCourse.lessons.length === 0}
-                  className="w-full bg-background border border-border rounded-[14px] px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-sky-500 transition-all disabled:opacity-50"
+                  className="w-full bg-background border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-info transition-all disabled:opacity-50"
                 >
                   <option value="">-- اختياري: اختر درساً محدداً --</option>
                   {selectedCourse?.lessons?.map((les: Lesson) => (
@@ -232,7 +236,7 @@ export default function TeacherMediaPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-secondary mb-1">
-                  رابط مشاركة Google Drive أو معرف الملف (File ID) <span className="text-rose-500">*</span>
+                  رابط مشاركة Google Drive أو معرف الملف (File ID) <span className="text-danger">*</span>
                 </label>
                 <input
                   type="text"
@@ -240,14 +244,14 @@ export default function TeacherMediaPage() {
                   placeholder="https://drive.google.com/file/d/1BxiMVs0X.../view"
                   value={googleDriveUrl}
                   onChange={(e) => setGoogleDriveUrl(e.target.value)}
-                  className="w-full bg-background border border-border rounded-[14px] px-3.5 py-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-sky-500 transition-all font-mono"
+                  className="w-full bg-background border border-border rounded-lg px-3.5 py-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-info transition-all font-mono"
                 />
               </div>
             </div>
 
             {/* Google Drive Sharing Tip */}
-            <div className="p-3 rounded-[12px] bg-sky-500/10 border border-sky-500/20 text-xs text-sky-300 flex items-start gap-2">
-              <span className="text-base">💡</span>
+            <div className="p-3 rounded-md bg-info/10 border border-info/20 text-xs text-info flex items-start gap-2">
+              <span className="text-base"><Lightbulb size={18} strokeWidth={1.75} aria-hidden /></span>
               <p className="leading-relaxed">
                 <strong>تلميح مهم:</strong> في Google Drive، تأكد من ضبط إعدادات المشاركة للملف على:{' '}
                 <span className="underline font-semibold">
@@ -263,7 +267,7 @@ export default function TeacherMediaPage() {
                 <span className="text-xs font-bold text-foreground block mb-2">
                   معاينة مشغل الفيديو المباشر:
                 </span>
-                <div className="rounded-[16px] overflow-hidden border border-border bg-black aspect-video max-w-xl mx-auto shadow-md">
+                <div className="rounded-lg overflow-hidden border border-border bg-black aspect-video max-w-xl mx-auto shadow-md">
                   <iframe
                     src={previewEmbedUrl}
                     className="w-full h-full border-0"
@@ -279,16 +283,16 @@ export default function TeacherMediaPage() {
               <button
                 type="button"
                 onClick={() => setIsAdding(false)}
-                className="px-4 py-2 rounded-[14px] border border-border text-xs text-secondary hover:text-foreground transition-colors"
+                className="px-4 py-2 rounded-lg border border-border text-xs text-secondary hover:text-foreground transition-colors"
               >
                 إلغاء
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-6 py-2.5 rounded-[14px] bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs shadow-md transition-all disabled:opacity-50"
+                className="px-6 py-2.5 rounded-md bg-primary hover:bg-primary-hover text-primary-fg font-semibold text-xs shadow-xs transition-all disabled:opacity-50"
               >
-                {isSubmitting ? 'جارٍ الحفظ...' : '✓ ربط وحفظ الفيديو للطلبة'}
+                {isSubmitting ? 'جارٍ الحفظ...' : <><Check size={16} strokeWidth={1.75} aria-hidden /> ربط وحفظ الفيديو للطلبة</>}
               </button>
             </div>
           </form>
@@ -299,7 +303,7 @@ export default function TeacherMediaPage() {
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-bold text-foreground">
-            الفيديوهات والمواد التعليمية المرفوعة ({mediaList.length})
+            الفيديوهات والمواد التعليمية المرفوعة ({formatNumber(mediaList.length)})
           </h2>
           <span className="text-xs text-secondary">مرتبة بحسب الأحدث</span>
         </div>
@@ -317,7 +321,7 @@ export default function TeacherMediaPage() {
               return (
                 <Card
                   key={asset.id}
-                  className="overflow-hidden border border-border hover:border-sky-500/40 transition-all shadow-sm flex flex-col justify-between"
+                  className="overflow-hidden border border-border hover:border-info/40 transition-all shadow-sm flex flex-col justify-between"
                 >
                   {/* Embedded Player or Thumbnail */}
                   <div className="relative aspect-video bg-black/90 flex items-center justify-center border-b border-border">
@@ -340,8 +344,8 @@ export default function TeacherMediaPage() {
                   <div className="p-4 flex-1 flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between gap-2 mb-2">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20">
-                          <span>📁</span>
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-info/10 text-info border border-info/20">
+                          <span><Folder size={16} strokeWidth={1.75} aria-hidden /></span>
                           <span>{isDrive ? 'Google Drive' : asset.provider}</span>
                         </span>
                         <Badge variant="success">جاهز للمشاهدة</Badge>
@@ -349,15 +353,15 @@ export default function TeacherMediaPage() {
 
                       <h3 className="text-sm font-bold text-foreground leading-snug">{asset.title}</h3>
 
-                      <div className="mt-2.5 flex flex-wrap gap-2 text-[11px] text-secondary">
+                      <div className="mt-2.5 flex flex-wrap gap-2 text-xs text-secondary">
                         {asset.course && (
-                          <span className="flex items-center gap-1 bg-background px-2 py-0.5 rounded border border-border">
+                          <span className="flex items-center gap-1 bg-background px-2 py-0.5 rounded-xs border border-border">
                             <BookOpenIcon size={12} />
                             {asset.course.code}
                           </span>
                         )}
                         {asset.lesson && (
-                          <span className="bg-background px-2 py-0.5 rounded border border-border">
+                          <span className="bg-background px-2 py-0.5 rounded-xs border border-border">
                             {asset.lesson.title}
                           </span>
                         )}
@@ -370,18 +374,19 @@ export default function TeacherMediaPage() {
                           href={asset.playback_url}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-sky-500 hover:underline text-[11px] flex items-center gap-1 font-medium"
+                          className="text-info hover:underline text-xs flex items-center gap-1 font-medium"
                         >
-                          🔗 فتح في Google Drive
-                        </a>
+                          
+ <Link size={16} strokeWidth={1.75} aria-hidden /> فتح في Google Drive
+ </a>
                       ) : (
-                        <span className="text-[10px] text-secondary font-mono">
+                        <span className="text-xs text-secondary font-mono">
                           ID: {asset.external_media_id}
                         </span>
                       )}
 
-                      <span className="text-[10px] text-secondary font-mono">
-                        {asset.created_at ? new Date(asset.created_at).toLocaleDateString('ar-EG') : 'الآن'}
+                      <span className="text-xs text-secondary font-mono">
+                        {asset.created_at ? formatDate(asset.created_at) : 'الآن'}
                       </span>
                     </div>
                   </div>

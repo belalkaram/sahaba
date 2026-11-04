@@ -259,6 +259,26 @@ docker exec lms_redis redis-cli -a "$REDIS_PASSWORD" ping
 docker exec lms_redis redis-cli -a "$REDIS_PASSWORD" FLUSHDB
 ```
 
+### Background processes (R8)
+
+Reports, notification emails and analytics run on the queue. Without a worker, reports stay in `queued` and emails are not sent.
+
+```bash
+php artisan queue:work      # worker (lms_worker in Docker)
+php artisan schedule:work   # scheduler (lms_scheduler in Docker)
+```
+
+Scheduled commands: `lms:notify-scheduled` (hourly), `lms:compute-analytics` (02:00 daily), `lms:refresh-platform-metrics` (hourly).
+
+On every deploy, migrate the Control DB **and** all tenant databases:
+
+```bash
+php artisan migrate --force
+php artisan lms:migrate-tenants
+```
+
+Email uses `MAIL_MAILER` (`log` until SMTP credentials are configured). Queue backlog and failed jobs appear on the platform dashboard.
+
 ### Queue worker crashed
 
 ```bash

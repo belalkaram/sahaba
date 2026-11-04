@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
-  title: Madar LMS API
-  description: API specifications for the Madar Multi-Tenant LMS backend.
+  title: Sahaba API
+  description: API specifications for the Sahaba multi-tenant backend.
   version: 1.0.0
 servers:
   - url: http://localhost:8000/api/v1
@@ -23,6 +23,2403 @@ components:
 security:
   - bearerAuth: []
 paths:
+  # BEGIN GENERATED ROUTES (scripts/generate-openapi.php)
+  /attendance-records/{id}:
+    put:
+      summary: "attendance.correct"
+      description: "Auth: tenant.auth. Permission: attendance.correct."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /auth/logout:
+    post:
+      summary: "auth.logout"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /auth/support/exchange:
+    post:
+      summary: "auth.support.exchange"
+      description: "Auth: public."
+      security: []
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /branches:
+    get:
+      summary: "branches.index"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    post:
+      summary: "branches.store"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /branches/{id}:
+    get:
+      summary: "branches.show"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    put:
+      summary: "branches.update"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    delete:
+      summary: "branches.destroy"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /branches/{id}/classrooms:
+    get:
+      summary: "branches.classrooms.index"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    post:
+      summary: "branches.classrooms.store"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /classes:
+    get:
+      summary: "classes.index"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    post:
+      summary: "classes.create"
+      description: "Auth: tenant.auth. Permission: classes.create."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /classes/{classId}/sessions:
+    get:
+      summary: "sessions.index"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: classId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    post:
+      summary: "sessions.create"
+      description: "Auth: tenant.auth. Permission: sessions.create."
+      parameters:
+        - { name: classId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /classes/{classId}/sessions/{id}:
+    get:
+      summary: "sessions.show"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: classId, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /classes/{id}:
+    get:
+      summary: "classes.show"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    put:
+      summary: "classes.update"
+      description: "Auth: tenant.auth. Permission: classes.create."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    delete:
+      summary: "classes.destroy"
+      description: "Auth: tenant.auth. Permission: classes.create."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /classes/{id}/students:
+    post:
+      summary: "classes.students.enroll"
+      description: "Auth: tenant.auth. Permission: classes.manage_students."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /classes/{id}/students/{studentId}:
+    delete:
+      summary: "classes.students.remove"
+      description: "Auth: tenant.auth. Permission: classes.manage_students."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: studentId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /classrooms:
+    get:
+      summary: "classrooms.index"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /classrooms/{id}:
+    get:
+      summary: "classrooms.show"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    put:
+      summary: "classrooms.update"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    delete:
+      summary: "classrooms.destroy"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses:
+    post:
+      summary: "courses.create"
+      description: "Auth: tenant.auth. Permission: courses.create."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{courseId}/assignments:
+    get:
+      summary: "assignments.index"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    post:
+      summary: "assignments.create"
+      description: "Auth: tenant.auth. Permission: assignments.create."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{courseId}/assignments/{id}:
+    get:
+      summary: "assignments.show"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    put:
+      summary: "assignments.update"
+      description: "Auth: tenant.auth. Permission: assignments.create."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    delete:
+      summary: "assignments.destroy"
+      description: "Auth: tenant.auth. Permission: assignments.create."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{courseId}/assignments/{id}/publish-grades:
+    post:
+      summary: "assignments.publish_grades"
+      description: "Auth: tenant.auth. Permission: assignments.grade."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{courseId}/assignments/{id}/submissions:
+    get:
+      summary: "assignments.submissions"
+      description: "Auth: tenant.auth. Permission: assignments.grade."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{courseId}/assignments/{id}/submissions/{submissionId}/file:
+    get:
+      summary: "assignments.download_file"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: submissionId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{courseId}/assignments/{id}/submissions/{submissionId}/grade:
+    post:
+      summary: "assignments.grade"
+      description: "Auth: tenant.auth. Permission: assignments.grade."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: submissionId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{courseId}/assignments/{id}/submit:
+    post:
+      summary: "assignments.submit"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{courseId}/enroll:
+    post:
+      summary: "enrollments.enroll"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{courseId}/enrollments:
+    get:
+      summary: "enrollments.index"
+      description: "Auth: tenant.auth. Permission: enrollments.view."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{courseId}/exams:
+    get:
+      summary: "exams.index"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    post:
+      summary: "exams.create"
+      description: "Auth: tenant.auth. Permission: exams.create."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{courseId}/exams/{id}:
+    get:
+      summary: "exams.show"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    put:
+      summary: "exams.update"
+      description: "Auth: tenant.auth. Permission: exams.create."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    delete:
+      summary: "exams.destroy"
+      description: "Auth: tenant.auth. Permission: exams.create."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{courseId}/exams/{id}/active-attempt:
+    get:
+      summary: "exams.active_attempt"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{courseId}/exams/{id}/archive:
+    post:
+      summary: "exams.archive"
+      description: "Auth: tenant.auth. Permission: exams.create."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{courseId}/exams/{id}/attempts/{attemptId}:
+    get:
+      summary: "exams.attempts.show"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: attemptId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{courseId}/exams/{id}/attempts/{attemptId}/answers:
+    post:
+      summary: "exams.answers.submit"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: attemptId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{courseId}/exams/{id}/attempts/{attemptId}/grade:
+    post:
+      summary: "exams.grade"
+      description: "Auth: tenant.auth. Permission: exams.grade."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: attemptId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{courseId}/exams/{id}/attempts/{attemptId}/integrity-events:
+    post:
+      summary: "exams.integrity_events"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: attemptId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{courseId}/exams/{id}/attempts/{attemptId}/results:
+    get:
+      summary: "exams.attempts.results"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: attemptId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{courseId}/exams/{id}/attempts/{attemptId}/submit:
+    post:
+      summary: "exams.submit"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: attemptId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{courseId}/exams/{id}/close:
+    post:
+      summary: "exams.close"
+      description: "Auth: tenant.auth. Permission: exams.create."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{courseId}/exams/{id}/publish:
+    post:
+      summary: "exams.publish"
+      description: "Auth: tenant.auth. Permission: exams.create."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{courseId}/exams/{id}/publish-grades:
+    post:
+      summary: "exams.publish_grades"
+      description: "Auth: tenant.auth. Permission: exams.grade."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{courseId}/exams/{id}/questions:
+    get:
+      summary: "exams.questions.index"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    post:
+      summary: "exams.questions.add"
+      description: "Auth: tenant.auth. Permission: exams.create."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{courseId}/exams/{id}/questions/import-from-bank:
+    post:
+      summary: "exams.questions.import"
+      description: "Auth: tenant.auth. Permission: exams.create."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{courseId}/exams/{id}/questions/reorder:
+    post:
+      summary: "exams.questions.reorder"
+      description: "Auth: tenant.auth. Permission: exams.create."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{courseId}/exams/{id}/questions/{questionId}:
+    put:
+      summary: "exams.questions.update"
+      description: "Auth: tenant.auth. Permission: exams.create."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: questionId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    delete:
+      summary: "exams.questions.delete"
+      description: "Auth: tenant.auth. Permission: exams.create."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: questionId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{courseId}/exams/{id}/start:
+    post:
+      summary: "exams.start"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{courseId}/lessons:
+    get:
+      summary: "lessons.index"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    post:
+      summary: "lessons.create"
+      description: "Auth: tenant.auth. Permission: lessons.create."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{courseId}/lessons/{id}:
+    get:
+      summary: "lessons.show"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{courseId}/question-banks:
+    get:
+      summary: "question_banks.index"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    post:
+      summary: "question_banks.store"
+      description: "Auth: tenant.auth. Permission: exams.create."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{courseId}/question-banks/{bankId}:
+    get:
+      summary: "question_banks.show"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: bankId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    put:
+      summary: "question_banks.update"
+      description: "Auth: tenant.auth. Permission: exams.create."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: bankId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    delete:
+      summary: "question_banks.destroy"
+      description: "Auth: tenant.auth. Permission: exams.create."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: bankId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{courseId}/question-banks/{bankId}/questions:
+    post:
+      summary: "question_banks.questions.add"
+      description: "Auth: tenant.auth. Permission: exams.create."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: bankId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{courseId}/question-banks/{bankId}/questions/{questionId}:
+    put:
+      summary: "question_banks.questions.update"
+      description: "Auth: tenant.auth. Permission: exams.create."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: bankId, in: path, required: true, schema: { type: string } }
+        - { name: questionId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    delete:
+      summary: "question_banks.questions.delete"
+      description: "Auth: tenant.auth. Permission: exams.create."
+      parameters:
+        - { name: courseId, in: path, required: true, schema: { type: string } }
+        - { name: bankId, in: path, required: true, schema: { type: string } }
+        - { name: questionId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{id}:
+    get:
+      summary: "courses.show"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    delete:
+      summary: "courses.destroy"
+      description: "Auth: tenant.auth. Permission: courses.delete."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{id}/cover:
+    post:
+      summary: "courses.cover.store"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    delete:
+      summary: "courses.cover.destroy"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    get:
+      summary: "courses.cover.show"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{id}/modules:
+    get:
+      summary: "modules.index"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    post:
+      summary: "modules.create"
+      description: "Auth: tenant.auth. Permission: courses.update."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{id}/modules/reorder:
+    post:
+      summary: "modules.reorder"
+      description: "Auth: tenant.auth. Permission: lessons.reorder."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{id}/outline:
+    get:
+      summary: "courses.outline"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{id}/progress:
+    get:
+      summary: "courses.progress"
+      description: "Auth: tenant.auth. Permission: courses.view."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{id}/publish:
+    post:
+      summary: "courses.publish"
+      description: "Auth: tenant.auth. Permission: courses.publish."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /courses/{id}/unpublish:
+    post:
+      summary: "courses.unpublish"
+      description: "Auth: tenant.auth. Permission: courses.publish."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /credentials:
+    post:
+      summary: "credentials.store"
+      description: "Auth: tenant.auth. Permission: credentials.create."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /credentials/verify:
+    post:
+      summary: "credentials.verify"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /credentials/{id}/activate:
+    post:
+      summary: "credentials.activate"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /credentials/{id}/replace-device:
+    post:
+      summary: "credentials.replace_device"
+      description: "Auth: tenant.auth. Permission: credentials.manage_devices."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /credentials/{id}/request-replacement:
+    post:
+      summary: "credentials.request_replacement"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /credentials/{id}/revoke:
+    post:
+      summary: "credentials.revoke"
+      description: "Auth: tenant.auth. Permission: credentials.revoke."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /entitlements/{id}/revoke:
+    post:
+      summary: "entitlements.revoke"
+      description: "Auth: tenant.auth. Permission: entitlements.revoke."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /grading/pending:
+    get:
+      summary: "grading.pending"
+      description: "Auth: tenant.auth. Permission: exams.grade."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /grading/publish-bulk:
+    post:
+      summary: "grading.bulk_publish"
+      description: "Auth: tenant.auth. Permission: exams.grade."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /health:
+    get:
+      summary: "health"
+      description: "Auth: public."
+      security: []
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /imports:
+    get:
+      summary: "imports.index"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /imports/{id}:
+    get:
+      summary: "imports.show"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /integrations/webhooks/{provider}:
+    post:
+      summary: "integrations.webhook"
+      description: "Auth: public."
+      security: []
+      parameters:
+        - { name: provider, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /lessons/{id}:
+    put:
+      summary: "lessons.update"
+      description: "Auth: tenant.auth. Permission: lessons.update."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    delete:
+      summary: "lessons.destroy"
+      description: "Auth: tenant.auth. Permission: lessons.delete."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /lessons/{id}/complete:
+    post:
+      summary: "lessons.complete"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /lessons/{id}/events:
+    post:
+      summary: "lessons.events"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /lessons/{id}/materials:
+    post:
+      summary: "materials.create"
+      description: "Auth: tenant.auth. Permission: materials.manage."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /lessons/{id}/publish:
+    post:
+      summary: "lessons.publish"
+      description: "Auth: tenant.auth. Permission: lessons.update."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /lessons/{id}/unpublish:
+    post:
+      summary: "lessons.unpublish"
+      description: "Auth: tenant.auth. Permission: lessons.update."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /materials/{id}:
+    delete:
+      summary: "materials.destroy"
+      description: "Auth: tenant.auth. Permission: materials.manage."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /materials/{id}/download:
+    get:
+      summary: "materials.download"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /me/attendance:
+    get:
+      summary: "me.attendance"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /me/attendance-qr:
+    get:
+      summary: "me.attendance_qr"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /me/children:
+    get:
+      summary: "me.children"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /me/classes:
+    get:
+      summary: "me.classes"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /me/courses:
+    get:
+      summary: "me.courses"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /me/entitlements:
+    get:
+      summary: "me.entitlements"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /me/progress:
+    get:
+      summary: "me.progress"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /me/sessions:
+    get:
+      summary: "me.sessions"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /me/students:
+    get:
+      summary: "me.students"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /me/subscriptions:
+    get:
+      summary: "me.subscriptions"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /media:
+    get:
+      summary: "media.index"
+      description: "Auth: tenant.auth. Permission: media.view."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    post:
+      summary: "media.upload"
+      description: "Auth: tenant.auth. Permission: media.upload."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /media/{id}:
+    get:
+      summary: "media.show"
+      description: "Auth: tenant.auth. Permission: media.view."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /media/{id}/embed:
+    get:
+      summary: "media.embed"
+      description: "Auth: tenant.auth. Permission: media.view."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /meetings:
+    get:
+      summary: "meetings.index"
+      description: "Auth: tenant.auth. Permission: meetings.view."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    post:
+      summary: "meetings.create"
+      description: "Auth: tenant.auth. Permission: meetings.create."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /meetings/{id}:
+    get:
+      summary: "meetings.show"
+      description: "Auth: tenant.auth. Permission: meetings.view."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /meetings/{id}/cancel:
+    post:
+      summary: "meetings.cancel"
+      description: "Auth: tenant.auth. Permission: meetings.manage."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /meetings/{id}/join:
+    get:
+      summary: "meetings.join"
+      description: "Auth: tenant.auth. Permission: meetings.view."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /metrics:
+    get:
+      summary: "metrics.index"
+      description: "Auth: tenant.auth. Permission: analytics.view."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    post:
+      summary: "metrics.store"
+      description: "Auth: tenant.auth. Permission: analytics.manage."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /metrics/{id}:
+    get:
+      summary: "metrics.show"
+      description: "Auth: tenant.auth. Permission: analytics.view."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /metrics/{id}/versions:
+    post:
+      summary: "metrics.add_version"
+      description: "Auth: tenant.auth. Permission: analytics.manage."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /modules/{id}:
+    put:
+      summary: "modules.update"
+      description: "Auth: tenant.auth. Permission: courses.update."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    delete:
+      summary: "modules.destroy"
+      description: "Auth: tenant.auth. Permission: courses.delete."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /modules/{id}/lessons/reorder:
+    post:
+      summary: "lessons.reorder"
+      description: "Auth: tenant.auth. Permission: lessons.reorder."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /notifications/read-all:
+    post:
+      summary: "notifications.read_all"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /notifications/{id}/read:
+    post:
+      summary: "notifications.read"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /packages:
+    get:
+      summary: "packages.index"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    post:
+      summary: "packages.create"
+      description: "Auth: tenant.auth. Permission: packages.create."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /packages/{id}:
+    get:
+      summary: "packages.show"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    put:
+      summary: "packages.update"
+      description: "Auth: tenant.auth. Permission: packages.manage."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /packages/{id}/archive:
+    post:
+      summary: "packages.archive"
+      description: "Auth: tenant.auth. Permission: packages.manage."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /parents:
+    get:
+      summary: "parents.index"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    post:
+      summary: "parents.store"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /parents/{id}:
+    get:
+      summary: "parents.show"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /parents/{id}/children:
+    post:
+      summary: "parents.children.link"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /parents/{id}/children/{studentId}:
+    delete:
+      summary: "parents.children.unlink"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: studentId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /payment-requests:
+    get:
+      summary: "payments.index"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    post:
+      summary: "payments.store"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /payment-requests/{id}:
+    get:
+      summary: "payments.show"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /payment-requests/{id}/approve:
+    post:
+      summary: "payments.approve"
+      description: "Auth: tenant.auth. Permission: payments.approve."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /payment-requests/{id}/proof:
+    get:
+      summary: "payments.proof"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /payment-requests/{id}/reject:
+    post:
+      summary: "payments.reject"
+      description: "Auth: tenant.auth. Permission: payments.reject."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /permissions:
+    get:
+      summary: "permissions.index"
+      description: "Auth: tenant.auth. Permission: roles.view."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /platform/auth/login:
+    post:
+      summary: "platform.auth.login"
+      description: "Auth: public."
+      security: []
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /platform/auth/logout:
+    post:
+      summary: "platform.auth.logout"
+      description: "Auth: platform.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /platform/auth/me:
+    get:
+      summary: "platform.auth.me"
+      description: "Auth: platform.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /platform/metrics:
+    get:
+      summary: "platform.metrics"
+      description: "Auth: platform.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /platform/support-sessions:
+    get:
+      summary: "platform.support_sessions.index"
+      description: "Auth: platform.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    post:
+      summary: "platform.support_sessions.create"
+      description: "Auth: platform.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /platform/support-sessions/{id}/end:
+    post:
+      summary: "platform.support_sessions.end"
+      description: "Auth: platform.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /public/academy/courses:
+    get:
+      summary: "public.academy.courses"
+      description: "Auth: public."
+      security: []
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /public/academy/courses/{id}:
+    get:
+      summary: "public.academy.course"
+      description: "Auth: public."
+      security: []
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /public/academy/courses/{id}/image:
+    get:
+      summary: "public.academy.course_image"
+      description: "Auth: public."
+      security: []
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /public/academy/teachers:
+    get:
+      summary: "public.academy.teachers"
+      description: "Auth: public."
+      security: []
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /public/academy/teachers/{id}:
+    get:
+      summary: "public.academy.teacher"
+      description: "Auth: public."
+      security: []
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /public/academy/teachers/{id}/image:
+    get:
+      summary: "public.academy.teacher_image"
+      description: "Auth: public."
+      security: []
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /public/register-school:
+    post:
+      summary: "public.register_school"
+      description: "Auth: public."
+      security: []
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /reports:
+    get:
+      summary: "reports.index"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    post:
+      summary: "reports.store"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /reports/{id}:
+    get:
+      summary: "reports.show"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /reports/{id}/download:
+    get:
+      summary: "reports.download"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /roles:
+    get:
+      summary: "roles.index"
+      description: "Auth: tenant.auth. Permission: roles.view."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    post:
+      summary: "roles.store"
+      description: "Auth: tenant.auth. Permission: roles.manage."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /roles/{id}:
+    get:
+      summary: "roles.show"
+      description: "Auth: tenant.auth. Permission: roles.view."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    put:
+      summary: "roles.update"
+      description: "Auth: tenant.auth. Permission: roles.manage."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    delete:
+      summary: "roles.destroy"
+      description: "Auth: tenant.auth. Permission: roles.manage."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /sessions:
+    get:
+      summary: "sessions.index_all"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /sessions/{id}:
+    get:
+      summary: "sessions.show_by_id"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /sessions/{id}/cancel:
+    post:
+      summary: "sessions.cancel"
+      description: "Auth: tenant.auth. Permission: sessions.update."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /sessions/{id}/end:
+    post:
+      summary: "sessions.end"
+      description: "Auth: tenant.auth. Permission: sessions.update."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /sessions/{id}/start:
+    post:
+      summary: "sessions.start"
+      description: "Auth: tenant.auth. Permission: sessions.update."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /sessions/{sessionId}/attendance:
+    post:
+      summary: "attendance.record"
+      description: "Auth: tenant.auth. Permission: attendance.record."
+      parameters:
+        - { name: sessionId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /sessions/{sessionId}/attendance/report:
+    get:
+      summary: "attendance.report"
+      description: "Auth: tenant.auth. Permission: attendance.view."
+      parameters:
+        - { name: sessionId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /sessions/{sessionId}/attendance/scan:
+    post:
+      summary: "attendance.scan"
+      description: "Auth: tenant.auth. Permission: attendance.record."
+      parameters:
+        - { name: sessionId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /staff:
+    get:
+      summary: "staff.index"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    post:
+      summary: "staff.store"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /staff/{id}:
+    get:
+      summary: "staff.show"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /staff/{id}/assignments:
+    post:
+      summary: "staff.assignments"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /staff/{id}/photo:
+    post:
+      summary: "staff.photo.store"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    delete:
+      summary: "staff.photo.destroy"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    get:
+      summary: "staff.photo.show"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /staff/{id}/public-profile:
+    get:
+      summary: "staff.public_profile.show"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    put:
+      summary: "staff.public_profile.update"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /students:
+    get:
+      summary: "students.index"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    post:
+      summary: "students.store"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /students/import:
+    post:
+      summary: "students.import"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /students/{id}:
+    get:
+      summary: "students.show"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    put:
+      summary: "students.update"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /students/{id}/activate:
+    post:
+      summary: "students.activate"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /students/{id}/suspend:
+    post:
+      summary: "students.suspend"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /students/{studentId}/credentials:
+    get:
+      summary: "credentials.index"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: studentId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /students/{studentId}/dashboard:
+    get:
+      summary: "students.dashboard"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: studentId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /students/{studentId}/dashboard/refresh:
+    post:
+      summary: "students.dashboard.refresh"
+      description: "Auth: tenant.auth. Permission: analytics.manage."
+      parameters:
+        - { name: studentId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /students/{studentId}/enrollments:
+    get:
+      summary: "students.enrollments"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: studentId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /students/{studentId}/entitlements:
+    get:
+      summary: "students.entitlements"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: studentId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    post:
+      summary: "students.entitlements.grant"
+      description: "Auth: tenant.auth. Permission: entitlements.grant."
+      parameters:
+        - { name: studentId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /students/{studentId}/grades:
+    get:
+      summary: "students.grades"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: studentId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /students/{studentId}/subscriptions:
+    get:
+      summary: "students.subscriptions"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: studentId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /tenant/current:
+    get:
+      summary: "tenant.current"
+      description: "Auth: public."
+      security: []
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /tenant/settings:
+    put:
+      summary: "tenant.settings.update"
+      description: "Auth: tenant.auth. Permission: tenant.settings."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /tenants:
+    get:
+      summary: "platform.tenants.index"
+      description: "Auth: platform.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /tenants/{id}:
+    get:
+      summary: "platform.tenants.show"
+      description: "Auth: platform.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /tenants/{id}/activate:
+    post:
+      summary: "platform.tenants.activate"
+      description: "Auth: platform.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /tenants/{id}/modules:
+    put:
+      summary: "platform.tenants.update_modules"
+      description: "Auth: platform.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /tenants/{id}/suspend:
+    post:
+      summary: "platform.tenants.suspend"
+      description: "Auth: platform.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /users:
+    get:
+      summary: "users.index"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /users/{id}:
+    get:
+      summary: "users.show"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /users/{id}/effective-permissions:
+    get:
+      summary: "users.effective_permissions"
+      description: "Auth: tenant.auth. Permission: roles.view."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /users/{id}/reset-password:
+    post:
+      summary: "users.reset_password"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /users/{id}/roles:
+    get:
+      summary: "users.roles.index"
+      description: "Auth: tenant.auth. Permission: roles.view."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    put:
+      summary: "users.roles.update"
+      description: "Auth: tenant.auth. Permission: roles.manage."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  # END GENERATED ROUTES
+  /me/notification-preferences:
+    get:
+      summary: Own notification preferences per event
+      responses:
+        '200':
+          description: Preferences list
+    put:
+      summary: Update own notification preferences
+      responses:
+        '200':
+          description: Preferences list
+  /tenant/academic-settings:
+    get:
+      summary: Absence notification and at-risk thresholds (tenant.settings)
+      responses:
+        '200':
+          description: Settings
+    put:
+      summary: Update settings, audited (tenant.settings)
+      responses:
+        '200':
+          description: Settings
+  /analytics/at-risk:
+    get:
+      summary: Students below tenant thresholds, filtered by the caller's scope (analytics.view)
+      responses:
+        '200':
+          description: Students and thresholds
+  /analytics/courses/{id}:
+    get:
+      summary: Course analytics from snapshots (analytics.view + scope)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Averages and per-student rows
+  /analytics/classes/{id}:
+    get:
+      summary: Class attendance per student (analytics.view + scope)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Per-student attendance
+  /reports/{id}/file:
+    get:
+      summary: Stream the generated file (owner or tenant-scope reports.download)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: CSV file
+        '404':
+          description: No file for this report
+  /platform/metrics/refresh:
+    post:
+      summary: Recompute per-tenant counts now (platform.auth)
+      responses:
+        '200':
+          description: Metrics summary
+  /public/config:
+    get:
+      summary: Public runtime flags (OD-20)
+      security: []
+      responses:
+        '200':
+          description: "{ demo_login_enabled: boolean }"
+  /public/contact:
+    post:
+      summary: Store a message from the public contact form
+      security: []
+      responses:
+        '201':
+          description: Stored
+        '422':
+          description: Validation error
+  /platform/settings:
+    get:
+      summary: Read platform settings (platform.auth)
+      responses:
+        '200':
+          description: "{ demo_login_enabled: boolean }"
+    put:
+      summary: Update platform settings, audited (platform.auth)
+      responses:
+        '200':
+          description: Updated settings
+  /platform/contact-messages:
+    get:
+      summary: List contact messages (platform.auth)
+      responses:
+        '200':
+          description: Paginated messages
+  /platform/contact-messages/{id}/handled:
+    post:
+      summary: Mark a contact message handled, audited (platform.auth)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Updated message
   /auth/login:
     post:
       summary: Login
@@ -48,6 +2445,69 @@ paths:
       responses:
         '200':
           description: Successful login
+  /auth/me:
+    get:
+      summary: Get Authenticated User Context & Target Access Model
+      tags: [Auth]
+      parameters:
+        - $ref: '#/components/parameters/TenantHeader'
+      responses:
+        '200':
+          description: Canonical auth session payload per Target Access Model §7
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        type: object
+                        properties:
+                          id: { type: integer }
+                          name: { type: string }
+                          email: { type: string }
+                          phone: { type: string, nullable: true }
+                          status: { type: string }
+                      persona:
+                        type: string
+                        enum: [staff, student, parent]
+                      profiles:
+                        type: object
+                        properties:
+                          student: { type: object, nullable: true }
+                          staff: { type: object, nullable: true }
+                          parent: { type: object, nullable: true }
+                      roles:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name: { type: string }
+                            label: { type: string }
+                      permissions:
+                        type: object
+                        additionalProperties:
+                          type: string
+                          enum: [self, linked, own, assigned, branch, tenant]
+                      tenant:
+                        type: object
+                        properties:
+                          id: { type: integer }
+                          slug: { type: string }
+                          name: { type: string }
+                          modules:
+                            type: array
+                            items: { type: string }
+                          auth_mode: { type: string }
+                          branding: { type: object }
+                      experience:
+                        type: string
+                        enum: [admin, staff, student, parent]
+                      support_session:
+                        type: object
+                        nullable: true
   /courses:
     get:
       summary: List Courses

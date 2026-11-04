@@ -13,49 +13,14 @@ class GoogleMeetProvider implements MeetingProviderInterface
         return 'google_meet';
     }
 
+    /**
+     * R8-6: real creation needs the tenant Google connection (Calendar API, conferenceData), which
+     * is not available yet. A generated code would be a link to a meeting that does not exist, so
+     * this refuses; teachers paste a real link through the manual provider instead.
+     */
     public function createMeeting(MeetingRequest $request): MeetingResponse
     {
-        $customCode = $request->settings['meeting_code'] ?? $request->settings['meet_url'] ?? null;
-        if (! empty($customCode)) {
-            $spaceCode = $this->extractMeetingCode((string) $customCode);
-        } else {
-            $spaceCode = $this->generateSpaceCode();
-        }
-
-        $clientId = config('services.google.client_id');
-
-        return new MeetingResponse(
-            externalMeetingId: $spaceCode,
-            joinUrl: "https://meet.google.com/{$spaceCode}",
-            hostUrl: "https://meet.google.com/{$spaceCode}?authuser=host",
-            passcode: null,
-            provider: 'google_meet',
-            rawPayload: [
-                'spaceUri' => "https://meet.google.com/{$spaceCode}",
-                'meetingCode' => $spaceCode,
-                'conferenceRecord' => 'spaces/'.$spaceCode,
-                'client_id_configured' => ! empty($clientId),
-                'google_service' => 'meet',
-            ]
-        );
-    }
-
-    /**
-     * Generate Google Meet compliant alpha-only space code: aaa-bbbb-ccc
-     */
-    public function generateSpaceCode(): string
-    {
-        $letters = 'abcdefghijklmnopqrstuvwxyz';
-        $gen = function (int $len) use ($letters) {
-            $res = '';
-            for ($i = 0; $i < $len; $i++) {
-                $res .= $letters[random_int(0, 25)];
-            }
-
-            return $res;
-        };
-
-        return "{$gen(3)}-{$gen(4)}-{$gen(3)}";
+        throw new ProviderException('Google account is not connected for this tenant.');
     }
 
     /**

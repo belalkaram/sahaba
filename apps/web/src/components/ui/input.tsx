@@ -1,58 +1,77 @@
 'use client';
 
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useId } from 'react';
+import { cn } from '../../lib/cn';
+import { normalizeDigits } from '../../lib/format';
+import { controlBase, controlError, controlNormal, FieldLabel, FieldMessage } from './field';
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   helperText?: string;
+  /** Icon at the inline start (right in RTL). */
   iconPrefix?: React.ReactNode;
+  /** Icon or action at the inline end (left in RTL). */
   iconSuffix?: React.ReactNode;
+  inputSize?: 'md' | 'lg';
 }
 
+const NUMERIC_TYPES = new Set(['number', 'tel']);
+const NUMERIC_MODES = new Set(['numeric', 'decimal', 'tel']);
+
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, helperText, iconPrefix, iconSuffix, className = '', id, ...props }, ref) => {
-    const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
+  (
+    { label, error, helperText, iconPrefix, iconSuffix, inputSize = 'md', className = '', id, onChange, type, inputMode, ...props },
+    ref,
+  ) => {
+    const autoId = useId();
+    const inputId = id || autoId;
+    const msgId = `${inputId}-msg`;
+    const numeric = NUMERIC_TYPES.has(type ?? '') || NUMERIC_MODES.has(inputMode ?? '');
+
+    // OD-17: accept Arabic-Indic digits; the app and API always receive 0-9.
+    const handleChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+      if (numeric) {
+        const normalized = normalizeDigits(e.target.value);
+        if (normalized !== e.target.value) e.target.value = normalized;
+      }
+      onChange?.(e);
+    };
 
     return (
-      <div className="w-full space-y-1.5 text-right" dir="rtl">
+      <div className="w-full space-y-1.5">
         {label && (
-          <label htmlFor={inputId} className="block text-xs font-semibold text-[var(--ink)]">
+          <FieldLabel htmlFor={inputId} required={props.required}>
             {label}
-            {props.required && <span className="text-[var(--red)] mr-1">*</span>}
-          </label>
+          </FieldLabel>
         )}
         <div className="relative flex items-center">
           {iconPrefix && (
-            <div className="absolute right-3 flex items-center pointer-events-none text-[var(--mut)]">
-              {iconPrefix}
-            </div>
+            <span className="pointer-events-none absolute start-3 flex items-center text-fg-subtle">{iconPrefix}</span>
           )}
           <input
             id={inputId}
             ref={ref}
-            className={`in2 ${iconPrefix ? 'pr-10' : ''} ${iconSuffix ? 'pl-10' : ''} ${
-              error ? 'border-[var(--red)] focus:border-[var(--red)]' : ''
-            } ${className}`}
+            type={type}
+            inputMode={inputMode}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error || helperText ? msgId : undefined}
+            onChange={handleChange}
+            className={cn(
+              controlBase,
+              error ? controlError : controlNormal,
+              inputSize === 'lg' ? 'h-12 px-4' : 'h-10 px-3.5',
+              iconPrefix && 'ps-10',
+              iconSuffix && 'pe-10',
+              className,
+            )}
             {...props}
           />
-          {iconSuffix && (
-            <div className="absolute left-3 flex items-center text-[var(--mut)]">
-              {iconSuffix}
-            </div>
-          )}
+          {iconSuffix && <span className="absolute end-3 flex items-center text-fg-subtle">{iconSuffix}</span>}
         </div>
-        {error ? (
-          <p className="text-[11px] font-medium text-[var(--red)] mt-1 flex items-center gap-1">
-            <span>⚠</span>
-            <span>{error}</span>
-          </p>
-        ) : helperText ? (
-          <p className="text-[11px] text-[var(--mut)] mt-1">{helperText}</p>
-        ) : null}
+        <FieldMessage id={msgId} error={error} helperText={helperText} />
       </div>
     );
-  }
+  },
 );
-
 Input.displayName = 'Input';

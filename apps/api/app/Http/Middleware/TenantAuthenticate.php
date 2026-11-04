@@ -40,6 +40,7 @@ class TenantAuthenticate
         // Bind user to request
         $request->setUserResolver(fn () => $user);
         $request->attributes->set('tenant_user', $user);
+        $request->attributes->set('tenant_token', $tokenRecord);
         auth()->setUser($user);
 
         return $next($request);

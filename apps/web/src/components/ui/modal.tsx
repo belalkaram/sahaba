@@ -1,6 +1,9 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useId } from 'react';
+import { X } from 'lucide-react';
+import { cn } from '../../lib/cn';
+import { usePresence, useDialogFocus } from '../../lib/motion/presence';
 
 export interface ModalProps {
   isOpen: boolean;
@@ -12,70 +15,57 @@ export interface ModalProps {
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
 }
 
-export const Modal: React.FC<ModalProps> = ({
-  isOpen,
-  onClose,
-  title,
-  subtitle,
-  children,
-  footer,
-  size = 'md',
-}) => {
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+const sizeClasses = {
+  sm: 'sm:max-w-md',
+  md: 'sm:max-w-lg',
+  lg: 'sm:max-w-2xl',
+  xl: 'sm:max-w-4xl',
+  full: 'sm:max-w-[95vw] sm:h-[90vh]',
+};
 
-  if (!isOpen) return null;
+/** Centered dialog on desktop, bottom sheet on mobile. */
+export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, subtitle, children, footer, size = 'md' }) => {
+  const titleId = useId();
+  const { rendered, backdropRef, panelRef } = usePresence(isOpen);
+  useDialogFocus(isOpen, panelRef, onClose);
 
-  const sizeClasses = {
-    sm: 'max-w-md',
-    md: 'max-w-lg',
-    lg: 'max-w-2xl',
-    xl: 'max-w-4xl',
-    full: 'max-w-[95vw] h-[90vh]',
-  };
+  if (!rendered) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md animate-in fade-in duration-200" dir="rtl">
-      {/* Backdrop click */}
-      <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
-
-      {/* Modal Dialog Box */}
+    <div className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center sm:p-4">
+      <div ref={backdropRef} className="fixed inset-0 bg-surface-overlay backdrop-blur-[2px]" onClick={onClose} aria-hidden />
       <div
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="modal-title"
-        className={`relative z-10 w-full ${sizeClasses[size]} bg-card border border-border rounded-[24px] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden`}
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        className={cn(
+          'relative z-10 flex max-h-[92vh] w-full flex-col overflow-hidden border border-border bg-surface-raised shadow-xl outline-none',
+          'rounded-t-xl sm:rounded-xl',
+          sizeClasses[size],
+        )}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border/80 bg-background/60">
-          <div>
-            <h3 id="modal-title" className="text-base font-bold text-white">
+        <div className="flex items-start justify-between gap-4 border-b border-border px-6 py-4">
+          <div className="min-w-0">
+            <h2 id={titleId} className="text-lg font-bold text-fg">
               {title}
-            </h3>
-            {subtitle && <p className="text-xs text-secondary mt-0.5">{subtitle}</p>}
+            </h2>
+            {subtitle && <p className="mt-0.5 text-sm text-fg-muted">{subtitle}</p>}
           </div>
           <button
+            type="button"
+            data-dialog-close
             onClick={onClose}
-            className="p-1.5 rounded-[16px] text-secondary hover:text-white hover:bg-card hover:border-border hover:border transition-colors"
-            aria-label="إغلاق النافذة"
+            className="-me-2 grid h-9 w-9 shrink-0 place-items-center rounded-md text-fg-muted transition-colors hover:bg-surface-muted hover:text-fg"
+            aria-label="إغلاق"
           >
-            ✕
+            <X size={18} aria-hidden />
           </button>
         </div>
-
-        {/* Body */}
-        <div className="p-6 overflow-y-auto space-y-4 flex-1">{children}</div>
-
-        {/* Footer */}
+        <div className="flex-1 space-y-4 overflow-y-auto p-6">{children}</div>
         {footer && (
-          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-border/80 bg-background/60">
+          <div className="flex flex-col-reverse gap-2 border-t border-border bg-surface-sunken px-6 py-4 sm:flex-row sm:items-center sm:justify-end">
             {footer}
           </div>
         )}

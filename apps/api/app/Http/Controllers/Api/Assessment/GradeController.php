@@ -7,6 +7,7 @@ use App\Models\Grade;
 use App\Models\Student;
 use App\Models\TenantUser;
 use App\Support\ApiResponse;
+use App\Support\Authorization\ScopeResolver;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -28,16 +29,15 @@ class GradeController extends Controller
         $user = $request->user();
 
         $isSelf = $user->student && $user->student->id === $student->id;
-        $canViewAll = $user->hasPermissionTo('grades.view');
 
-        if (! $isSelf && ! $canViewAll) {
+        if (! $isSelf && ! ScopeResolver::canAccess($user, 'grades.view', $student)) {
             throw new AuthorizationException('You are not authorized to view student grade records.');
         }
 
         $query = Grade::where('student_id', $student->id);
 
-        if (! $canViewAll) {
-            // Student only sees published grades
+        // Students and parents hold grades.view too (self/linked), but only see published grades.
+        if (in_array($user->permissionScope('grades.view'), [null, 'self', 'linked'], true)) {
             $query->where('is_published', true);
         }
 

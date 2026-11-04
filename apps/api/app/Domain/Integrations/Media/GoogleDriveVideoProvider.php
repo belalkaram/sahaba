@@ -5,7 +5,7 @@ namespace App\Domain\Integrations\Media;
 use App\Domain\Integrations\Contracts\VideoProviderInterface;
 use App\Domain\Integrations\DTOs\VideoUploadRequest;
 use App\Domain\Integrations\DTOs\VideoUploadResponse;
-use Illuminate\Support\Str;
+use App\Domain\Integrations\Exceptions\ProviderException;
 
 class GoogleDriveVideoProvider implements VideoProviderInterface
 {
@@ -23,8 +23,11 @@ class GoogleDriveVideoProvider implements VideoProviderInterface
 
     public function uploadVideo(VideoUploadRequest $request): VideoUploadResponse
     {
-        $rawId = $request->externalId ?: Str::random(28);
-        $fileId = $this->extractFileId($rawId);
+        if (! $request->externalId) {
+            throw new ProviderException('Google Drive media needs an existing file link.');
+        }
+
+        $fileId = $this->extractFileId($request->externalId);
         $clientId = config('services.google.client_id');
 
         return new VideoUploadResponse(

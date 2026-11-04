@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Auth;
 
+use App\Domain\Authorization\Services\AuthPayloadBuilder;
 use App\Http\Controllers\Controller;
 use App\Models\AccessCredential;
 use App\Models\TenantToken;
@@ -64,6 +65,11 @@ class LoginController extends Controller
                 return ApiResponse::error('INVALID_CREDENTIAL_SECRET', 'Invalid coupon secret.', Response::HTTP_UNAUTHORIZED);
             }
 
+            // First use: the secret was just verified, the same proof POST /credentials/{id}/activate asks for.
+            if ($credential->status === 'pending') {
+                $credential->update(['status' => 'active', 'activated_at' => now()]);
+            }
+
             if ($credential->status !== 'active') {
                 return ApiResponse::error('CREDENTIAL_NOT_ACTIVE', 'Coupon is not yet active.', Response::HTTP_FORBIDDEN);
             }
@@ -86,21 +92,13 @@ class LoginController extends Controller
             }
 
             $tokenResult = TenantToken::createTokenFor($user, 'coupon_session');
+            $authPayload = AuthPayloadBuilder::build($user, $tenant, $tokenResult['token']);
 
-            return ApiResponse::success([
+            return ApiResponse::success(array_merge([
                 'token' => $tokenResult['plainTextToken'],
                 'token_type' => 'Bearer',
                 'auth_method' => 'coupon',
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'phone' => $user->phone,
-                    'type' => $user->type,
-                    'roles' => $user->roles->pluck('name')->values()->all(),
-                    'permissions' => $user->getAllPermissions()->values()->all(),
-                ],
-            ]);
+            ], $authPayload));
         }
 
         // Standard Password Login Flow
@@ -143,20 +141,12 @@ class LoginController extends Controller
         }
 
         $tokenResult = TenantToken::createTokenFor($user);
+        $authPayload = AuthPayloadBuilder::build($user, $tenant, $tokenResult['token']);
 
-        return ApiResponse::success([
+        return ApiResponse::success(array_merge([
             'token' => $tokenResult['plainTextToken'],
             'token_type' => 'Bearer',
             'auth_method' => 'password',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'phone' => $user->phone,
-                'type' => $user->type,
-                'roles' => $user->roles->pluck('name')->values()->all(),
-                'permissions' => $user->getAllPermissions()->values()->all(),
-            ],
-        ]);
+        ], $authPayload));
     }
 }

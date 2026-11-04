@@ -8,6 +8,8 @@ use App\Models\AccessCredential;
 use App\Models\Student;
 use App\Models\TenantUser;
 use App\Support\ApiResponse;
+use App\Support\Audit\AuditLogger;
+use App\Support\Authorization\ScopeResolver;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -26,9 +28,8 @@ class CredentialController extends Controller
         $user = $request->user();
 
         $isSelf = $user->student && $user->student->id === $student->id;
-        $canView = $user->hasPermissionTo('credentials.view');
 
-        if (! $isSelf && ! $canView) {
+        if (! $isSelf && ! ScopeResolver::canAccess($user, 'credentials.view', $student)) {
             throw new AuthorizationException('You are not authorized to view student credentials.');
         }
 
@@ -165,27 +166,48 @@ class CredentialController extends Controller
     }
 
     /**
-     * Replace device binding (Authorized staff action).
+     * Unbind / Replace device binding (Authorized staff action).
+     *
+     * R0-6 (T-SEC-12): Supports two modes:
+     *   - Unbind mode (new_device_id omitted): clears the binding; student binds next device on login.
+     *   - Replace mode (new_device_id provided): sets an explicit new binding immediately.
+     *
+     * The old code generated Math.random() fingerprints on the frontend, which locked
+     * students out. Now the default action is unbind — the student's next login auto-binds.
      */
     public function replaceDevice(Request $request, string $id, CredentialLifecycleService $lifecycleService): JsonResponse
     {
         $credential = AccessCredential::findOrFail($id);
 
         $validated = $request->validate([
-            'new_device_id' => 'required|string',
-            'new_device_fingerprint' => 'required|string',
-            'new_device_name' => 'nullable|string',
-            'reason' => 'required|string|max:500',
+            'new_device_id' => 'nullable|string|max:255',
+            'new_device_fingerprint' => 'nullable|string|max:255',
+            'new_device_name' => 'nullable|string|max:255',
+            'reason' => 'required|string|min:3|max:500',
         ]);
 
         /** @var TenantUser $user */
         $user = $request->user();
 
+        $unbindMode = empty($validated['new_device_id']);
+
+        if ($unbindMode) {
+            // Unbind: clear current binding; student re-binds on next login
+            $updatedCredential = $lifecycleService->unbindDevice($credential, $user, $validated['reason']);
+
+            return ApiResponse::success([
+                'credential' => $updatedCredential,
+                'device_binding' => null,
+                'message' => 'تم فك ربط الجهاز — سيُربط الجهاز الجديد عند أول تسجيل دخول.',
+            ]);
+        }
+
+        // Replace mode: explicit new device provided (e.g. staff is physically holding the device)
         $newBinding = $lifecycleService->replaceDevice(
             $credential,
             $user,
             $validated['new_device_id'],
-            $validated['new_device_fingerprint'],
+            $validated['new_device_fingerprint'] ?? '',
             $validated['reason'],
             $validated['new_device_name'] ?? null
         );
@@ -213,6 +235,50 @@ class CredentialController extends Controller
         return ApiResponse::success([
             'credential' => $revoked,
             'message' => 'Credential revoked successfully.',
+        ]);
+    }
+
+    /**
+     * Submit a request for device replacement (created by student).
+     */
+    public function requestReplacement(Request $request, string $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'reason' => 'required|string|min:5|max:1000',
+            'new_device_name' => 'nullable|string|max:255',
+        ]);
+
+        $credential = AccessCredential::with('student.user')->findOrFail($id);
+        /** @var TenantUser $user */
+        $user = $request->user();
+
+        if (! $user->student || $user->student->id !== $credential->student_id) {
+            throw new AuthorizationException('You are not authorized to request device change for this credential.');
+        }
+
+        AuditLogger::log(
+            action: 'device_replacement.requested',
+            entityType: 'AccessCredential',
+            entityId: $credential->id,
+            payload: [
+                'reason' => $validated['reason'],
+                'new_device_name' => $validated['new_device_name'] ?? null,
+                'student_code' => $credential->student?->student_code,
+            ],
+            tenantId: $user->tenant_id,
+            actorId: $user->id,
+            actorType: 'TenantUser',
+            actorEmail: $user->email,
+        );
+
+        return ApiResponse::success([
+            'message' => 'تم تقديم طلب استبدال الجهاز إلى إدارة المؤسسة بنجاح.',
+            'request' => [
+                'credential_id' => $credential->id,
+                'reason' => $validated['reason'],
+                'status' => 'pending_review',
+                'submitted_at' => now()->toIso8601String(),
+            ],
         ]);
     }
 }

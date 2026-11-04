@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -30,6 +31,29 @@ class ApiResponse
             'data' => $data ?? (object) [],
             'meta' => $meta,
         ], $status, $headers);
+    }
+
+    /**
+     * Build a standardized paginated response envelope.
+     */
+    public static function paginated(
+        LengthAwarePaginator $paginator,
+        int $status = Response::HTTP_OK,
+        array $headers = []
+    ): JsonResponse {
+        return self::success(
+            $paginator->items(),
+            $status,
+            [
+                'pagination' => [
+                    'total' => $paginator->total(),
+                    'page' => $paginator->currentPage(),
+                    'per_page' => $paginator->perPage(),
+                    'last_page' => $paginator->lastPage(),
+                ],
+            ],
+            $headers
+        );
     }
 
     /**

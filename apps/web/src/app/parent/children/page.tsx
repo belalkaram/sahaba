@@ -1,197 +1,213 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Card } from '../../../components/ui/card';
-import { Badge } from '../../../components/ui/badge';
-import { Button } from '../../../components/ui/button';
-import { Tabs } from '../../../components/ui/tabs';
-import { Modal } from '../../../components/ui/modal';
-import {
-  AwardIcon,
-  BookOpenIcon,
-  CalendarIcon,
-  CheckCircleIcon,
-  UserIcon,
-  ShieldIcon,
-  SmartphoneIcon,
-  ClockIcon,
-} from '../../../components/icons';
+import Link from 'next/link';
 import { educationApi } from '../../../lib/education-api';
 import { analyticsApi } from '../../../lib/analytics-api';
-import { assessmentApi } from '../../../lib/assessment-api';
-import type { Student, StudentAnalyticsSnapshot, Grade } from '../../../types';
+import type { Student, StudentAnalyticsSnapshot } from '../../../types';
+import { PageHeader } from '../../../components/ui/page-header';
+import { Card } from '../../../components/ui/card';
+import { Badge } from '../../../components/ui/badge';
+import { ProgressBar } from '../../../components/ui/progress-bar';
+import { EmptyState } from '../../../components/ui/empty-state';
+import { SearchIcon, CalendarIcon, AwardIcon, IconNext } from '../../../components/icons';
 
-interface ChildProfile {
+import { Search, Users } from 'lucide-react';
+import { formatNumber, formatPercent } from '../../../lib/format';
+import { partial } from '../../../lib/partial-failure';
+interface ChildCardData {
   student: Student;
-  analytics: StudentAnalyticsSnapshot | null;
-  grades: Grade[];
+  snapshot: StudentAnalyticsSnapshot | null;
 }
 
-export default function ParentChildrenPage() {
-  const [childrenProfiles, setChildrenProfiles] = useState<ChildProfile[]>([]);
-  const [selectedChildId, setSelectedChildId] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'courses' | 'grades' | 'attendance' | 'security'>('grades');
-  const [contactTeacherName, setContactTeacherName] = useState<string | null>(null);
+export default function ParentChildrenDirectoryPage() {
+  const [childrenData, setChildrenData] = useState<ChildCardData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    const loadData = async () => {
+    const loadChildren = async () => {
       try {
         setLoading(true);
-        const stList = await educationApi.getStudents().catch(() => []);
-        
-        const profiles: ChildProfile[] = await Promise.all(
-          stList.map(async (st) => {
-             const [snap, grades] = await Promise.all([
-                 analyticsApi.getStudentDashboard(st.id).catch(() => null),
-                 assessmentApi.getStudentGrades(st.id).catch(() => [])
-             ]);
-             return { student: st, analytics: snap, grades };
+        const list = await educationApi.getMyChildren();
+
+        const enriched = await Promise.all(
+          list.map(async (st) => {
+            const snap = await analyticsApi.getStudentDashboard(st.id).catch(partial(null));
+            return { student: st, snapshot: snap };
           })
         );
-        
-        setChildrenProfiles(profiles);
-        if (profiles.length > 0) {
-            setSelectedChildId(profiles[0].student.id);
-        }
+
+        setChildrenData(enriched);
       } finally {
         setLoading(false);
       }
     };
-    loadData();
+
+    loadChildren();
   }, []);
 
-  const activeProfile = childrenProfiles.find((c) => c.student.id === selectedChildId);
+  const filteredChildren = childrenData.filter((item) => {
+    const name = item.student.user?.name || '';
+    const code = item.student.student_code || '';
+    const query = searchQuery.trim().toLowerCase();
+    return name.toLowerCase().includes(query) || code.toLowerCase().includes(query);
+  });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-start">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
-            <UserIcon size={24} className="text-accent" />
-            الملف الأكاديمي الشامل للأبناء
-          </h1>
-          <p className="text-sm text-secondary mt-1">
-            سجل المقررات، التقييمات الشهرية، سجل الحضور، وحالة ترخيص الأجهزة المصرح بها.
-          </p>
+      <PageHeader
+        title="الملف الأكاديمي الشامل للأبناء"
+        description="استعرض السجل الأكاديمي، كشف الدرجات التفصيلي، وسجل الحضور والغياب لكل ابن مسجل بالأكاديمية."
+        breadcrumbs={[
+          { label: 'لوحة التحكم', href: '/parent/dashboard' },
+          { label: 'سجل الأبناء' },
+        ]}
+      />
+
+      {/* Search and Filters Bar */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-3 bg-surface rounded-lg border border-border shadow-xs">
+        <div className="relative w-full sm:w-80">
+          <SearchIcon size={16} className="absolute start-3.5 top-1/2 -translate-y-1/2 text-fg-muted pointer-events-none" />
+          <input
+            type="text"
+            placeholder="بحث بالاسم أو الكود الأكاديمي..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-background border border-border rounded-md ps-9 pe-3 py-2 text-xs text-fg placeholder:text-fg-muted focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+        </div>
+
+        <div className="text-xs text-fg-muted">
+          إجمالي الأبناء المسجلين:{' '}
+          <strong className="font-mono text-fg font-bold">{formatNumber(childrenData.length)}</strong>
         </div>
       </div>
 
+      {/* Main Content State */}
       {loading ? (
-        <div className="py-12 text-center text-sm text-secondary">جارٍ تحميل بيانات الطلاب...</div>
-      ) : childrenProfiles.length === 0 ? (
-        <Card className="p-12 text-center text-sm text-secondary">لا يوجد طلاب مرتبطين بحسابك حالياً.</Card>
+        <div className="py-20 text-center text-fg-muted text-xs">
+          <div className="inline-block animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mb-3" />
+          <p>جارٍ تحميل السجلات الأكاديمية للأبناء...</p>
+        </div>
+      ) : childrenData.length === 0 ? (
+        <Card className="p-12 text-center bg-surface border border-border">
+          <EmptyState
+            icon={<Users size={20} strokeWidth={1.75} aria-hidden />}
+            title="لا يوجد طلاب مسجلون"
+            description="لم يتم ربط أي طالب بحسابك حالياً. يرجى التواصل مع إدارة المدرسة أو المركز لربط رقم الهوية."
+          />
+        </Card>
+      ) : filteredChildren.length === 0 ? (
+        <Card className="p-12 text-center bg-surface border border-border">
+          <EmptyState
+            icon={<Search size={20} strokeWidth={1.75} aria-hidden />}
+            title="لا توجد نتائج بحث"
+            description="لم نجد أي طالب يطابق معايير البحث المدخلة."
+          />
+        </Card>
       ) : (
-        <>
-          {/* Child Switcher Tabs */}
-          <div className="flex items-center justify-between border-b border-border pb-2">
-            <Tabs
-              tabs={childrenProfiles.map((c) => ({
-                id: c.student.id,
-                label: c.student.user?.name || c.student.student_code,
-              }))}
-              activeTab={selectedChildId}
-              onChange={(id) => setSelectedChildId(id)}
-              variant="pill"
-            />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filteredChildren.map(({ student, snapshot }) => {
+            const overallScore = snapshot?.overall_score ?? null;
+            const attendanceRate = snapshot?.attendance_rate ?? null;
+            const assignmentRate = snapshot?.assignment_completion_rate ?? null;
+            const examAverage = snapshot?.exam_average ?? null;
 
-            <Badge variant="purple">{activeProfile?.student.grade_level || 'غير محدد'}</Badge>
-          </div>
+            return (
+              <Card
+                key={student.id}
+                className="p-5 bg-surface border border-border shadow-xs hover:border-primary/40 hover:shadow-md transition-all flex flex-col justify-between"
+              >
+                <div>
+                  {/* Card Header */}
+                  <div className="flex items-start justify-between gap-3 border-b border-border pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-lg bg-primary-subtle text-primary font-bold text-lg flex items-center justify-center shrink-0 border border-primary/20">
+                        {(student.user?.name || 'ط').charAt(0)}
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-sm text-fg">
+                          {student.user?.name || `طالب (${student.student_code})`}
+                        </h3>
+                        <p className="text-xs text-fg-muted mt-0.5">
+                          كود الطالب:{' '}
+                          <span className="font-mono text-fg font-semibold">{student.student_code}</span>
+                        </p>
+                      </div>
+                    </div>
 
-          {activeProfile && (
-            <Card className="p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-accent/10 text-accent font-bold text-xl border border-accent/20">
-                    {(activeProfile.student.user?.name || 'ط').slice(0, 1)}
+                    <Badge variant={student.status === 'active' ? 'success' : 'neutral'}>
+                      {student.status === 'active' ? 'منتظم' : student.status}
+                    </Badge>
                   </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-white">{activeProfile.student.user?.name || 'بدون اسم'}</h2>
-                    <p className="text-xs text-secondary mt-1">
-                      رقم الهوية الأكاديمية:{' '}
-                      <span className="font-mono text-accent font-bold">{activeProfile.student.student_code}</span>
-                    </p>
+
+                  {/* Level & Contact */}
+                  <div className="py-3 text-xs text-fg-muted flex items-center justify-between border-b border-border/60">
+                    <span>المرحلة الدراسية:</span>
+                    <strong className="text-fg font-semibold">
+                      {student.grade_level || 'الصف الدراسي المسجل'}
+                    </strong>
                   </div>
-                </div>
 
-                <div className="flex flex-wrap items-center gap-3">
-                  <Badge variant="success">نشط</Badge>
-                  <span className="text-xs text-primary font-semibold bg-primary/10 px-3 py-1.5 rounded-[16px] border border-primary/20">
-                    المعدل العام: {activeProfile.analytics?.overall_score ?? 0}%
-                  </span>
-                </div>
-              </div>
+                  {/* Metrics Grid */}
+                  <div className="py-4 space-y-3">
+                    <div>
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className="text-fg-muted flex items-center gap-1.5">
+                          <AwardIcon size={14} className="text-primary" />
+                          <span>المعدل العام الموزون</span>
+                        </span>
+                        <span className="font-mono font-bold text-fg">{formatPercent(overallScore)}</span>
+                      </div>
+                      <ProgressBar
+                        value={Number(overallScore ?? 0)}
+                        variant={overallScore === null || overallScore >= 50 ? (overallScore !== null && overallScore >= 80 ? 'success' : 'primary') : 'danger'}
+                      />
+                    </div>
 
-              {/* Inner Sub-Navigation Tabs */}
-              <div className="mt-6 border-b border-border pb-3">
-                <Tabs
-                  tabs={[
-                    { id: 'grades', label: 'سجل الدرجات' },
-                    { id: 'attendance', label: 'ملخص الحضور' },
-                  ]}
-                  activeTab={activeTab}
-                  onChange={(id) => setActiveTab(id as typeof activeTab)}
-                  variant="underline"
-                />
-              </div>
+                    <div>
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className="text-fg-muted flex items-center gap-1.5">
+                          <CalendarIcon size={14} className="text-primary" />
+                          <span>نسبة الحضور المعتمدة</span>
+                        </span>
+                        <span className="font-mono font-bold text-fg">{formatPercent(attendanceRate)}</span>
+                      </div>
+                      <ProgressBar
+                        value={Number(attendanceRate ?? 0)}
+                        variant={attendanceRate === null ? 'primary' : attendanceRate >= 75 ? 'success' : 'danger'}
+                      />
+                    </div>
 
-              {/* Tab 2: Grades & Academic Transcripts */}
-              {activeTab === 'grades' && (
-                <div className="mt-6 overflow-x-auto">
-                  {activeProfile.grades.length === 0 ? (
-                      <div className="text-center text-sm text-secondary py-8">لا توجد درجات مرصودة حالياً.</div>
-                  ) : (
-                    <table className="w-full text-right text-xs">
-                      <thead className="bg-card/60 border-b border-border text-secondary">
-                        <tr>
-                          <th className="py-3 px-4 font-semibold">نوع التقييم</th>
-                          <th className="py-3 px-4 font-semibold">الدرجة المحققة</th>
-                          <th className="py-3 px-4 font-semibold">الدرجة العظمى</th>
-                          <th className="py-3 px-4 font-semibold">النسبة</th>
-                          <th className="py-3 px-4 font-semibold">الحالة</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-800/60">
-                        {activeProfile.grades.map((grade) => (
-                          <tr key={grade.id} className="hover:bg-card/40">
-                            <td className="py-3.5 px-4 font-semibold text-white">
-                              {grade.gradable_type.includes('Assignment') ? 'واجب دراسي' : 'اختبار'}
-                            </td>
-                            <td className="py-3.5 px-4 font-mono font-bold text-primary">
-                              {grade.score}
-                            </td>
-                            <td className="py-3.5 px-4 font-mono text-secondary">
-                              {grade.max_score}
-                            </td>
-                            <td className="py-3.5 px-4 font-mono font-bold text-white">{grade.percentage}%</td>
-                            <td className="py-3.5 px-4">
-                              <Badge variant={grade.is_published ? 'success' : 'neutral'}>
-                                {grade.is_published ? 'معتمد' : 'تحت المراجعة'}
-                              </Badge>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
-              )}
-
-              {/* Tab 3: Detailed Attendance History */}
-              {activeTab === 'attendance' && (
-                <div className="mt-6 space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 rounded-[16px] border border-border bg-card/50 space-y-2">
-                        <div className="text-sm font-bold text-white">معدل الحضور العام</div>
-                        <div className="text-2xl font-bold text-turquoise">{activeProfile.analytics?.attendance_rate ?? 0}%</div>
+                    <div className="grid grid-cols-2 gap-2 pt-2 text-xs text-fg-muted">
+                      <div className="p-2 rounded-md bg-surface-sunken border border-border">
+                        <span className="block text-xs">إنجاز الواجبات</span>
+                        <strong className="font-mono text-fg text-xs">{formatPercent(assignmentRate)}</strong>
+                      </div>
+                      <div className="p-2 rounded-md bg-surface-sunken border border-border">
+                        <span className="block text-xs">متوسط الاختبارات</span>
+                        <strong className="font-mono text-fg text-xs">{formatPercent(examAverage)}</strong>
+                      </div>
                     </div>
                   </div>
                 </div>
-              )}
-            </Card>
-          )}
-        </>
+
+                {/* Card Action */}
+                <div className="pt-4 border-t border-border">
+                  <Link
+                    href={`/parent/children/${student.id}`}
+                    className="w-full flex items-center justify-center gap-2 py-2 rounded-md bg-primary text-primary-fg text-xs font-semibold hover:bg-primary-hover transition-colors shadow-xs"
+                  >
+                    <span>فتح الملف الأكاديمي المفصل</span>
+                    <IconNext size={13}  />
+                  </Link>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
       )}
     </div>
   );

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Domain\Authorization\Services\RoleSynchronizer;
 use App\Models\AccessCredential;
 use App\Models\Assignment;
 use App\Models\AssignmentSubmission;
@@ -19,16 +20,17 @@ use App\Models\Meeting;
 use App\Models\Package;
 use App\Models\ParentProfile;
 use App\Models\PaymentRequest;
-use App\Models\Permission;
 use App\Models\Role;
 use App\Models\SchoolClass;
 use App\Models\Staff;
+use App\Models\StaffAssignment;
 use App\Models\Student;
 use App\Models\StudentAnalyticsSnapshot;
 use App\Models\Subscription;
 use App\Models\Tenant;
 use App\Models\TenantDatabase;
 use App\Models\TenantDomain;
+use App\Models\TenantFeature;
 use App\Models\TenantUser;
 use App\Tenancy\TenantDatabaseManager;
 use Illuminate\Database\Seeder;
@@ -64,60 +66,32 @@ class DemoDataSeeder extends Seeder
             ]
         );
 
+        // Enable all standard modules in tenant_features (R1-A5)
+        foreach (array_keys(config('authorization.modules', [])) as $moduleKey) {
+            TenantFeature::firstOrCreate(
+                ['tenant_id' => $tenant->id, 'feature_key' => $moduleKey],
+                ['enabled' => true]
+            );
+        }
+
         // 2. Migrate Tenant Database
         $dbManager = app(TenantDatabaseManager::class);
         $dbManager->migrateTenant($tenant);
         $dbManager->configureConnection($tenant);
 
-        // 3. Permissions & Roles
-        $allPermKeys = [
-            'courses.create', 'courses.update', 'courses.delete', 'courses.view',
-            'lessons.create', 'lessons.update',
-            'enrollments.view', 'enrollments.create',
-            'classes.create', 'classes.manage_students',
-            'sessions.create',
-            'attendance.record', 'attendance.view',
-            'assignments.create', 'assignments.grade',
-            'exams.create', 'exams.grade',
-            'packages.create', 'payments.approve', 'payments.reject',
-            'credentials.create', 'credentials.manage_devices', 'credentials.revoke',
-            'meetings.create', 'meetings.view', 'meetings.manage',
-            'media.upload', 'media.view',
-            'analytics.view', 'analytics.manage',
-            'reports.generate', 'reports.view',
-        ];
+        // 3. Permissions & Standard System Roles via RoleSynchronizer (R1-A3)
+        $synchronizer = app(RoleSynchronizer::class);
+        $synchronizer->sync();
 
-        $permMap = [];
-        foreach ($allPermKeys as $key) {
-            $parts = explode('.', $key);
-            $perm = Permission::firstOrCreate(
-                ['name' => $key],
-                ['module' => $parts[0]]
-            );
-            $permMap[$key] = $perm->id;
-        }
-
-        $adminRole = Role::firstOrCreate(['name' => 'admin'], ['label' => 'مدير النظام', 'is_system' => true]);
-        $teacherRole = Role::firstOrCreate(['name' => 'teacher'], ['label' => 'معلم', 'is_system' => true]);
-        $studentRole = Role::firstOrCreate(['name' => 'student'], ['label' => 'طالب', 'is_system' => true]);
-        $parentRole = Role::firstOrCreate(['name' => 'parent'], ['label' => 'ولي أمر', 'is_system' => true]);
-
-        // Attach permissions
-        $adminRole->permissions()->sync(array_values($permMap));
-        $teacherRole->permissions()->sync([
-            $permMap['courses.create'], $permMap['courses.update'], $permMap['courses.view'],
-            $permMap['lessons.create'], $permMap['enrollments.view'],
-            $permMap['classes.create'], $permMap['classes.manage_students'], $permMap['sessions.create'],
-            $permMap['attendance.record'], $permMap['attendance.view'],
-            $permMap['assignments.create'], $permMap['assignments.grade'],
-            $permMap['exams.create'], $permMap['exams.grade'],
-            $permMap['meetings.create'], $permMap['meetings.view'],
-            $permMap['media.upload'], $permMap['media.view'],
-            $permMap['analytics.view'], $permMap['reports.view'],
-        ]);
+        $ownerRole = Role::where('name', 'owner')->firstOrFail();
+        $teacherRole = Role::where('name', 'teacher')->firstOrFail();
+        $assistantRole = Role::where('name', 'assistant')->firstOrFail();
+        $financeRole = Role::where('name', 'finance')->firstOrFail();
+        $studentRole = Role::where('name', 'student')->firstOrFail();
+        $parentRole = Role::where('name', 'parent')->firstOrFail();
 
         // 4. Create Users
-        // Admin
+        // Admin / Owner
         $adminUser = TenantUser::firstOrCreate(
             ['email' => 'admin@almustaqbal.edu'],
             [
@@ -128,7 +102,11 @@ class DemoDataSeeder extends Seeder
                 'status' => 'active',
             ]
         );
-        $adminUser->roles()->sync([$adminRole->id]);
+        $adminUser->roles()->sync([$ownerRole->id]);
+        Staff::firstOrCreate(
+            ['user_id' => $adminUser->id],
+            ['staff_type' => 'admin', 'status' => 'active']
+        );
 
         // Teacher
         $teacherUser = TenantUser::firstOrCreate(
@@ -145,6 +123,40 @@ class DemoDataSeeder extends Seeder
         $teacherStaff = Staff::firstOrCreate(
             ['user_id' => $teacherUser->id],
             ['staff_type' => 'teacher', 'status' => 'active']
+        );
+
+        // Assistant (R1-A3)
+        $assistantUser = TenantUser::firstOrCreate(
+            ['email' => 'assistant@almustaqbal.edu'],
+            [
+                'name' => 'أ. كريم محمود (مساعد تعليمي)',
+                'phone' => '+966500000005',
+                'password' => Hash::make('password123'),
+                'type' => 'staff',
+                'status' => 'active',
+            ]
+        );
+        $assistantUser->roles()->sync([$assistantRole->id]);
+        $assistantStaff = Staff::firstOrCreate(
+            ['user_id' => $assistantUser->id],
+            ['staff_type' => 'assistant', 'status' => 'active']
+        );
+
+        // Finance (R1-A3 / OD-7)
+        $financeUser = TenantUser::firstOrCreate(
+            ['email' => 'finance@almustaqbal.edu'],
+            [
+                'name' => 'أ. فؤاد المالي (شؤون مالية)',
+                'phone' => '+966500000006',
+                'password' => Hash::make('password123'),
+                'type' => 'staff',
+                'status' => 'active',
+            ]
+        );
+        $financeUser->roles()->sync([$financeRole->id]);
+        Staff::firstOrCreate(
+            ['user_id' => $financeUser->id],
+            ['staff_type' => 'finance', 'status' => 'active']
         );
 
         // Student
@@ -269,6 +281,18 @@ class DemoDataSeeder extends Seeder
                 'classroom_id' => $classroom->id,
                 'teacher_staff_id' => $teacherStaff->id,
                 'status' => 'active',
+            ]
+        );
+
+        // Assign assistant to this demo class (R1-A3 / R1-A4)
+        StaffAssignment::firstOrCreate(
+            [
+                'staff_id' => $assistantStaff->id,
+                'assignable_type' => 'class',
+                'assignable_id' => $schoolClass->id,
+            ],
+            [
+                'role_context' => 'assistant',
             ]
         );
 

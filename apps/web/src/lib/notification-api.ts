@@ -20,7 +20,24 @@ export interface NotificationResponse {
   meta: NotificationMeta;
 }
 
+export interface NotificationPreferenceItem {
+  event: string;
+  label: string;
+  in_app: boolean;
+  mail: boolean;
+}
+
 export const notificationApi = {
+  async getPreferences(): Promise<NotificationPreferenceItem[]> {
+    const res = await apiClient.get<{ preferences: NotificationPreferenceItem[] }>('/me/notification-preferences');
+    return res.data.preferences;
+  },
+
+  async updatePreferences(preferences: Pick<NotificationPreferenceItem, 'event' | 'in_app' | 'mail'>[]): Promise<NotificationPreferenceItem[]> {
+    const res = await apiClient.put<{ preferences: NotificationPreferenceItem[] }>('/me/notification-preferences', { preferences });
+    return res.data.preferences;
+  },
+
   /**
    * Fetch a paginated list of notifications for the authenticated user.
    */

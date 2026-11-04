@@ -4,22 +4,31 @@ namespace App\Http\Controllers\Api\Platform;
 
 use App\Http\Controllers\Controller;
 use App\Models\SupportAccessLog;
+use App\Models\SupportExchangeCode;
 use App\Models\Tenant;
-use App\Models\TenantToken;
-use App\Models\TenantUser;
 use App\Support\ApiResponse;
 use App\Support\Audit\AuditLogger;
-use App\Tenancy\TenantDatabaseManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
+/**
+ * R0-1, R0-5: Platform support access controller.
+ *
+ * generateToken() now returns a one-time exchange code (60s TTL, hashed server-side)
+ * instead of the bearer token directly. The frontend POSTs the code to
+ * POST /auth/support/exchange (tenant-scoped) to obtain the actual token.
+ *
+ * This prevents the bearer token from appearing in URLs, browser history,
+ * referrer headers, or server logs. (Fixes T-SEC-03)
+ */
 class SupportAccessController extends Controller
 {
     /**
-     * Generate a temporary access token for a tenant.
+     * Generate a one-time exchange code for support access to a tenant.
+     *
+     * Protected by: platform.auth middleware (R0-1)
+     * Returns: exchange code (not the bearer token)
      */
     public function generateToken(Request $request, string $tenantId): JsonResponse
     {
@@ -29,11 +38,11 @@ class SupportAccessController extends Controller
 
         $tenant = Tenant::findOrFail($tenantId);
 
-        // Platform user (Control DB)
-        // Since we don't have full Sanctum on control DB yet in these tests, we might mock the user or assume it's passed.
-        // For production, the platform admin is authenticated via a web guard or global sanctum guard.
-        // We will default to a placeholder platform_user_id for now if not authenticated globally.
-        $platformUserId = $request->user()?->id ?? 1;
+        // Platform actor resolved from platform.auth middleware.
+        // R1-A9 will replace with real platform_users.
+        $platformActorType = $request->attributes->get('platform_actor_type', 'platform_token');
+
+        $platformUserId = (string) $request->attributes->get('platform_actor_id', 'platform_admin');
 
         // 1. Audit Log (Control DB)
         $log = SupportAccessLog::create([
@@ -46,48 +55,36 @@ class SupportAccessController extends Controller
         ]);
 
         AuditLogger::log(
-            action: 'support.access_granted',
+            action: 'support.access_code_issued',
             tenantId: $tenant->id,
             entityType: 'Tenant',
             entityId: $tenant->id,
-            payload: ['reason' => $validated['reason'], 'expires_in_hours' => 2],
-            actorType: 'support',
-            actorId: (string) $platformUserId
+            payload: ['reason' => $validated['reason'], 'expires_in_hours' => 2, 'log_id' => $log->id],
+            actorType: $platformActorType,
+            actorId: (string) $platformUserId,
         );
 
-        // 2. Connect to Tenant DB
-        $dbManager = app(TenantDatabaseManager::class);
-        $dbManager->configureConnection($tenant);
+        // 2. Generate a one-time exchange code (plaintext returned once; hash stored)
+        $plainCode = Str::random(64);
+        $codeHash = hash('sha256', $plainCode);
 
-        // 3. Find or Create Support User in Tenant DB
-        $supportEmail = 'support@platform.local';
+        SupportExchangeCode::create([
+            'code_hash' => $codeHash,
+            'tenant_id' => $tenant->id,
+            'actor_id' => $platformUserId,
+            'actor_type' => $platformActorType,
+            'reason' => $validated['reason'],
+            'expires_at' => now()->addSeconds(60),  // 60s to exchange
+        ]);
 
-        $supportUser = TenantUser::firstOrCreate(
-            ['email' => $supportEmail],
-            [
-                'name' => 'Platform Support',
-                'password' => Hash::make(Str::random(32)),
-                'type' => 'support',
-                'status' => 'active',
-            ]
-        );
-
-        // Optional: Ensure the support user has a support role (RBAC).
-        // For now, type='support' might be enough to grant broad permissions in policies.
-
-        // 4. Generate Token (Expires in 2 hours)
-        // Note: Sanctum doesn't natively support token expiry in the token itself without custom logic,
-        // but our frontend or middleware can enforce it based on the log or a custom ability.
-        $tokenData = TenantToken::createTokenFor($supportUser, 'support_token', 120);
-
-        // Restore default connection just in case
-        DB::purge('tenant');
-
+        // Return the exchange code — NOT the bearer token.
+        // Frontend opens: /login?support_code={code}&tenant={slug}
+        // The login page POSTs to POST /auth/support/exchange { code } (inside tenant middleware)
         return ApiResponse::success([
-            'message' => 'Support access granted.',
+            'message' => 'Support exchange code issued. POST it to /auth/support/exchange within 60 seconds.',
             'tenant' => $tenant->slug,
-            'token' => $tokenData['plainTextToken'],
-            'expires_at' => $log->expires_at,
+            'support_code' => $plainCode,
+            'support_code_ttl' => 60,
             'audit_log_id' => $log->id,
         ]);
     }

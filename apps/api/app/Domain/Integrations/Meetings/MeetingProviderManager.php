@@ -20,6 +20,7 @@ class MeetingProviderManager
     public function __construct()
     {
         $this->providers = [
+            'manual' => new ManualMeetingProvider,
             'mock' => new MockMeetingProvider,
             'google_meet' => new GoogleMeetProvider,
             'zoom' => new ZoomMeetingProvider,
@@ -28,7 +29,7 @@ class MeetingProviderManager
 
     public function provider(?string $name = null): MeetingProviderInterface
     {
-        $name = $name ?: config('services.meetings.default', 'mock');
+        $name = $name ?: config('services.meetings.default', 'manual');
 
         if (! isset($this->providers[$name])) {
             throw new InvalidArgumentException("Meeting provider [{$name}] is not supported.");
