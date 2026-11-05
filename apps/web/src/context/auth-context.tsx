@@ -65,6 +65,7 @@ export interface AuthContextType {
   supportLogin: (supportCode: string, tenantSlug: string) => Promise<void>;
   couponLogin: (couponCode: string, secret: string, tenantSlug: string) => Promise<void>;
   logout: () => Promise<void>;
+  refreshSession: () => Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -221,6 +222,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Logout
   // ---------------------------------------------------------------------------
 
+  const refreshSession = useCallback(async () => {
+    const storedToken = tokenStore.getToken();
+    const storedTenant = tokenStore.getTenant();
+    if (!storedToken || !storedTenant) return;
+    try {
+      const authSession = await fetchAuthSession(storedToken, storedTenant);
+      setSession(authSession);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        handleUnauthenticated();
+      }
+    }
+  }, [handleUnauthenticated]);
+
   const logout = useCallback(async () => {
     setIsLoading(true);
     await apiLogout();
@@ -269,6 +284,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         supportLogin,
         couponLogin,
         logout,
+        refreshSession,
       }}
     >
       {children}

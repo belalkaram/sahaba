@@ -1681,6 +1681,28 @@ paths:
           description: Standard success envelope { data, meta }
         default:
           description: Standard error envelope { error, meta }
+  /public/directory/teachers:
+    get:
+      summary: "public.directory.teachers"
+      description: "Unauthenticated platform-wide public directory of teachers. Auth: public."
+      security: []
+      parameters:
+        - { name: featured, in: query, required: false, schema: { type: boolean } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /public/academy/logo:
+    get:
+      summary: "public.academy.logo"
+      description: "Serves tenant logo through ProfileImageService. Auth: public."
+      security: []
+      responses:
+        '200':
+          description: Image stream response
+        default:
+          description: Standard error envelope { error, meta }
   /public/academy/courses:
     get:
       summary: "public.academy.courses"
@@ -2193,6 +2215,53 @@ paths:
     put:
       summary: "tenant.settings.update"
       description: "Auth: tenant.auth. Permission: tenant.settings."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /tenant/logo:
+    post:
+      summary: "tenant.logo.store"
+      description: "Upload tenant branding logo. Auth: tenant.auth. Permission: tenant.settings."
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image: { type: string, format: binary }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    delete:
+      summary: "tenant.logo.destroy"
+      description: "Delete tenant branding logo. Auth: tenant.auth. Permission: tenant.settings."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /platform/directory/teachers:
+    get:
+      summary: "platform.directory.index"
+      description: "List all directory entries. Auth: platform.auth."
+      parameters:
+        - { name: search, in: query, required: false, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /platform/directory/teachers/{id}/toggle-featured:
+    post:
+      summary: "platform.directory.toggle_featured"
+      description: "Toggle featured status for directory entry. Auth: platform.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
       responses:
         '200':
           description: Standard success envelope { data, meta }

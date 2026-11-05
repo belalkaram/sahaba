@@ -6,10 +6,14 @@ import { Badge } from '../../../components/ui/badge';
 import { DataState } from '../../../components/ui/data-state';
 import { ShieldIcon, CheckCircleIcon } from '../../../components/icons';
 import { adminApi, type TenantCurrentInfo } from '../../../lib/admin-api';
+import { useAuth } from '../../../context/auth-context';
+import { ImageUploader } from '../../../components/ui/image-uploader';
 
 import { Check } from 'lucide-react';
 export default function TenantSettingsPage() {
+  const { refreshSession } = useAuth();
   const [tenant, setTenant] = useState<TenantCurrentInfo | null>(null);
+  const [logoVersion, setLogoVersion] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,6 +66,7 @@ export default function TenantSettingsPage() {
         auth_mode: authMode,
       });
       setTenant(res.tenant);
+      await refreshSession();
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err: unknown) {
@@ -159,6 +164,34 @@ export default function TenantSettingsPage() {
                     value={tagline}
                     onChange={(e) => setTagline(e.target.value)}
                     className="w-full bg-background border border-border rounded-md px-3 py-2 text-xs text-fg focus:outline-none focus:border-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-secondary mb-1.5">
+                    شعار المؤسسة (Upload Logo)
+                  </label>
+                  <ImageUploader
+                    shape="avatar"
+                    label="رفع شعار المؤسسة"
+                    hint="يظهر الشعار في الشريط الجانبي وصفحات الأكاديمية (JPG، PNG، WebP حتى ٣ ميجابايت)"
+                    hasImage={Boolean(logoUrl)}
+                    version={logoVersion}
+                    loadCurrent={() => adminApi.tenantLogoBlob()}
+                    onUpload={async (file) => {
+                      const res = await adminApi.uploadTenantLogo(file);
+                      setTenant(res.tenant);
+                      setLogoUrl(res.logo_url);
+                      setLogoVersion((v) => v + 1);
+                      await refreshSession();
+                    }}
+                    onRemove={async () => {
+                      const res = await adminApi.deleteTenantLogo();
+                      setTenant(res.tenant);
+                      setLogoUrl('');
+                      setLogoVersion((v) => v + 1);
+                      await refreshSession();
+                    }}
                   />
                 </div>
 

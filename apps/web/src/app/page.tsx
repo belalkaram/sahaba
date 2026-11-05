@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { homePathFor, useAuth } from '../context/auth-context';
 import { PublicFooter, PublicHeader } from '../components/layout/public-chrome';
 import { LandingHero } from '../features/landing/landing-hero';
-import { Faq, FinalCta, HowItWorks, LogosStrip, RoleFeatures, Testimonials, useScrollReveal } from '../features/landing/landing-sections';
+import { Faq, FinalCta, HowItWorks, LogosStrip, PublicTeachersSection, RoleFeatures, Testimonials, useScrollReveal } from '../features/landing/landing-sections';
 
 /** Public landing (R7F). Signed-in users go straight to their own dashboard. */
 export default function HomePage() {
@@ -23,6 +23,7 @@ export default function HomePage() {
       <main>
         <LandingHero />
         <LogosStrip />
+        <PublicTeachersSection />
         <RoleFeatures />
         <HowItWorks />
         <Testimonials />

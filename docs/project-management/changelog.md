@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [PS-2] - 2026-11-05 — Teacher Public Directory, Cache-Busting, Logo Upload & Instant Public Switches (F-1 to F-4)
+### Added
+- **Platform Public Directory (F-1):** Added `public_directory_entries` table in Control DB and `PublicDirectorySyncService` which automatically syncs opted-in (`is_public = true`, `status = active`) teacher public profiles and photos. Added `GET /api/v1/public/directory/teachers` and `PublicTeachersSection` on the landing page (`/`), allowing visitors to view and visit opted-in teachers and academies across the platform.
+- **Featured Directory Entries:** Added platform super-admin endpoints (`GET /platform/directory/teachers`, `POST /platform/directory/teachers/{id}/toggle-featured`) with audit logging.
+- **Tenant Logo Upload (F-4):** Added `POST /tenant/logo` and `DELETE /tenant/logo` using `ProfileImageService` and `GET /public/academy/logo`. Added `ImageUploader` component to Tenant Settings (`/admin/settings`).
+- **Session Refresh (F-4):** Added `refreshSession()` to `auth-context` so branding updates (logo, name, colors) are immediately reflected across the workspace shell and UI without a page reload.
+### Fixed
+- **Instant Public Visibility (F-2):** Changed `is_public` switches in Teacher Profile (`/teacher/profile`) and Course Settings (`/teacher/courses/[id]`) to save immediately on toggle with feedback, state badges ("ظاهر للعامة" / "مخفي عن العامة"), and direct preview links to public academy pages (`/a/{slug}/teachers`, `/a/{slug}/courses/{id}`).
+- **Cache-Busting (F-3):** Added `&v=<hash>` query parameter to teacher photos, course covers, and tenant logos in `PublicAcademyController` and `PublicDirectorySyncService` so updated images are immediately served without being stale in browser or CDN caches.
+### Tests
+- Added `Tests\Feature\PublicDirectoryAndBrandingTest` (4 tests, 51 assertions): teacher photo/profile sync to public directory, opt-out removal, super admin featured toggling, logo upload/serve/deletion, and cache-busting hashes.
+- Verified `PublicAcademyAndImagesTest` (8 tests, 71 assertions PASS).
+- Frontend tests: `tsc --noEmit` (0 errors), `npm run lint` (0 errors), `npm run lint:design` (PASS), `npm run test` (9 tests PASS), `npm run build` (all 68 routes build).
+
 ## [PS-1] - 2026-11-05 — Platform Create-Tenant Form Security & Consistency (F-5 / RK-2)
 ### Fixed
 - **Security:** Removed default owner password 'password123' when creating a tenant via the platform console. The owner password is now strictly required (min 8 chars) in both the frontend modal and backend validation (owner.password).

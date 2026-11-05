@@ -3,6 +3,7 @@
 import React, { useEffect, useState, use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '../../../../context/auth-context';
 import {
   educationApi,
   CourseProgressOverview,
@@ -33,6 +34,7 @@ interface PageProps {
 export default function TeacherCourseBuilderPage({ params }: PageProps) {
   const { id } = use(params);
   const router = useRouter();
+  const { tenant } = useAuth();
 
   const [course, setCourse] = useState<Course | null>(null);
   const [progressOverview, setProgressOverview] = useState<CourseProgressOverview | null>(null);
@@ -711,12 +713,42 @@ export default function TeacherCourseBuilderPage({ params }: PageProps) {
                   await loadCourseData(true);
                 }}
               />
-              <Switch
-                checked={settingsForm.is_public}
-                onChange={(checked) => setSettingsForm({ ...settingsForm, is_public: checked })}
-                label="عرض المقرر في الصفحة العامة للأكاديمية"
-                description="يظهر للزوار فقط عندما تكون حالة المقرر «منشور للطلاب»."
-              />
+              <div className="space-y-2">
+                <Switch
+                  checked={settingsForm.is_public}
+                  onChange={async (checked) => {
+                    setSettingsForm((prev) => ({ ...prev, is_public: checked }));
+                    try {
+                      await educationApi.updateCourse(id, { is_public: checked });
+                      setFeedback({
+                        type: 'success',
+                        text: checked ? 'المقرر أصبح ظاهراً للعامة في صفحة الأكاديمية.' : 'تم إخفاء المقرر عن الصفحة العامة.',
+                      });
+                    } catch {
+                      setSettingsForm((prev) => ({ ...prev, is_public: !checked }));
+                      setFeedback({ type: 'error', text: 'تعذّر تحديث حالة ظهور المقرر.' });
+                    }
+                  }}
+                  label="عرض المقرر في الصفحة العامة للأكاديمية"
+                  description="يظهر للزوار فقط عندما تكون حالة المقرر «منشور للطلاب»."
+                />
+                <div className="flex items-center gap-2 pr-8">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+                    settingsForm.is_public ? 'bg-success/15 text-success border border-success/30' : 'bg-muted text-secondary border border-border'
+                  }`}>
+                    {settingsForm.is_public ? 'ظاهر للعامة' : 'مخفي عن العامة'}
+                  </span>
+                  {tenant?.slug && settingsForm.is_public && (
+                    <Link
+                      href={`/a/${tenant.slug}/courses/${id}`}
+                      target="_blank"
+                      className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                    >
+                      معاينة صفحة المقرر العامة <IconExternal size={12} />
+                    </Link>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="pt-4 border-t border-border flex items-center justify-between">

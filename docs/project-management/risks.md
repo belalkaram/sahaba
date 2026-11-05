@@ -2,7 +2,7 @@
 
 | ID | Risk | Impact | Mitigation |
 |---|---|---|---|
-| RK-1 | UI shows success while the change is not persisted or not reflected (see `audit/2026-11-05-frontend-backend-persistence-audit.md`) | Owner and user trust | Plan phase PS |
+| RK-1 | UI shows success while the change is not persisted or not reflected (see `audit/2026-11-05-frontend-backend-persistence-audit.md`) | Owner and user trust | PARTIALLY FIXED in PS-1 (F-5) & PS-2 (F-1..F-4: teacher directory in `/`, instant `is_public` switches with badges/links, cache-busting `&v=` query hashes, logo file upload + `refreshSession`); remaining F-6..F-16 in PS-3..PS-6 |
 | RK-2 | The "create tenant" form on the platform console defaults the owner password to `password123` when left empty | Account takeover | CLOSED in PS-1 (2026-11-05): owner password required (min: 8), real owner-name field, no default password, tested in PlatformTenantProvisioningSecurityTest |
 | RK-3 | QR scanner has no camera decoding on iOS Safari or Firefox | Manual entry only on iPhone | P6 (OD-29 approved) |
 | RK-4 | Tenant `type` holds free-form values | Wrong behaviour per tenant type | P1 |

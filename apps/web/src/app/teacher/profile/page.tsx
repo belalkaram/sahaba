@@ -103,12 +103,46 @@ export default function TeacherProfilePage() {
             </label>
             <Textarea id="bio" rows={5} maxLength={2000} value={bio} onChange={(e) => setBio(e.target.value)} />
           </div>
-          <Switch
-            checked={isPublic}
-            onChange={setIsPublic}
-            label="إظهار ملفي في صفحة مدرسي الأكاديمية"
-            description="عند التفعيل يظهر اسمك وصورتك ونبذتك والمقررات المنشورة التي فعّلت عرضها."
-          />
+          <div className="space-y-3">
+            <Switch
+              checked={isPublic}
+              onChange={async (checked) => {
+                if (!staffId) return;
+                setIsPublic(checked);
+                setNotice(null);
+                try {
+                  await staffProfileApi.update(staffId, { is_public: checked });
+                  setNotice({
+                    type: 'success',
+                    text: checked ? 'ملفك أصبح ظاهراً للعامة في صفحة مدرسي الأكاديمية وفي دليل المنصة.' : 'تم إخفاء ملفك عن العامة بنجاح.'
+                  });
+                  await load();
+                } catch {
+                  setIsPublic(!checked);
+                  setNotice({ type: 'error', text: 'تعذّر تحديث حالة ظهور الملف. حاول مرة أخرى.' });
+                }
+              }}
+              label="إظهار ملفي في صفحة مدرسي الأكاديمية ودليل المنصة"
+              description="عند التفعيل يظهر اسمك وصورتك ونبذتك في صفحة مدرسي الأكاديمية وقسم المدرسين في الصفحة الرئيسية."
+            />
+
+            <div className="flex flex-wrap items-center gap-3 pr-8">
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                isPublic ? 'bg-success/15 text-success border border-success/30' : 'bg-muted text-secondary border border-border'
+              }`}>
+                {isPublic ? '● ملفك ظاهر للعامة' : '○ ملفك مخفي عن العامة'}
+              </span>
+              {tenant?.slug && isPublic && (
+                <Link
+                  href={`/a/${tenant.slug}/teachers`}
+                  target="_blank"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+                >
+                  شوف صفحتك العامة <ExternalLink size={12} aria-hidden />
+                </Link>
+              )}
+            </div>
+          </div>
 
           {notice && (
             <p role="status" className={notice.type === 'success' ? 'text-sm font-medium text-success' : 'text-sm font-medium text-danger'}>

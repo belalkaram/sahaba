@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Education;
 
 use App\Domain\Media\Services\ProfileImageService;
+use App\Domain\PublicDirectory\Services\PublicDirectorySyncService;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\Staff;
@@ -21,7 +22,8 @@ class ProfileImageController extends Controller
 {
     public function __construct(
         protected ProfileImageService $images,
-        protected TenantContext $context
+        protected TenantContext $context,
+        protected PublicDirectorySyncService $directorySync
     ) {}
 
     public function storeCourseCover(Request $request, string $id): JsonResponse
@@ -98,6 +100,9 @@ class ProfileImageController extends Controller
 
         $staff->update($validated);
 
+        $tenant = $this->context->getTenantOrFail();
+        $this->directorySync->syncStaff($tenant, $staff->fresh(['user']));
+
         AuditLogger::log('staff.public_profile.updated', null, 'staff', $staff->id, ['is_public' => $staff->is_public]);
 
         return ApiResponse::success(['staff' => $staff->fresh()->load('user')]);
@@ -115,6 +120,9 @@ class ProfileImageController extends Controller
         $slug = $this->context->getTenantOrFail()->slug;
         $staff->update(['photo_path' => $this->images->store($request->file('image'), $slug, 'staff', $staff->photo_path)]);
 
+        $tenant = $this->context->getTenantOrFail();
+        $this->directorySync->syncStaff($tenant, $staff->fresh(['user']));
+
         AuditLogger::log('staff.photo.updated', null, 'staff', $staff->id);
 
         return ApiResponse::success(['staff' => $staff->fresh()->load('user')]);
@@ -127,6 +135,9 @@ class ProfileImageController extends Controller
 
         $this->images->delete($staff->photo_path, $this->context->getTenantOrFail()->slug);
         $staff->update(['photo_path' => null]);
+
+        $tenant = $this->context->getTenantOrFail();
+        $this->directorySync->syncStaff($tenant, $staff->fresh(['user']));
 
         AuditLogger::log('staff.photo.removed', null, 'staff', $staff->id);
 

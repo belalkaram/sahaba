@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   Award,
@@ -25,6 +25,9 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { FAQ, LOGOS, ROLE_FEATURES, STEPS, TESTIMONIALS, type RoleKey } from './content';
+import { publicApi, type DirectoryTeacher } from '../../lib/public-api';
+import { apiClient } from '../../lib/api-client';
+import { Sparkles, MapPin, GraduationCap } from 'lucide-react';
 import { Tabs } from '../../components/ui/tabs';
 import { buttonClasses } from '../../components/ui/button';
 import { IconNext } from '../../components/icons/directional';
@@ -262,6 +265,118 @@ export function FinalCta() {
               تحدّث مع فريقنا
             </Link>
           </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
+export function PublicTeachersSection() {
+  const [teachers, setTeachers] = useState<DirectoryTeacher[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    publicApi
+      .getDirectoryTeachers()
+      .then((data) => {
+        setTeachers(data);
+        setLoaded(true);
+      })
+      .catch(() => {
+        setTeachers([]);
+        setLoaded(true);
+      });
+  }, []);
+
+  if (loaded && teachers.length === 0) {
+    return null;
+  }
+
+  return (
+    <section id="teachers-directory" className="py-20 lg:py-24 border-b border-border bg-surface-raised/40" data-reveal-group>
+      <div className="mx-auto max-w-[var(--content-max)] px-4 sm:px-6">
+        <SectionHeading
+          eyebrow="نخبة المعلمين والمراكز"
+          title="تعلّم مع أفضل المعلمين والأكاديميات"
+          description="معلمون ومراكز تعليمية موثوقة تستخدم سحابة لتقديم تجربة تعليمية متميزة لطلابها."
+        />
+
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" data-reveal>
+          {teachers.map((t) => {
+            const photoSrc = t.photo_url ? apiClient.url(t.photo_url) : null;
+            return (
+              <article
+                key={t.id}
+                className="group relative flex flex-col justify-between rounded-xl border border-border bg-surface p-6 shadow-sm transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-md"
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-3 mb-4">
+                    <div className="flex items-center gap-3">
+                      {photoSrc ? (
+                        <img
+                          src={photoSrc}
+                          alt={t.name}
+                          className="h-14 w-14 rounded-full border border-border object-cover"
+                        />
+                      ) : (
+                        <span className="grid h-14 w-14 place-items-center rounded-full bg-primary-subtle text-lg font-bold text-primary">
+                          {t.name.slice(0, 1)}
+                        </span>
+                      )}
+                      <div>
+                        <h3 className="text-base font-bold text-fg group-hover:text-primary transition-colors">
+                          {t.name}
+                        </h3>
+                        <p className="text-xs text-fg-muted line-clamp-1">
+                          {t.headline || 'معلم معتمد'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {t.is_featured && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-warning/10 px-2 py-0.5 text-[0.6875rem] font-semibold text-warning border border-warning/30">
+                        <Sparkles size={11} aria-hidden />
+                        مميز
+                      </span>
+                    )}
+                  </div>
+
+                  {t.bio && (
+                    <p className="text-xs text-fg-muted line-clamp-2 leading-relaxed mb-4">
+                      {t.bio}
+                    </p>
+                  )}
+                </div>
+
+                <div className="pt-4 border-t border-border/70 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-xs text-fg-subtle">
+                    <span className="flex items-center gap-1">
+                      <GraduationCap size={13} aria-hidden />
+                      {t.tenant_name}
+                    </span>
+                    {t.city && (
+                      <>
+                        <span>•</span>
+                        <span className="flex items-center gap-1">
+                          <MapPin size={11} aria-hidden />
+                          {t.city}
+                        </span>
+                      </>
+                    )}
+                  </div>
+
+                  <Link
+                    href={t.academy_url}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                  >
+                    صفحة المعلم
+                    <IconNext size={13} />
+                  </Link>
+                </div>
+              </article>
+            );
+          })}
         </div>
       </div>
     </section>

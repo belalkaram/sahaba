@@ -384,6 +384,22 @@ export const adminApi = {
     return res.data;
   },
 
+  async uploadTenantLogo(file: File): Promise<{ tenant: TenantCurrentInfo; logo_url: string; message: string }> {
+    const form = new FormData();
+    form.append('image', file);
+    const res = await apiClient.post<{ tenant: TenantCurrentInfo; logo_url: string; message: string }>('/tenant/logo', form);
+    return res.data;
+  },
+
+  async deleteTenantLogo(): Promise<{ tenant: TenantCurrentInfo; message: string }> {
+    const res = await apiClient.delete<{ tenant: TenantCurrentInfo; message: string }>('/tenant/logo');
+    return res.data;
+  },
+
+  tenantLogoBlob(): Promise<Blob> {
+    return apiClient.blob('/public/academy/logo');
+  },
+
   // ── Roles & Permissions Catalog (R1A/R2) ────────────────────────────────
   async getRoles(): Promise<RoleItem[]> {
     const res = await apiClient.get<{ roles: RoleItem[] }>('/roles');

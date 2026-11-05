@@ -70,6 +70,14 @@ class PublicAcademyController extends Controller
         return $this->image($this->listedTeachers()->findOrFail($id)->photo_path);
     }
 
+    public function logo()
+    {
+        $tenant = $this->context->getTenantOrFail();
+        $logoPath = $tenant->brand_settings['logo_path'] ?? null;
+
+        return $this->image($logoPath);
+    }
+
     protected function image(?string $path)
     {
         $response = $this->images->response($path, $this->context->getTenantOrFail()->slug);
@@ -89,13 +97,17 @@ class PublicAcademyController extends Controller
 
     protected function courseCard(Course $c): array
     {
+        $v = $c->cover_path ? substr(md5($c->cover_path), 0, 8) : null;
+
         return [
             'id' => $c->id,
             'title' => $c->title,
             'level' => $c->level,
             'is_free' => (bool) $c->is_free,
             'summary' => str($c->description ?? '')->limit(160)->toString(),
-            'image_url' => $c->cover_path ? "/public/academy/courses/{$c->id}/image?tenant=".$this->context->getTenantOrFail()->slug : null,
+            'image_url' => $c->cover_path
+                ? "/public/academy/courses/{$c->id}/image?tenant=".$this->context->getTenantOrFail()->slug.($v ? "&v={$v}" : '')
+                : null,
             'teacher' => $c->teacher && $c->teacher->is_public
                 ? ['id' => $c->teacher->id, 'name' => $c->teacher->user?->name]
                 : null,
@@ -104,11 +116,15 @@ class PublicAcademyController extends Controller
 
     protected function teacherCard(Staff $s): array
     {
+        $v = $s->photo_path ? substr(md5($s->photo_path), 0, 8) : null;
+
         return [
             'id' => $s->id,
             'name' => $s->user?->name,
             'headline' => $s->headline,
-            'image_url' => $s->photo_path ? "/public/academy/teachers/{$s->id}/image?tenant=".$this->context->getTenantOrFail()->slug : null,
+            'image_url' => $s->photo_path
+                ? "/public/academy/teachers/{$s->id}/image?tenant=".$this->context->getTenantOrFail()->slug.($v ? "&v={$v}" : '')
+                : null,
             'courses_count' => (int) ($s->public_courses_count ?? 0),
         ];
     }

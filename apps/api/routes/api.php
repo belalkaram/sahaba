@@ -46,12 +46,14 @@ use App\Http\Controllers\Api\Me\MyResourceController;
 use App\Http\Controllers\Api\Me\NotificationPreferenceController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\Platform\PlatformAuthController;
+use App\Http\Controllers\Api\Platform\PlatformDirectoryController;
 use App\Http\Controllers\Api\Platform\PlatformSettingsController;
 use App\Http\Controllers\Api\Platform\SupportAccessController;
 use App\Http\Controllers\Api\Platform\TenantController;
 use App\Http\Controllers\Api\Public\ContactMessageController;
 use App\Http\Controllers\Api\Public\PublicAcademyController;
 use App\Http\Controllers\Api\Public\PublicConfigController;
+use App\Http\Controllers\Api\Public\PublicDirectoryController;
 use App\Http\Controllers\Api\Public\SchoolRegistrationController;
 use App\Http\Controllers\Api\Reporting\ReportController;
 use App\Http\Controllers\Api\TenantCurrentController;
@@ -77,6 +79,8 @@ Route::post('/public/register-school', [SchoolRegistrationController::class, 're
     ->name('api.public.register_school');
 Route::get('/public/config', [PublicConfigController::class, 'show'])
     ->name('api.public.config');
+Route::get('/public/directory/teachers', [PublicDirectoryController::class, 'teachers'])
+    ->name('api.public.directory.teachers');
 Route::post('/public/contact', [ContactMessageController::class, 'store'])
     ->middleware('throttle:auth')
     ->name('api.public.contact');
@@ -110,6 +114,10 @@ Route::middleware(['platform.auth'])->group(function () {
 
     // Platform Centralized Audit Logs
     Route::get('/platform/audit-logs', [App\Http\Controllers\Api\Platform\AuditLogController::class, 'index'])->name('api.platform.audit_logs.index');
+
+    // Platform Directory (PS-2, F-1)
+    Route::get('/platform/directory/teachers', [PlatformDirectoryController::class, 'index'])->name('api.platform.directory.index');
+    Route::post('/platform/directory/teachers/{id}/toggle-featured', [PlatformDirectoryController::class, 'toggleFeatured'])->whereNumber('id')->name('api.platform.directory.toggle_featured');
 });
 
 // Tenant-scoped endpoints (protected by TenantResolutionMiddleware)
@@ -118,6 +126,7 @@ Route::middleware(['tenant', 'throttle:api'])->group(function () {
 
     // Public academy landing data (opt-in content only)
     Route::prefix('public/academy')->group(function () {
+        Route::get('/logo', [PublicAcademyController::class, 'logo'])->name('api.public.academy.logo');
         Route::get('/courses', [PublicAcademyController::class, 'courses'])->name('api.public.academy.courses');
         Route::get('/courses/{id}', [PublicAcademyController::class, 'course'])->name('api.public.academy.course');
         Route::get('/courses/{id}/image', [PublicAcademyController::class, 'courseImage'])->name('api.public.academy.course_image');
@@ -206,6 +215,12 @@ Route::middleware(['tenant', 'throttle:api'])->group(function () {
         Route::put('/tenant/settings', [TenantCurrentController::class, 'update'])
             ->middleware('tenant.can:tenant.settings')
             ->name('api.tenant.settings.update');
+        Route::post('/tenant/logo', [TenantCurrentController::class, 'storeLogo'])
+            ->middleware('tenant.can:tenant.settings')
+            ->name('api.tenant.logo.store');
+        Route::delete('/tenant/logo', [TenantCurrentController::class, 'destroyLogo'])
+            ->middleware('tenant.can:tenant.settings')
+            ->name('api.tenant.logo.destroy');
         Route::get('/tenant/academic-settings', [AcademicSettingsController::class, 'show'])
             ->middleware('tenant.can:tenant.settings')
             ->name('api.tenant.academic_settings.show');

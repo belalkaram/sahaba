@@ -12,6 +12,20 @@ export interface ContactPayload {
   message: string;
 }
 
+export interface DirectoryTeacher {
+  id: number;
+  staff_id: string;
+  tenant_slug: string;
+  tenant_name: string;
+  name: string;
+  headline: string | null;
+  bio: string | null;
+  photo_url: string | null;
+  city: string | null;
+  is_featured: boolean;
+  academy_url: string;
+}
+
 /** Unauthenticated endpoints used by public pages. */
 export const publicApi = {
   async getConfig(): Promise<PublicConfig> {
@@ -21,6 +35,15 @@ export const publicApi = {
 
   async sendContactMessage(payload: ContactPayload): Promise<void> {
     await apiClient.post('/public/contact', payload, { skipUnauthorizedHandler: true });
+  },
+
+  async getDirectoryTeachers(featured?: boolean): Promise<DirectoryTeacher[]> {
+    const query = featured ? '?featured=1' : '';
+    const res = await apiClient.get<{ teachers: DirectoryTeacher[] }>(
+      `/public/directory/teachers${query}`,
+      { skipUnauthorizedHandler: true }
+    );
+    return res.data.teachers;
   },
 };
 

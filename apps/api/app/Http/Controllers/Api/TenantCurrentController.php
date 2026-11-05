@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Domain\Media\Services\ProfileImageService;
 use App\Http\Controllers\Controller;
 use App\Support\ApiResponse;
 use App\Support\Audit\AuditLogger;
@@ -84,6 +85,78 @@ class TenantCurrentController extends Controller
                 'features' => $tenant->features->where('enabled', true)->pluck('feature_key')->values()->all(),
             ],
             'message' => 'تم تحديث إعدادات المؤسسة بنجاح',
+        ]);
+    }
+
+    /**
+     * Upload and store tenant branding logo.
+     */
+    public function storeLogo(Request $request, TenantContext $context, ProfileImageService $images): JsonResponse
+    {
+        $tenant = $context->getTenantOrFail();
+
+        $request->validate([
+            'image' => 'required|file|image|mimes:'.ProfileImageService::MIMES.'|max:'.ProfileImageService::MAX_KB,
+        ]);
+
+        $previous = $tenant->brand_settings['logo_path'] ?? null;
+        $path = $images->store($request->file('image'), $tenant->slug, 'logo', $previous);
+
+        $v = substr(md5($path), 0, 8);
+        $logoUrl = "/public/academy/logo?tenant={$tenant->slug}&v={$v}";
+
+        $brandSettings = $tenant->brand_settings ?? [];
+        $brandSettings['logo_path'] = $path;
+
+        $tenant->update([
+            'logo_url' => $logoUrl,
+            'brand_settings' => $brandSettings,
+        ]);
+
+        AuditLogger::log(
+            action: 'tenant.logo.updated',
+            tenantId: $tenant->id,
+            entityType: 'Tenant',
+            entityId: $tenant->id
+        );
+
+        return ApiResponse::success([
+            'tenant' => $tenant->fresh(),
+            'logo_url' => $logoUrl,
+            'message' => 'تم رفع وتحديث شعار المؤسسة بنجاح',
+        ]);
+    }
+
+    /**
+     * Delete stored tenant branding logo.
+     */
+    public function destroyLogo(Request $request, TenantContext $context, ProfileImageService $images): JsonResponse
+    {
+        $tenant = $context->getTenantOrFail();
+
+        $previous = $tenant->brand_settings['logo_path'] ?? null;
+        if ($previous) {
+            $images->delete($previous, $tenant->slug);
+        }
+
+        $brandSettings = $tenant->brand_settings ?? [];
+        unset($brandSettings['logo_path']);
+
+        $tenant->update([
+            'logo_url' => null,
+            'brand_settings' => $brandSettings,
+        ]);
+
+        AuditLogger::log(
+            action: 'tenant.logo.removed',
+            tenantId: $tenant->id,
+            entityType: 'Tenant',
+            entityId: $tenant->id
+        );
+
+        return ApiResponse::success([
+            'tenant' => $tenant->fresh(),
+            'message' => 'تم حذف شعار المؤسسة بنجاح',
         ]);
     }
 }
