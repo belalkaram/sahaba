@@ -285,14 +285,22 @@ class AttendanceController extends Controller
             ], Response::HTTP_OK);
         }
 
-        // 9. Record New Attendance
+        // 9. Check Late Status (OD-29 / P6: late_after_minutes setting, default 15 min)
+        $lateThreshold = (int) ($tenant->brand_settings['late_after_minutes'] ?? 15);
+        $isLate = false;
+        if ($session->starts_at && now()->gt($session->starts_at->clone()->addMinutes($lateThreshold))) {
+            $isLate = true;
+        }
+        $status = $isLate ? 'late' : 'present';
+
+        // 10. Record New Attendance
         $record = AttendanceRecord::create([
             'session_id' => $session->id,
             'student_id' => $student->id,
             'recorded_by_user_id' => $user->id,
-            'status' => 'present',
+            'status' => $status,
             'attendance_mode' => 'qr',
-            'notes' => 'Recorded via secure dynamic QR scan.',
+            'notes' => $isLate ? 'Recorded as late via dynamic QR scan.' : 'Recorded via secure dynamic QR scan.',
             'recorded_at' => now(),
         ]);
 
@@ -303,7 +311,7 @@ class AttendanceController extends Controller
             payload: [
                 'session_id' => $session->id,
                 'student_id' => $student->id,
-                'status' => 'present',
+                'status' => $status,
                 'mode' => 'qr',
             ]
         );
@@ -311,8 +319,8 @@ class AttendanceController extends Controller
         return ApiResponse::success([
             'already_recorded' => false,
             'record' => $record->load(['student.user', 'recordedBy']),
-            'student' => array_merge($studentPayload, ['status' => 'present']),
-            'message' => 'تم تسجيل الحضور بنجاح',
+            'student' => array_merge($studentPayload, ['status' => $status]),
+            'message' => $isLate ? 'تم تسجيل حضور الطالب (متأخر)' : 'تم تسجيل الحضور بنجاح',
         ], Response::HTTP_OK);
     }
 
@@ -368,6 +376,39 @@ class AttendanceController extends Controller
         return ApiResponse::success([
             'message' => 'تم تعديل حالة الحضور بنجاح.',
             'record' => $record->fresh()->load(['student.user', 'recordedBy', 'changes.changedBy']),
+        ]);
+    }
+
+    /**
+     * Delete an attendance record (e.g. quick undo of scan error within 30 seconds) (P6.6).
+     */
+    public function destroy(Request $request, string $id): JsonResponse
+    {
+        $record = AttendanceRecord::findOrFail($id);
+
+        /** @var TenantUser $user */
+        $user = $request->user();
+
+        if (! $user->hasPermissionTo('attendance.correct') && ! $user->hasPermissionTo('attendance.record')) {
+            throw new AuthorizationException('You do not have permission to delete attendance records.');
+        }
+
+        AuditLogger::log(
+            action: 'attendance.deleted',
+            entityType: 'AttendanceRecord',
+            entityId: $record->id,
+            payload: [
+                'session_id' => $record->session_id,
+                'student_id' => $record->student_id,
+                'status' => $record->status,
+                'reason' => $request->input('reason', 'تراجع فوري عن المسح'),
+            ]
+        );
+
+        $record->delete();
+
+        return ApiResponse::success([
+            'message' => 'تم التراجع عن تسجيل الحضور بنجاح.',
         ]);
     }
 

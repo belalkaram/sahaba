@@ -113,6 +113,13 @@ export const attendanceApi = {
     return res.data;
   },
 
+  async deleteAttendanceRecord(recordId: string, reason?: string): Promise<{ message: string }> {
+    const res = await apiClient.delete<{ message: string }>(`/attendance-records/${recordId}`, {
+      body: { reason },
+    });
+    return res.data;
+  },
+
   async getSessionReport(sessionId: string): Promise<SessionReportData> {
     const res = await apiClient.get<SessionReportData>(`/sessions/${sessionId}/attendance/report`);
     return res.data;
@@ -128,6 +135,13 @@ export const attendanceApi = {
     return res.data.sessions ?? [];
   },
 
+  async getMyTodaySessions(): Promise<ClassSession[]> {
+    const res = await apiClient.get<ClassSession[]>('/me/sessions', {
+      params: { date: 'today' },
+    });
+    return res.data ?? [];
+  },
+
   async getSession(id: string): Promise<ClassSession> {
     const res = await apiClient.get<{ session: ClassSession }>(`/sessions/${id}`);
     return res.data.session;
@@ -138,8 +152,10 @@ export const attendanceApi = {
     return res.data.session;
   },
 
-  async endSession(id: string): Promise<ClassSession> {
-    const res = await apiClient.post<{ session: ClassSession }>(`/sessions/${id}/end`);
+  async endSession(id: string, markAbsentRemaining = false): Promise<ClassSession> {
+    const res = await apiClient.post<{ session: ClassSession }>(`/sessions/${id}/end`, {
+      mark_absent_remaining: markAbsentRemaining,
+    });
     return res.data.session;
   },
 

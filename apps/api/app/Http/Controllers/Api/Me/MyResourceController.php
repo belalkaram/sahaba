@@ -127,6 +127,12 @@ class MyResourceController extends Controller
 
         $query = ScopeResolver::scopeSessions($query, $user, 'classes.view');
 
+        if ($request->query('date') === 'today') {
+            $query->whereDate('starts_at', today());
+        } elseif ($request->filled('date')) {
+            $query->whereDate('starts_at', $request->query('date'));
+        }
+
         if ($request->filled('from')) {
             $query->where('starts_at', '>=', $request->query('from'));
         }

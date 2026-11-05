@@ -238,6 +238,7 @@ export interface ClassSession {
   status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
   classroom?: Classroom;
   school_class?: SchoolClass;
+  schoolClass?: SchoolClass;
   attendance_records?: AttendanceRecord[];
 }
 

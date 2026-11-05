@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Api\Attendance;
 use App\Domain\Communication\NotificationCatalog;
 use App\Domain\Communication\NotificationService;
 use App\Http\Controllers\Controller;
+use App\Models\AttendanceRecord;
 use App\Models\ClassSession;
 use App\Models\SchoolClass;
+use App\Models\TenantSetting;
 use App\Models\TenantUser;
 use App\Support\ApiResponse;
 use App\Support\Audit\AuditLogger;
@@ -154,16 +156,60 @@ class SessionController extends Controller
      */
     public function end(Request $request, string $id): JsonResponse
     {
-        $session = ClassSession::findOrFail($id);
+        $session = ClassSession::with('schoolClass.students.user')->findOrFail($id);
         $session->update([
             'status' => 'completed',
             'ends_at' => $session->ends_at ?? now(),
         ]);
 
-        AuditLogger::log(action: 'session.ended', entityType: 'ClassSession', entityId: $session->id, payload: ['status' => 'completed']);
+        $markedAbsentCount = 0;
+        if ($request->boolean('mark_absent_remaining') && $session->schoolClass) {
+            $existingStudentIds = AttendanceRecord::where('session_id', $session->id)
+                ->pluck('student_id')
+                ->all();
+
+            $unrecordedStudents = $session->schoolClass->students()
+                ->whereNotIn('students.id', $existingStudentIds)
+                ->get();
+
+            foreach ($unrecordedStudents as $student) {
+                AttendanceRecord::create([
+                    'session_id' => $session->id,
+                    'student_id' => $student->id,
+                    'recorded_by_user_id' => $request->user()?->id ?? $session->schoolClass->teacher_staff_id,
+                    'status' => 'absent',
+                    'attendance_mode' => 'system',
+                    'notes' => 'تغيب تلقائي عند إنهاء الجلسة',
+                    'recorded_at' => now(),
+                ]);
+                $markedAbsentCount++;
+
+                // Notification to parent if enabled (OD-33 / P9)
+                if (TenantSetting::getValue(TenantSetting::NOTIFY_PARENTS_ON_ABSENCE, true)) {
+                    $notifier = app(NotificationService::class);
+                    $notifier->send(
+                        NotificationCatalog::ATTENDANCE_ABSENT,
+                        $notifier->parentUsers($student),
+                        ['student' => $student->user?->name, 'title' => $session->title],
+                        '/parent/dashboard'
+                    );
+                }
+            }
+        }
+
+        AuditLogger::log(
+            action: 'session.ended',
+            entityType: 'ClassSession',
+            entityId: $session->id,
+            payload: [
+                'status' => 'completed',
+                'marked_absent_count' => $markedAbsentCount,
+            ]
+        );
 
         return ApiResponse::success([
-            'message' => 'تم إنهاء الجلسة بنجاح.',
+            'message' => 'تم إنهاء الجلسة بنجاح.'.($markedAbsentCount > 0 ? " ورصد {$markedAbsentCount} طالب كغائب." : ''),
+            'marked_absent_count' => $markedAbsentCount,
             'session' => $session->fresh()->load(['classroom', 'schoolClass']),
         ]);
     }

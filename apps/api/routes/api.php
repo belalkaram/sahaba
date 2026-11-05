@@ -429,6 +429,9 @@ Route::middleware(['tenant', 'throttle:api'])->group(function () {
             Route::put('/attendance-records/{id}', [AttendanceController::class, 'correct'])
                 ->middleware('tenant.can:attendance.correct')
                 ->name('api.attendance.correct');
+            Route::delete('/attendance-records/{id}', [AttendanceController::class, 'destroy'])
+                ->middleware('tenant.can:attendance.record')
+                ->name('api.attendance.destroy');
             Route::get('/sessions/{sessionId}/attendance/report', [AttendanceController::class, 'report'])
                 ->middleware('tenant.can:attendance.view')
                 ->name('api.attendance.report');

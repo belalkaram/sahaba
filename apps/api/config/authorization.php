@@ -805,6 +805,7 @@ return [
                 'lessons.view' => 'assigned',
                 'classes.view' => 'assigned',
                 'sessions.view' => 'assigned',
+                'sessions.update' => 'assigned',
                 'attendance.view' => 'assigned',
                 'attendance.record' => 'assigned',
                 'attendance.scan' => 'assigned',

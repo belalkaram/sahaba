@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [P6] - 2026-11-05 — Universal Camera QR Attendance, Mobile Experience & Auto-Absent on Session End (OD-29, OD-4, F-14, R5-6)
+### Added
+- **Universal QR Scanner Hook (`useQrScanner`):** Implemented mobile-first QR scanner supporting high-speed native `BarcodeDetector` on modern Chromium browsers with automatic lazy-loading fallback to `@zxing/browser` on iOS Safari, Firefox, and desktop (OD-29). Features 720p resolution, 8-10 fps frame throttling, 3-second duplicate scan cooldown, torch/flashlight toggle, camera flip, and automatic stream pausing on visibility change.
+- **Mobile Staff Attendance Portal (`/staff/attendance/scan` & `/staff/attendance/scan/[sessionId]`):**
+  - Created `/staff/attendance/scan` displaying today's active and scheduled sessions (`GET /me/sessions?date=today`, closing F-14).
+  - Created high-performance scanning interface `/staff/attendance/scan/[sessionId]` featuring real-time KPIs (present, late, absent, total), live audio/haptic feedback, floating student verification card, and live session roster.
+  - Implemented 30-second "Undo last scan" capability calling `DELETE /api/v1/attendance-records/{id}` with audit logging.
+  - Added "End Session & Record Absence" modal calling `POST /sessions/{id}/end` with `mark_absent_remaining: true`, automatically recording unrecorded students as absent and triggering parent absence notifications (OD-33 / P9).
+- **Backend Attendance & Sessions Enhancements:**
+  - Added support for `date=today` and `date=YYYY-MM-DD` in `MyResourceController::sessions` (F-14).
+  - Added late arrival evaluation in `AttendanceController::qrScan` based on tenant `late_after_minutes` setting (default 15 minutes).
+  - Added `DELETE /api/v1/attendance-records/{id}` for instant scan reversals with audit tracking.
+  - Added `mark_absent_remaining` option to `SessionController::end` marking unrecorded students as absent with parent notifications.
+  - Granted `sessions.update => assigned` permission to `assistant` role in `config/authorization.php`.
+- **Backward Compatibility:** Redirects legacy route `/teacher/attendance/scan/[sessionId]` to `/staff/attendance/scan/[sessionId]` (OD-8).
+### Tests
+- Backend test suite: `Tests\Feature\CameraAttendanceScanTest` (6 tests, 20 assertions PASS) covering `date=today` filtering, on-time vs late QR scans, invalid student rejection, expired QR token rejection, undo deletion, and auto-absent on session end.
+- Full attendance suite: `SecureAttendanceQrAndLifecycleTest` (13 tests PASS), `ModuleEnforcementTest` (4 tests PASS). Total 23 tests, 93 assertions PASS.
+- Frontend test suite: `access-model.test.ts` (12 tests PASS) testing `attendance.scan` navigation permissions.
+- Code quality & builds: `pint --test` (PASS), `tsc --noEmit` (0 errors), `npm run lint:design` (PASS), `npm run lint` (0 errors), `npm run build` (all 69 routes compiled).
+
 ## [P1] - 2026-11-05 — Tenant Archetypes, Simplified Teacher UI, Service Bundles & ADR-002 (OD-23, OD-24, OD-31, F-6)
 ### Added
 - **Architectural Decision Record (ADR-002):** Approved canonical tenant archetypes (`individual_teacher` vs `organization`), organizational kinds (`center`, `academy`, `school`, `institute`), role syncing isolation, and service bundles (`online`, `offline`, or both).

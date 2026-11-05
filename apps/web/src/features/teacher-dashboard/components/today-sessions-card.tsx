@@ -57,7 +57,7 @@ export const TodaySessionsCard: React.FC<TodaySessionsCardProps> = ({ sessions }
               </div>
 
               <Link
-                href={`/teacher/attendance/scan/${sess.id}`}
+                href={`/staff/attendance/scan/${sess.id}`}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-primary text-primary-fg text-xs font-semibold hover:bg-primary-hover transition-colors shrink-0"
               >
                 <QrCodeIcon size={14} />

@@ -35,6 +35,16 @@ paths:
           description: Standard success envelope { data, meta }
         default:
           description: Standard error envelope { error, meta }
+    delete:
+      summary: "attendance.destroy"
+      description: "Revert or undo an attendance record (P6.6). Auth: tenant.auth. Permission: attendance.record."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
   /auth/logout:
     post:
       summary: "auth.logout"

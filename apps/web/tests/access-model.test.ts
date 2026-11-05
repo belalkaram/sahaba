@@ -143,6 +143,19 @@ describe('NavigationRegistry Filtering', () => {
     assert.ok(both.some((i) => i.id === 'admin-courses'), 'Both tenant has courses');
     assert.ok(both.some((i) => i.id === 'admin-attendance'), 'Both tenant has attendance');
   });
+
+  test('P6 / OD-4 / OD-29: attendance.scan permission grants access to attendance scanner navigation', () => {
+    const modules = ['online', 'offline'];
+    const assistantPerms: PermissionsMap = {
+      'attendance.scan': 'assigned',
+    };
+
+    const items = filterNavItems('staff', modules, assistantPerms);
+    assert.ok(items.some((i) => i.id === 'admin-attendance'), 'Assistant with attendance.scan sees attendance item');
+
+    const withoutPerms = filterNavItems('staff', modules, {});
+    assert.ok(!withoutPerms.some((i) => i.id === 'admin-attendance'), 'Staff without attendance permission cannot see attendance');
+  });
 });
 
 describe('Canonical AuthSession Contract Validation', () => {
