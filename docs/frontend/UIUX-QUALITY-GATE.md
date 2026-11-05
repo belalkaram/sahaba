@@ -1401,7 +1401,7 @@ Feature موجودة لكنها سطحية أو سيئة أو غير احترا�
 - `docs/master/MASTER-SPECIFICATION.md`
 - `docs/phases/phase-g.md`
 - `docs/phases/phase-h.md`
-- `docs/phases/phase-k.md`
+- `docs/master/MASTER-SPECIFICATION.md` (Phase K)
 - `docs/frontend/`
 - Backend/API documentation
 - Relevant domain documentation

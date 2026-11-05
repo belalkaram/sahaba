@@ -1,6 +1,8 @@
-# LMS AI-Ready Project — Complete Recovered Package
+# سحابة / Sahaba
 
-This package was rebuilt from the shared ChatGPT conversation, including the hidden embedded conversation data that is not exposed in the visible page text.
+Multi-tenant LMS and education-management platform (Laravel API + Next.js web) for independent teachers and educational organizations.
+
+> **Status: RECOVERY — NOT PRODUCTION READY.**
 
 ## Start here
 
@@ -29,6 +31,6 @@ node scripts/release-gate.mjs                  # all gates, writes docs/project-
 cd apps/web && npx playwright test             # E2E + accessibility (API and web must be running)
 ```
 
-## Completeness
+## Documentation
 
-The package contains 71 original bootstrap files plus the recovered detailed phase/requirements/source files. The full recovered payload is preserved under `source/`.
+Start at `docs/00-INDEX.md`.

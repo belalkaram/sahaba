@@ -94,6 +94,22 @@
 | R9 | R9-7 | Repository hygiene | T-QA-06, T-UX-11 | TODO | |
 | R9 | R9-8 | Documentation & status | C-09 | TODO | |
 
+### Program 2026-11-05 (plan: `docs/plans/2026-11-05-platform-console-tenancy-venues-qr-plan.md`); runs after the R9 rows above unless the owner reorders
+
+| Phase | Task | Title | Closes | Status | Evidence |
+|---|---|---|---|---|---|
+| PS | PS-1 | Platform create-tenant form: no default password, send domain, owner name | F-5 | TODO | |
+| PS | PS-2 | Teacher photo and public profile shown on `/a/{slug}` and `/`; cache-busting; branding refresh and logo upload | F-1..F-4 | TODO | |
+| P6 | P6 | Camera QR attendance on all browsers (OD-29) | R5-6, X-3 | TODO | |
+| P1 | P1 | Tenant types and profiles (ADR-002) | X-1 | TODO | |
+| P2 | P2 | Leads inbox and reviewed organization signup (OD-26) | X-2 | TODO | |
+| PS | PS-3 | Exam creation UI and question-bank management | F-7..F-9 | TODO | |
+| P3 | P3 | Full platform console (+PS-4 admin tools) | F-6, F-10..F-12 | TODO | |
+| P5 | P5 | Venues, halls, recurring schedule, conflicts | — | TODO | |
+| P4 | P4 | Platform plans and tenant subscriptions (ADR-004) (+PS-5) | F-17, F-18 | TODO | |
+| P7 | P7 | Global staff identity and workspace switcher (OD-25, ADR-003) | — | TODO | |
+| PS | PS-6 | CI guard: unused API methods and routes | — | TODO | |
+
 ## External prerequisites (owner action)
 
 | Needed for | What the owner must provide |

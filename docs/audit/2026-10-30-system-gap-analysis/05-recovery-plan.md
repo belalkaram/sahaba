@@ -161,7 +161,7 @@ R9  التحقق والإطلاق: E2E، مصفوفة الأدوار، Visual QA
 
 ## R7 — تجارب الأدوار (UI/UX Recovery الفعلي)
 
-> هنا يُطبق `LMS_Frontend_Recovery_and_UIUX_Quality_Gate.md` بالكامل — **فوق** دومين حقيقي.
+> هنا يُطبق `docs/frontend/UIUX-QUALITY-GATE.md` بالكامل — **فوق** دومين حقيقي.
 
 | # | المهمة | يغلق |
 |---|---|---|

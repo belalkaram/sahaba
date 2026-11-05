@@ -1,67 +1,44 @@
 # Documentation Index
 
-## Canonical files
-- `master/MASTER-SPECIFICATION.md` is canonical for the specification; files under `phases/` are the source phases it was built from.
-- `phases/phase-h-rendered-document.md` is a rendered mirror of `phases/phase-h.md`: edit `phase-h.md` only.
-- Status: `../prompts/recovery/03-PROGRESS-TRACKER.md` and `recovery-reports/`. Older status documents are historical.
+## Canonical files (one copy each — cleaned 2026-11-05)
+- Specification: `master/MASTER-SPECIFICATION.md` (this is Phase K). Summary: `master/MASTER-SPECIFICATION-SUMMARY.md`.
+- Phase A = `requirements/PRODUCT-DEFINITION.md`. Phase B = `requirements/BRD-FULL.md`. Phases C–J: `phases/`.
+- Status: `../prompts/recovery/03-PROGRESS-TRACKER.md` and `recovery-reports/`. `project-management/current-state.md` and `implementation-ledger.md` are pre-recovery history.
+- Decisions: `../prompts/recovery/01-DECISIONS.md` and `decisions/` (ADRs).
+- Removed copies and archives can be recovered from git history: see `audit/2026-11-05-documentation-hygiene.md`.
 
-## Audit & Recovery (current source of truth for status)
-- `audit/2026-10-30-system-gap-analysis/README.md`
-- `audit/2026-11-05-documentation-hygiene.md` — duplicates, stubs and stale docs (proposed cleanup)
+## Audit & Recovery
+- `audit/2026-10-30-system-gap-analysis/README.md`: the main audit
+- `audit/2026-11-05-documentation-hygiene.md`: documentation cleanup (what was removed and why)
+- `audit/2026-11-05-frontend-backend-persistence-audit.md`: actions that do not reach the backend, or are not reflected where expected
 
-## Plans (PROPOSED, not implemented)
-- `plans/2026-11-05-platform-console-tenancy-venues-qr-plan.md` — super-admin console, tenant types, venues/scheduling, camera QR attendance
+## Plans
+- `plans/2026-11-05-platform-console-tenancy-venues-qr-plan.md`: super-admin console, tenant types, venues and scheduling, camera QR attendance, persistence fixes (PLAN, not implemented)
 
-## Master
-- `master/MASTER-SPECIFICATION.md`
+## Requirements
+- `requirements/PRODUCT-DEFINITION.md` (Phase A)
+- `requirements/BRD-FULL.md` (Phase B)
+- `requirements/CONSOLIDATED-SPEC-PACKAGE.md`
+- `requirements/REQUIREMENTS-ENGINEERING-WORKSHOP.md`
 
 ## Phases
-- `phases/phase-a.md`
-- `phases/phase-b.md`
-- `phases/phase-c.md`
-- `phases/phase-d.md`
-- `phases/phase-e.md`
-- `phases/phase-f.md`
-- `phases/phase-g.md`
-- `phases/phase-h.md`
-- `phases/phase-i.md`
-- `phases/phase-j.md`
-- `phases/phase-k.md`
-
-## Phase Zero
-- `phase-zero/PHASE-0-M0-REPOSITORY-BOOTSTRAP.md`
+- `phases/phase-c.md` … `phases/phase-j.md`
 
 ## Architecture
-- `architecture/architecture.md`
-- `architecture/system-context.md`
-- `architecture/tenancy.md`
-- `architecture/identity.md`
-- `architecture/authorization.md`
-- `architecture/security.md`
-- `architecture/scalability.md`
-- `architecture/observability.md`
+- `architecture/` (short notes; detail lives in the Master Specification)
 
-## Contracts
-- `api/`
-- `frontend/`
-- `testing/`
-- `infrastructure/`
+## Contracts & engineering
+- `api/` (stub: no API contract written yet)
+- `backend/`, `frontend/` (includes `frontend/UIUX-QUALITY-GATE.md`), `design/`
+- `testing/`, `security/` (stubs)
+- `infrastructure/`, `../infrastructure/RUNBOOK.md`
 
 ## Domains
-- `domains/`
+- `domains/<domain>/README.md`. Still empty templates: authorization, classroom, communication, platform, support.
 
 ## Project Management
-- `project-management/current-state.md`
-- `project-management/roadmap.md`
-- `project-management/milestones.md`
-- `project-management/implementation-ledger.md`
-- `project-management/pending.md`
-- `project-management/blocked.md`
-- `project-management/deferred.md`
-- `project-management/risks.md`
+- `project-management/pending.md`, `blocked.md`, `deferred.md`, `risks.md`: current lists derived from the tracker
 - `project-management/changelog.md`
-
-## Decisions
-- `decisions/`
+- `project-management/current-state.md`, `implementation-ledger.md`: history
 
 The AI should load the master specification plus only the documentation relevant to its current task.

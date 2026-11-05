@@ -1,7 +1,7 @@
 # System Gap Analysis & Recovery Program — 2026-10-30
 
 > **الحالة:** AUDIT — مصدر الحقيقة الحالي للفجوات والخطة.
-> **النطاق:** Backend (`apps/api`) + Frontend (`apps/web`) + التوثيق والحالة (`docs/`) مقارنة بـ `MASTER-SPECIFICATION.md` و `BRD-FULL.md` و `LMS_Frontend_Recovery_and_UIUX_Quality_Gate.md`.
+> **النطاق:** Backend (`apps/api`) + Frontend (`apps/web`) + التوثيق والحالة (`docs/`) مقارنة بـ `MASTER-SPECIFICATION.md` و `BRD-FULL.md` و `docs/frontend/UIUX-QUALITY-GATE.md`.
 > **طريقة العمل:** قراءة مباشرة للكود (routes, controllers, models, migrations, seeders, tests, كل صفحات الـ frontend). كل ملاحظة تقنية لها دليل `file:line`.
 > **ما لم يتم:** لم يُعَد تشغيل الاختبارات أو الـ build في هذه المراجعة. آخر تشغيل مسجل هو `release-evidence.json` (2026-10-30T18:13Z — 9/9 gates). نجاح هذه الـ gates **لا يتعارض** مع النتائج هنا، لأنها لا تختبر المسارات المكسورة (انظر T-QA-01).
 

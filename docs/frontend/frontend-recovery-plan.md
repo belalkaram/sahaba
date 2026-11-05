@@ -3,7 +3,7 @@
 # Frontend Recovery & UI/UX Elevation Plan
 **Project:** Multi-Tenant SaaS LMS & Education Management Platform  
 **Document:** `docs/frontend/frontend-recovery-plan.md`  
-**Execution Standard:** Phase G & H Architecture, `LMS_Frontend_Recovery_and_UIUX_Quality_Gate.md`  
+**Execution Standard:** Phase G & H Architecture, `docs/frontend/UIUX-QUALITY-GATE.md`  
 **Author:** Frontend Architecture & Quality Gate Lead  
 **Date:** September 30, 2026  
 **Status:** APPROVED FOR EXECUTION

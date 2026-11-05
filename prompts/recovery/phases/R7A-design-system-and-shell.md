@@ -2,7 +2,7 @@
 
 > **بالعربي:** نظام تصميم حقيقي بثيم فاتح وداكن يعمل، مكونات ناقصة، App Shell واحد لكل الأدوار، وتقسيم الصفحات الضخمة.
 > **Closes:** T-UX-03, 06, 07, 08, 10, C-14 (foundation)
-> **Depends on:** R1B. **Spec:** `LMS_Frontend_Recovery_and_UIUX_Quality_Gate.md` §7, §8, §21, §30, §33-35; Master §7, §63-67.
+> **Depends on:** R1B. **Spec:** `docs/frontend/UIUX-QUALITY-GATE.md` §7, §8, §21, §30, §33-35; Master §7, §63-67.
 
 **Before coding:** load the `frontend-design` guidance if available in your environment, and re-read Quality Gate §7 (identity: premium Gulf/Saudi education SaaS, calm, data-rich, IBM Plex Sans Arabic, RTL-first; avoid generic AI gradients/glass/card-grid sameness).
 
