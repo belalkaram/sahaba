@@ -13,9 +13,10 @@ export interface PaymentTableProps {
   payments: PaymentRequestItem[];
   loading: boolean;
   onInspect: (payment: PaymentRequestItem) => void;
-  onApprove: (payment: PaymentRequestItem) => void;
-  onReject: (payment: PaymentRequestItem) => void;
+  onApprove?: (payment: PaymentRequestItem) => void;
+  onReject?: (payment: PaymentRequestItem) => void;
   getMethodLabel: (method: string) => string;
+  readOnly?: boolean;
 }
 
 export const PaymentTable: React.FC<PaymentTableProps> = ({
@@ -25,6 +26,7 @@ export const PaymentTable: React.FC<PaymentTableProps> = ({
   onApprove,
   onReject,
   getMethodLabel,
+  readOnly = false,
 }) => {
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -114,7 +116,7 @@ export const PaymentTable: React.FC<PaymentTableProps> = ({
                   <Button variant="ghost" size="sm" onClick={() => onInspect(p)}>
                     معاينة
                   </Button>
-                  {p.status === 'pending' && (
+                  {!readOnly && p.status === 'pending' && onApprove && onReject && (
                     <>
                       <Button variant="primary" size="sm" onClick={() => onApprove(p)}>
                         اعتماد

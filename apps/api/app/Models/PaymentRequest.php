@@ -13,6 +13,7 @@ class PaymentRequest extends TenantModel
     protected $fillable = [
         'student_id',
         'package_id',
+        'period_month',
         'amount',
         'currency',
         'payment_method',
@@ -23,6 +24,8 @@ class PaymentRequest extends TenantModel
         'status',
         'rejection_reason',
         'reviewed_by_user_id',
+        'reviewed_by_platform_user_id',
+        'reviewed_by_platform_user_name',
         'reviewed_at',
         'submitted_at',
     ];

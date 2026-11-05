@@ -8,6 +8,7 @@ use App\Domain\Communication\NotificationService;
 use App\Http\Controllers\Controller;
 use App\Models\Package;
 use App\Models\PaymentRequest;
+use App\Models\PlatformPricing;
 use App\Models\TenantUser;
 use App\Support\ApiResponse;
 use App\Tenancy\TenantContext;
@@ -58,8 +59,9 @@ class PaymentRequestController extends Controller
         }
 
         $validated = $request->validate([
-            'package_id' => 'required|uuid|exists:tenant.packages,id',
-            'amount' => 'required|numeric|min:0',
+            'package_id' => 'nullable|uuid|exists:tenant.packages,id',
+            'period_month' => ['nullable', 'string', 'regex:/^\d{4}-(0[1-9]|1[0-2])$/'],
+            'amount' => 'nullable|numeric|min:0',
             'payment_method' => 'required|string|in:instapay,cash,bank_transfer',
             'sender_phone' => 'nullable|string|max:30',
             'reference_code' => 'nullable|string|max:100',
@@ -67,20 +69,26 @@ class PaymentRequestController extends Controller
             'proof_url' => 'nullable|string|max:500',
         ]);
 
+        $tenant = $tenantContext->getTenant();
+        $pricing = PlatformPricing::getForTenant($tenant?->id);
+
         $proofPath = null;
         if ($request->hasFile('proof')) {
-            $tenant = $tenantContext->getTenant();
             $tenantSlug = $tenant ? $tenant->slug : 'default';
             $proofPath = $request->file('proof')->store('tenants/'.$tenantSlug.'/proofs', 'local');
         }
 
-        $package = Package::findOrFail($validated['package_id']);
+        $package = ! empty($validated['package_id']) ? Package::find($validated['package_id']) : null;
+        $amount = isset($validated['amount']) ? (float) $validated['amount'] : (float) ($package?->price ?? $pricing->student_monthly_fee);
+        $currency = $package?->currency ?? $pricing->currency ?? 'SAR';
+        $periodMonth = $validated['period_month'] ?? now()->format('Y-m');
 
         $paymentRequest = PaymentRequest::create([
             'student_id' => $user->student->id,
-            'package_id' => $package->id,
-            'amount' => $validated['amount'],
-            'currency' => $package->currency ?? 'EGP',
+            'package_id' => $package?->id,
+            'period_month' => $periodMonth,
+            'amount' => $amount,
+            'currency' => $currency,
             'payment_method' => $validated['payment_method'],
             'sender_phone' => $validated['sender_phone'] ?? null,
             'reference_code' => $validated['reference_code'] ?? null,
@@ -94,7 +102,7 @@ class PaymentRequestController extends Controller
         $notifier->send(
             NotificationCatalog::PAYMENT_SUBMITTED,
             $notifier->usersWithPermission('payments.approve'),
-            ['student' => $user->name, 'package' => $package->name],
+            ['student' => $user->name, 'package' => $package?->name ?? 'اشتراك شهر '.$periodMonth],
             '/teacher/payments'
         );
 
@@ -226,5 +234,24 @@ class PaymentRequestController extends Controller
                 Response::HTTP_UNPROCESSABLE_ENTITY
             );
         }
+    }
+
+    /**
+     * Get active pricing & payment transfer details for this tenant (OD-27).
+     */
+    public function pricing(TenantContext $tenantContext): JsonResponse
+    {
+        $tenant = $tenantContext->getTenant();
+        $pricing = PlatformPricing::getForTenant($tenant?->id);
+
+        return ApiResponse::success([
+            'student_monthly_fee' => (float) $pricing->student_monthly_fee,
+            'currency' => $pricing->currency,
+            'receiving_account_type' => $pricing->receiving_account_type,
+            'bank_name' => $pricing->bank_name,
+            'account_holder_name' => $pricing->account_holder_name,
+            'iban' => $pricing->iban,
+            'transfer_instructions' => $pricing->transfer_instructions,
+        ]);
     }
 }

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useState, use } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { billingApi, PackageItem } from '../../../../../lib/billing-api';
 import { Card } from '../../../../../components/ui/card';
@@ -14,9 +13,9 @@ import {
   AlertCircleIcon,
   FileTextIcon,
   IconBack,
-} from '../../../../../components/icons'
-
+} from '../../../../../components/icons';
 import { formatNumber } from '../../../../../lib/format';
+
 interface PageProps {
   params: Promise<{ id: string }>;
 }
@@ -24,34 +23,50 @@ interface PageProps {
 export default function StudentPlanPaymentPage({ params }: PageProps) {
   const resolvedParams = use(params);
   const packageId = resolvedParams.id;
-  const router = useRouter();
 
   const [pkg, setPkg] = useState<PackageItem | null>(null);
+  const [bankInfo, setBankInfo] = useState<{
+    student_monthly_fee?: number;
+    currency?: string;
+    receiving_account_type?: string;
+    bank_name?: string | null;
+    account_holder_name?: string | null;
+    iban?: string | null;
+    transfer_instructions?: string | null;
+  } | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
   // Form State
-  const [paymentMethod, setPaymentMethod] = useState<'instapay' | 'bank_transfer' | 'cash'>('instapay');
+  const [periodMonth, setPeriodMonth] = useState(() => new Date().toISOString().slice(0, 7));
+  const [paymentMethod, setPaymentMethod] = useState<'instapay' | 'bank_transfer' | 'cash'>('bank_transfer');
   const [senderPhone, setSenderPhone] = useState('');
   const [referenceCode, setReferenceCode] = useState('');
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [proofPreview, setProofPreview] = useState<string | null>(null);
 
   useEffect(() => {
-    async function loadPackage() {
+    async function loadData() {
       try {
         setLoading(true);
-        const data = await billingApi.getPackage(packageId);
-        setPkg(data);
+        const [pkgData, pricingData] = await Promise.all([
+          billingApi.getPackage(packageId).catch(() => null),
+          billingApi.getPricing().catch(() => null),
+        ]);
+        setPkg(pkgData);
+        if (pricingData) {
+          setBankInfo(pricingData);
+        }
       } catch {
-        setError('تعذر تحميل بيانات الباقة المحددة.');
+        setError('تعذر تحميل بيانات الباقة أو تفاصيل الحساب المصرفي.');
       } finally {
         setLoading(false);
       }
     }
-    loadPackage();
+    loadData();
   }, [packageId]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -92,6 +107,7 @@ export default function StudentPlanPaymentPage({ params }: PageProps) {
 
       const formData = new FormData();
       formData.append('package_id', pkg.id);
+      formData.append('period_month', periodMonth);
       formData.append('amount', String(pkg.price));
       formData.append('payment_method', paymentMethod);
       if (senderPhone.trim()) {
@@ -131,8 +147,9 @@ export default function StudentPlanPaymentPage({ params }: PageProps) {
           <div>
             <h2 className="text-2xl font-bold text-fg">تم استلام طلب السداد بنجاح!</h2>
             <p className="text-xs sm:text-sm text-fg-muted mt-2 leading-relaxed">
-              تم إرسال إيصال التحويل وبيانات السداد إلى الإدارة المالية للتحقق والمراجعة.
-              سيتم تفعيل باقة <span className="text-fg font-semibold">{pkg?.name}</span> فور الاعتماد.
+              تم إرسال إيصال التحويل وبيانات السداد لشهر{' '}
+              <span className="text-fg font-semibold font-mono">{periodMonth}</span> إلى إدارة المنصة
+              المركزية للتدقيق والاعتماد. سيتم تفعيل حسابك والاشتراك فور المطابقة.
             </p>
           </div>
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -190,7 +207,7 @@ export default function StudentPlanPaymentPage({ params }: PageProps) {
         <div className="text-end bg-surface-raised px-4 py-2.5 rounded-md border border-border">
           <div className="text-xs text-fg-muted">المبلغ المستحق</div>
           <div className="text-2xl font-bold text-primary font-mono">
-            {formatNumber(pkg.price)} {pkg.currency || 'EGP'}
+            {formatNumber(pkg.price)} {pkg.currency || 'SAR'}
           </div>
         </div>
       </div>
@@ -214,19 +231,19 @@ export default function StudentPlanPaymentPage({ params }: PageProps) {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {[
                 {
+                  id: 'bank_transfer',
+                  label: 'تحويل بنكي مباشر',
+                  desc: 'إيداع أو تحويل عبر الحساب المصرفي (IBAN)',
+                },
+                {
                   id: 'instapay',
                   label: 'InstaPay (إنستاباي)',
                   desc: 'تحويل لحظي عبر الحساب أو رقم الهاتف',
                 },
                 {
-                  id: 'bank_transfer',
-                  label: 'تحويل بنكي مباشر',
-                  desc: 'إيداع أو تحويل عبر الحساب المصرفي',
-                },
-                {
                   id: 'cash',
                   label: 'سداد نقدي بالفرع',
-                  desc: 'الدفع المباشر في مقر الأكاديمية',
+                  desc: 'الدفع المباشر في مقر السنتر أو القاعة',
                 },
               ].map((m) => {
                 const isSelected = paymentMethod === m.id;
@@ -238,7 +255,7 @@ export default function StudentPlanPaymentPage({ params }: PageProps) {
                     className={`p-3.5 rounded-xl border text-right transition-all flex flex-col justify-between ${
                       isSelected
                         ? 'border-primary bg-primary-subtle text-fg shadow-xs'
-                        : 'border-border bg-surface-raised/40 text-fg-muted hover:border-border-strong hover:text-fg'
+                        : 'border-border bg-surface-raised/40 text-fg-muted hover:border-border hover:text-fg'
                     }`}
                   >
                     <div className="font-semibold text-xs text-fg">{m.label}</div>
@@ -253,21 +270,37 @@ export default function StudentPlanPaymentPage({ params }: PageProps) {
           <div className="p-4 rounded-md border border-border bg-surface-raised/50 space-y-2 text-xs text-fg-muted leading-relaxed">
             <div className="font-semibold text-fg flex items-center gap-1.5">
               <CreditCardIcon size={14} className="text-primary" />
-              <span>تعليمات السداد:</span>
+              <span>بيانات وتعليمات التحويل:</span>
             </div>
+            {paymentMethod === 'bank_transfer' && (
+              <div className="space-y-1">
+                <p>
+                  البنك: <span className="text-fg font-bold">{bankInfo?.bank_name || 'مصرف الراجحي'}</span>
+                  {bankInfo?.account_holder_name && (
+                    <> — المستفيد: <span className="text-fg font-bold">{bankInfo.account_holder_name}</span></>
+                  )}
+                </p>
+                <p>
+                  رقم الآيبان (IBAN):{' '}
+                  <span className="text-primary font-mono font-bold select-all">
+                    {bankInfo?.iban || 'SA0000000000000000000000'}
+                  </span>
+                </p>
+                {bankInfo?.transfer_instructions && (
+                  <p className="text-fg-muted pt-1 border-t border-border mt-1">
+                    {bankInfo.transfer_instructions}
+                  </p>
+                )}
+              </div>
+            )}
             {paymentMethod === 'instapay' && (
               <p>
-                يرجى التحويل إلى عنوان إنستاباي: <span className="text-primary font-mono font-bold">academy@instapay</span> أو إلى رقم الهاتف <span className="text-fg font-mono font-bold">01012345678</span>. بعد إتمام التحويل، يرجى إدخال الرقم المرجعي وإرفاق لقطة شاشة للإيصال.
-              </p>
-            )}
-            {paymentMethod === 'bank_transfer' && (
-              <p>
-                يرجى التحويل إلى حساب الأكاديمية في بنك مصر: رقم الحساب <span className="text-fg font-mono font-bold">1234567890123456</span> — IBAN: <span className="text-primary font-mono font-bold">EG3800020001234567890123456</span>. يرجى إرفاق صورة إيصال الإيداع أو إشعار التحويل البنكي.
+                يرجى التحويل إلى عنوان إنستاباي أو الحساب البنكي الموضح، ثم إرفاق لقطة شاشة للإيصال وكتابة الرقم المرجعي.
               </p>
             )}
             {paymentMethod === 'cash' && (
               <p>
-                يمكنك التوجه إلى مقر السنتر / الأكاديمية وسداد المبلغ نقداً والحصول على إيصال استلام، ثم تسجيل رقم الإيصال ورقم هاتفك هنا لمطابقة السجل وتفعيل حسابك.
+                يمكنك التوجه إلى مقر السنتر أو القاعة وسداد الرسوم نقداً، ثم تسجيل رقم الإيصال هنا لمطابقة السجل.
               </p>
             )}
           </div>
@@ -275,29 +308,44 @@ export default function StudentPlanPaymentPage({ params }: PageProps) {
           {/* Step 2: Verification Details */}
           <div className="space-y-4 pt-2 border-t border-border">
             <label className="text-xs font-bold text-fg uppercase tracking-wider block">
-              2. بيانات التأكيد والتحقق:
+              2. بيانات الشهر والتأكيد:
             </label>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="text-xs font-medium text-fg-muted mb-1.5 block">
-                  رقم هاتف المُرسل / المحوّل:
+                  الشهر المراد سداده:
                 </label>
                 <Input
-                  placeholder="مثال: 01012345678"
-                  value={senderPhone}
-                  onChange={(e) => setSenderPhone(e.target.value)}
+                  type="text"
+                  placeholder="YYYY-MM (مثال: 2026-11)"
+                  value={periodMonth}
+                  onChange={(e) => setPeriodMonth(e.target.value)}
+                  className="font-mono text-xs"
                 />
               </div>
 
               <div>
                 <label className="text-xs font-medium text-fg-muted mb-1.5 block">
-                  الرقم المرجعي للعملية (Reference Code):
+                  رقم هاتف المُرسل / المحوّل:
                 </label>
                 <Input
-                  placeholder="رقم المعاملة البنكية أو كود إنستاباي"
+                  placeholder="مثال: 0501234567"
+                  value={senderPhone}
+                  onChange={(e) => setSenderPhone(e.target.value)}
+                  className="text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-fg-muted mb-1.5 block">
+                  الرقم المرجعي للعملية:
+                </label>
+                <Input
+                  placeholder="رقم المعاملة البنكية"
                   value={referenceCode}
                   onChange={(e) => setReferenceCode(e.target.value)}
+                  className="text-xs font-mono"
                 />
               </div>
             </div>
@@ -334,6 +382,7 @@ export default function StudentPlanPaymentPage({ params }: PageProps) {
               {/* Image Preview */}
               {proofPreview && (
                 <div className="mt-3 p-2 rounded-sm border border-border bg-surface inline-block">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={proofPreview}
                     alt="معاينة الإيصال"
@@ -358,7 +407,7 @@ export default function StudentPlanPaymentPage({ params }: PageProps) {
               isLoading={submitting}
               className="px-6"
             >
-              إرسال طلب السداد للمراجعة
+              إرسال طلب السداد للمراجعة المركزية
             </Button>
           </div>
         </form>

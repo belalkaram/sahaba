@@ -12,9 +12,10 @@ export interface PaymentInspectionDrawerProps {
   payment: PaymentRequestItem | null;
   isOpen: boolean;
   onClose: () => void;
-  onApprove: (payment: PaymentRequestItem) => void;
-  onReject: (payment: PaymentRequestItem) => void;
+  onApprove?: (payment: PaymentRequestItem) => void;
+  onReject?: (payment: PaymentRequestItem) => void;
   getMethodLabel: (method: string) => string;
+  readOnly?: boolean;
 }
 
 export const PaymentInspectionDrawer: React.FC<PaymentInspectionDrawerProps> = ({
@@ -24,6 +25,7 @@ export const PaymentInspectionDrawer: React.FC<PaymentInspectionDrawerProps> = (
   onApprove,
   onReject,
   getMethodLabel,
+  readOnly = false,
 }) => {
   if (!payment) return null;
 
@@ -194,7 +196,12 @@ export const PaymentInspectionDrawer: React.FC<PaymentInspectionDrawerProps> = (
         )}
 
         {/* Action Buttons in Drawer */}
-        {payment.status === 'pending' && (
+        {payment.status === 'pending' && readOnly && (
+          <div className="p-3 rounded-md border border-warning/30 bg-warning-subtle text-xs text-warning">
+            مراجعة واعتماد طلبات السداد تخضع لرقابة إدارة المنصة المركزية (OD-27). يمكنك متابعة حالة السداد هنا للقراءة فقط.
+          </div>
+        )}
+        {payment.status === 'pending' && !readOnly && onApprove && onReject && (
           <div className="flex items-center gap-3 pt-4 border-t border-border">
             <Button
               variant="primary"

@@ -15,6 +15,7 @@ use App\Models\NotificationPreference;
 use App\Models\Package;
 use App\Models\ParentProfile;
 use App\Models\PaymentRequest;
+use App\Models\Permission;
 use App\Models\Role;
 use App\Models\SchoolClass;
 use App\Models\Staff;
@@ -80,6 +81,12 @@ class NotificationEventsTest extends TestCase
         }
 
         app(RoleSynchronizer::class)->sync();
+
+        $ownerRole = Role::where('name', 'owner')->first();
+        $perm = Permission::where('name', 'payments.approve')->first();
+        if ($perm && $ownerRole) {
+            $ownerRole->permissions()->syncWithoutDetaching([$perm->id => ['scope' => 'tenant']]);
+        }
 
         [$this->studentUser, $this->student] = $this->makeStudent('a');
         [$this->otherStudentUser] = $this->makeStudent('b');

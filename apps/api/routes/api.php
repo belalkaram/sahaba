@@ -49,6 +49,8 @@ use App\Http\Controllers\Api\Me\NotificationPreferenceController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\Platform\PlatformAuthController;
 use App\Http\Controllers\Api\Platform\PlatformDirectoryController;
+use App\Http\Controllers\Api\Platform\PlatformPaymentController;
+use App\Http\Controllers\Api\Platform\PlatformPricingController;
 use App\Http\Controllers\Api\Platform\PlatformSettingsController;
 use App\Http\Controllers\Api\Platform\SupportAccessController;
 use App\Http\Controllers\Api\Platform\TenantController;
@@ -86,6 +88,8 @@ Route::get('/public/directory/teachers', [PublicDirectoryController::class, 'tea
 Route::post('/public/contact', [ContactMessageController::class, 'store'])
     ->middleware('throttle:auth')
     ->name('api.public.contact');
+Route::get('/public/pricing', [PlatformPricingController::class, 'publicPricing'])
+    ->name('api.public.pricing');
 
 // Platform Administration (Global endpoints) — protected by platform.auth (R0-1, R1-A9)
 Route::middleware(['platform.auth'])->group(function () {
@@ -121,6 +125,18 @@ Route::middleware(['platform.auth'])->group(function () {
     // Platform Directory (PS-2, F-1)
     Route::get('/platform/directory/teachers', [PlatformDirectoryController::class, 'index'])->name('api.platform.directory.index');
     Route::post('/platform/directory/teachers/{id}/toggle-featured', [PlatformDirectoryController::class, 'toggleFeatured'])->whereNumber('id')->name('api.platform.directory.toggle_featured');
+
+    // Platform Payments Review Inbox & Reports (OD-27, ADR-004)
+    Route::get('/platform/payments', [PlatformPaymentController::class, 'index'])->name('api.platform.payments.index');
+    Route::get('/platform/payments/reports', [PlatformPaymentController::class, 'reports'])->name('api.platform.payments.reports');
+    Route::get('/platform/payments/{tenantId}/{paymentId}', [PlatformPaymentController::class, 'show'])->name('api.platform.payments.show');
+    Route::get('/platform/payments/{tenantId}/{paymentId}/proof', [PlatformPaymentController::class, 'proof'])->name('api.platform.payments.proof');
+    Route::post('/platform/payments/{tenantId}/{paymentId}/approve', [PlatformPaymentController::class, 'approve'])->name('api.platform.payments.approve');
+    Route::post('/platform/payments/{tenantId}/{paymentId}/reject', [PlatformPaymentController::class, 'reject'])->name('api.platform.payments.reject');
+
+    // Platform Pricing Settings (OD-27)
+    Route::get('/platform/pricing', [PlatformPricingController::class, 'show'])->name('api.platform.pricing.show');
+    Route::put('/platform/pricing', [PlatformPricingController::class, 'update'])->name('api.platform.pricing.update');
 });
 
 // Tenant-scoped endpoints (protected by TenantResolutionMiddleware)
@@ -597,7 +613,8 @@ Route::middleware(['tenant', 'throttle:api'])->group(function () {
                 ->middleware('tenant.can:packages.manage')
                 ->name('api.packages.archive');
 
-            // Payment Requests (R3-3)
+            // Payment Requests (R3-3, OD-27)
+            Route::get('/billing/pricing', [PaymentRequestController::class, 'pricing'])->name('api.billing.pricing');
             Route::get('/payment-requests', [PaymentRequestController::class, 'index'])->name('api.payments.index');
             Route::post('/payment-requests', [PaymentRequestController::class, 'store'])->name('api.payments.store');
             Route::get('/payment-requests/{id}', [PaymentRequestController::class, 'show'])->name('api.payments.show');

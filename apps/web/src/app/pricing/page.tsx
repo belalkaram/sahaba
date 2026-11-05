@@ -1,184 +1,238 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Card } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
-
-
-import { Check } from 'lucide-react';
-import { IconNext } from '../../components/icons/directional';
+import { Button } from '../../components/ui/button';
 import { PublicPage } from '../../components/layout/public-chrome';
-export default function PricingPage() {
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly');
+import { publicApi, PublicPricing } from '../../lib/public-api';
+import { formatNumber } from '../../lib/format';
+import { Check, ShieldCheck, Sparkles, HelpCircle } from 'lucide-react';
+import { IconNext } from '../../components/icons/directional';
 
-  const plans = [
-    {
-      id: 'starter',
-      name: 'باقة المراكز والسناتر (Starter)',
-      description: 'مثالية للمراكز التعليمية، المعاهد المتوسطة، والمعلمين المستقلين.',
-      monthlyPrice: '499',
-      yearlyPrice: '399',
-      features: [
-        'قاعدة بيانات سحابية معزولة (1 Tenant DB)',
-        'حتى 300 طالب نشط',
-        'حضور وغياب بالـ QR Code المتجدد',
-        'بنك أسئلة واختبارات مؤتمتة',
-        'مشغل فيديو ومذكرات PDF',
-        'ربط جهاز واحد لكل طالب (Single Device Binding)',
-        'دعم فني عبر البريد وتذاكر المساعدة',
-      ],
-      ctaText: 'ابدأ تجربة المراكز',
-      badge: 'الأنسب للمراكز',
-      popular: false,
-    },
-    {
-      id: 'pro',
-      name: 'باقة المدارس والمعاهد (Professional)',
-      description: 'الحل الشامل للمدارس الأهلية والدولية ومجمعات اللغات الكبرى.',
-      monthlyPrice: '1,299',
-      yearlyPrice: '999',
-      features: [
-        'جميع ميزات باقة المراكز',
-        'حتى 1,500 طالب نشط',
-        'فصول وبث مباشر متكامل (Google Meet / Zoom)',
-        'لوحة متابعة شاملة لأولياء الأمور (Parent Portal)',
-        'إدارة الفروع والقاعات والمساعدين (RBAC كامل)',
-        'تحليلات تقدم أكاديمي سريعة (Fast-read Snapshots)',
-        'نطاق مخصص خاص بالمدرسة (school.edu.sa)',
-        'دعم فني مباشر عبر الهاتف والواتساب',
-      ],
-      ctaText: 'ابدأ تجربة المدارس المتقدمة',
-      badge: 'الأكثر طلباً واكتمالاً',
-      popular: true,
-    },
-    {
-      id: 'enterprise',
-      name: 'باقة الجامعات والأكاديميات (Enterprise)',
-      description: 'حلول مخصصة للجامعات، الكليات، ومجموعات المدارس المتعددة.',
-      monthlyPrice: 'مخصص',
-      yearlyPrice: 'مخصص',
-      features: [
-        'جميع ميزات باقة المدارس',
-        'عدد غير محدود من الطلاب والفصول',
-        'نشر على خوادم سحابية خاصة (Dedicated VPC / On-Prem)',
-        'تكامل كامل مع أنظمة SIS و ERP الحكومية',
-        'مساعد تعليمي ذكي مخصص (AI Tutor Integration)',
-        'اتفاقية مستوى الخدمة SLA 99.99%',
-        'مدير حساب تقني مخصص على مدار الساعة',
-      ],
-      ctaText: 'طلب عرض سعر مخصص',
-      badge: 'مؤسسي ضخم',
-      popular: false,
-    },
+export default function PricingPage() {
+  const [pricing, setPricing] = useState<PublicPricing>({
+    student_monthly_fee: 10,
+    currency: 'SAR',
+    teacher_fee: 0,
+    organization_fee: 0,
+    headline: 'مجانًا للمدرس والسنتر، 10 ريال للطالب في الشهر',
+  });
+
+  useEffect(() => {
+    publicApi
+      .getPricing()
+      .then((data) => {
+        if (data && data.student_monthly_fee) {
+          setPricing(data);
+        }
+      })
+      .catch(() => {
+        // Fallback to default 10 SAR
+      });
+  }, []);
+
+  const teacherFeatures = [
+    'قاعدة بيانات سحابية معزولة تماماً (100% Tenant Isolation)',
+    'عدد غير محدود من الطلاب والفصول والقاعات الدراسية',
+    'تسجيل الحضور والغياب الذكي بمسح الـ QR بكاميرا الموبايل',
+    'متابعة حل الواجبات ورصد درجات الكويزات الأوفلاين والأونلاين',
+    'حسابات مجانية لمساعدي المستر لإدارة الحصص والقاعات',
+    'بوابة خاصة لأولياء الأمور لمتابعة الأبناء والإشعارات الفورية',
+    'لوحة تحليلات وتقارير حضور ومستوى أكاديمي لحظية',
+    'لا توجد رسوم خفية أو نسب مقتطعة — مجانًا بالكامل',
+  ];
+
+  const studentFeatures = [
+    'بطاقة الطالب الرقمية الذكية للحضور السريع بالسنتر والقاعات',
+    'الوصول لجميع الدروس والواجبات والمذكرات الدراسية المعتمدة',
+    'أداء الاختبارات والواجبات واستلام نتائج التصحيح التلقائي',
+    'ربط مباشر بحساب ولي الأمر لاستلام إشعارات الحضور والواجبات',
+    'سجل أكاديمي كامل لدرجات الكويزات ونسب الحضور',
+    'سداد يدوي شهري بسيط ومباشر عبر التحويل البنكي',
   ];
 
   return (
     <PublicPage>
-      <div className="py-12 px-6 relative overflow-hidden">
-      {/* Background glow */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-primary/10 rounded-full blur-[160px] pointer-events-none" />
+      <div className="py-12 px-6 relative overflow-hidden text-start">
+        {/* Background glow */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-primary/10 rounded-full blur-[160px] pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto relative z-10">
-        {/* Navigation back */}
-        
-
-        {/* Heading */}
-        <div className="text-center max-w-3xl mx-auto mb-12">
-          <Badge variant="success" size="sm" className="mb-3">باقات واضحة وعادلة</Badge>
-          <h1 className="text-3xl sm:text-5xl font-black text-fg">خطط أسعار تناسب حجم مؤسستك</h1>
-          <p className="text-sm text-secondary mt-3 leading-relaxed">
-            كل باقة تشتمل على عزل سحابي كامل لقاعدة البيانات وضمان عدم تداخل البيانات، مع تجربة مجانية لمدة 14 يوماً.
-          </p>
-
-          {/* Billing cycle toggle */}
-          <div className="mt-8 inline-flex items-center bg-card border border-border p-1.5 rounded-xl">
-            <button
-              onClick={() => setBillingCycle('yearly')}
-              className={`px-4 py-2 rounded-[16px] text-xs font-semibold transition-all ${
-                billingCycle === 'yearly'
-                  ? 'bg-primary text-primary-fg shadow-md'
-                  : 'text-fg-muted hover:text-fg'
-              }`}
-            >
-              
- دفع سنوي (خصم 20%) 
- </button>
-            <button
-              onClick={() => setBillingCycle('monthly')}
-              className={`px-4 py-2 rounded-[16px] text-xs font-semibold transition-all ${
-                billingCycle === 'monthly'
-                  ? 'bg-primary text-primary-fg shadow-md'
-                  : 'text-fg-muted hover:text-fg'
-              }`}
-            >
-              دفع شهري
-            </button>
+        <div className="max-w-6xl mx-auto relative z-10 space-y-16">
+          {/* Heading */}
+          <div className="text-center max-w-3xl mx-auto space-y-4">
+            <Badge variant="success" size="sm">
+              <Sparkles size={12} className="me-1 inline" />
+              تسعير شفاف وعادل بدون تعقيد (OD-27)
+            </Badge>
+            <h1 className="text-3xl sm:text-5xl font-black text-fg tracking-tight">
+              {pricing.headline || 'مجانًا للمدرس والسنتر، 10 ريال للطالب في الشهر'}
+            </h1>
+            <p className="text-sm sm:text-base text-fg-muted max-w-2xl mx-auto leading-relaxed">
+              نموذج تشغيل عادل يتيح للمعلمين والمراكز التعليمية العمل بأحدث التقنيات السحابية مجانًا بالكامل،
+              مع رسم اشتراك شهري رمزي لكل طالب نشط.
+            </p>
           </div>
-        </div>
 
-        {/* Pricing Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {plans.map((p) => (
-            <Card
-              key={p.id}
-              className={`p-8 relative flex flex-col justify-between transition-all ${
-                p.popular
-                  ? 'border-primary/60 bg-[color-mix(in_srgb,var(--pri)_15%,transparent)] shadow-xl shadow-primary/10 scale-105'
-                  : 'border-border-strong bg-card/40 hover:border-border-strong'
-              }`}
-            >
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <Badge variant={p.popular ? 'success' : 'neutral'}>{p.badge}</Badge>
+          {/* Pricing Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto items-stretch">
+            {/* Card 1: Teachers & Centers (Free) */}
+            <Card className="p-8 bg-surface border-border flex flex-col justify-between rounded-2xl relative shadow-xs">
+              <div className="space-y-6">
+                <div>
+                  <Badge variant="neutral" size="sm" className="mb-2">
+                    للمعلمين والمراكز
+                  </Badge>
+                  <h2 className="text-2xl font-bold text-fg">حساب المعلم والمؤسسة</h2>
+                  <p className="text-xs text-fg-muted mt-1 leading-relaxed">
+                    منصة متكاملة للمدرسين المستقلين، السناتر، الأكاديميات، والمدارس.
+                  </p>
                 </div>
-                <h3 className="text-lg font-bold text-fg">{p.name}</h3>
-                <p className="text-xs text-secondary mt-1 min-h-[32px]">{p.description}</p>
 
-                <div className="mt-6 mb-6 pb-6 border-b border-border">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-3xl sm:text-4xl font-black text-fg">
-                      {billingCycle === 'yearly' ? p.yearlyPrice : p.monthlyPrice}
-                    </span>
-                    {p.yearlyPrice !== 'مخصص' && (
-                      <span className="text-xs text-secondary font-medium">ر.س / شهر</span>
-                    )}
+                <div className="pt-2 border-t border-border">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-4xl sm:text-5xl font-black text-fg font-mono">0</span>
+                    <span className="text-lg font-bold text-fg-muted font-sans">ريال / شهرياً</span>
                   </div>
-                  {billingCycle === 'yearly' && p.yearlyPrice !== 'مخصص' && (
-                    <span className="text-xs text-primary block mt-1">تُدفع سنوياً مع شهرين مجاناً</span>
-                  )}
+                  <div className="text-xs text-success font-semibold mt-1 flex items-center gap-1">
+                    <Check size={14} strokeWidth={2.5} />
+                    <span>مجانًا دائمًا بدون أي اشتراكات سنوية أو رسوم إعداد</span>
+                  </div>
                 </div>
 
-                <div className="space-y-3">
-                  <span className="text-xs font-bold text-secondary uppercase tracking-wider block">
-                    المميزات المضمنة:
-                  </span>
-                  {p.features.map((f, i) => (
-                    <div key={i} className="flex items-start gap-2.5 text-xs text-secondary">
-                      <span className="text-primary text-sm mt-0.5"><Check size={16} strokeWidth={1.75} aria-hidden /></span>
-                      <span>{f}</span>
-                    </div>
+                <ul className="space-y-3 pt-2 text-xs text-fg">
+                  {teacherFeatures.map((feat, idx) => (
+                    <li key={idx} className="flex items-start gap-2.5">
+                      <div className="w-4 h-4 rounded-full bg-success-subtle text-success flex items-center justify-center shrink-0 mt-0.5">
+                        <Check size={11} strokeWidth={2.5} />
+                      </div>
+                      <span className="leading-relaxed">{feat}</span>
+                    </li>
                   ))}
-                </div>
+                </ul>
               </div>
 
-              <div className="mt-8 pt-4">
-                <Link
-                  href="/register-school"
-                  className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-[16px] font-bold text-xs transition-all active:scale-95 ${
-                    p.popular
-                      ? 'bg-primary hover:bg-primary-hover text-primary-fg shadow-lg shadow-primary/30'
-                      : 'bg-surface-muted hover:bg-background hover:border-border hover:border text-fg'
-                  }`}
-                >
-                  {p.ctaText}  <IconNext size={16} />
- </Link>
+              <div className="pt-8 border-t border-border mt-8">
+                <Link href="/login" className="block w-full">
+                  <Button variant="secondary" className="w-full text-xs font-semibold py-2.5">
+                    <span>تسجيل دخول المعلمين</span>
+                    <IconNext size={14} className="ms-1.5" />
+                  </Button>
+                </Link>
               </div>
             </Card>
-          ))}
+
+            {/* Card 2: Students (10 SAR/Month) */}
+            <Card className="p-8 bg-surface border-primary/40 flex flex-col justify-between rounded-2xl relative shadow-md ring-1 ring-primary/20">
+              <div className="absolute -top-3.5 start-8">
+                <Badge variant="brand" size="sm" className="shadow-xs font-bold px-3 py-1">
+                  الباقة الأكاديمية للطالب
+                </Badge>
+              </div>
+
+              <div className="space-y-6 pt-2">
+                <div>
+                  <Badge variant="brand" size="sm" className="mb-2">
+                    للطلاب وأولياء الأمور
+                  </Badge>
+                  <h2 className="text-2xl font-bold text-fg">اشتراك الطالب الشهري</h2>
+                  <p className="text-xs text-fg-muted mt-1 leading-relaxed">
+                    وصول شامل ومستمر للدروس، الواجبات، بنك الأسئلة، وكارت الحضور بالسنتر.
+                  </p>
+                </div>
+
+                <div className="pt-2 border-t border-border">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-4xl sm:text-5xl font-black text-primary font-mono">
+                      {formatNumber(pricing.student_monthly_fee)}
+                    </span>
+                    <span className="text-lg font-bold text-fg-muted font-sans">
+                      {pricing.currency || 'ر.س'} / شهرياً
+                    </span>
+                  </div>
+                  <div className="text-xs text-fg-muted mt-1">
+                    يدفعها الطالب لكل اشتراك مدرس نشط في الشهر، بمراجعة معتمدة ومباشرة
+                  </div>
+                </div>
+
+                <ul className="space-y-3 pt-2 text-xs text-fg">
+                  {studentFeatures.map((feat, idx) => (
+                    <li key={idx} className="flex items-start gap-2.5">
+                      <div className="w-4 h-4 rounded-full bg-primary-subtle text-primary flex items-center justify-center shrink-0 mt-0.5">
+                        <Check size={11} strokeWidth={2.5} />
+                      </div>
+                      <span className="leading-relaxed">{feat}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="pt-8 border-t border-border mt-8">
+                <Link href="/login" className="block w-full">
+                  <Button variant="primary" className="w-full text-xs font-semibold py-2.5">
+                    <span>تسجيل دخول الطالب أو ولي الأمر</span>
+                    <IconNext size={14} className="ms-1.5" />
+                  </Button>
+                </Link>
+              </div>
+            </Card>
+          </div>
+
+          {/* Tenant Isolation Security Banner */}
+          <div className="max-w-4xl mx-auto p-6 rounded-2xl border border-border bg-surface-raised flex flex-col sm:flex-row items-center gap-5">
+            <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <ShieldCheck size={28} />
+            </div>
+            <div className="space-y-1 text-center sm:text-start">
+              <h3 className="text-sm font-bold text-fg">
+                عزل سحابي كامل وأمان فائق لقواعد البيانات (Tenant DB Isolation)
+              </h3>
+              <p className="text-xs text-fg-muted leading-relaxed">
+                تحصل كل مؤسسة أو معلم مستقل على مساحة تخزين وقاعدة بيانات معزولة تماماً تضمن عدم تداخل
+                البيانات أو تسرب سجلات الحضور والدرجات، مع التزام تام باللوائح والأنظمة.
+              </p>
+            </div>
+          </div>
+
+          {/* FAQ Section */}
+          <div className="max-w-3xl mx-auto space-y-6 pt-4">
+            <div className="text-center space-y-2">
+              <div className="flex items-center justify-center gap-1.5 text-primary text-xs font-bold uppercase tracking-wider">
+                <HelpCircle size={14} />
+                <span>الأسئلة الشائعة</span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-bold text-fg">كل ما تريد معرفته عن التسعير</h2>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4">
+              <Card className="p-5 bg-surface border-border space-y-2">
+                <h4 className="text-sm font-bold text-fg">هل يدفع المعلم أو السنتر أي رسوم اشتراك؟</h4>
+                <p className="text-xs text-fg-muted leading-relaxed">
+                  لا، استخدام منصة سحابة مجاني بالكامل لكافة المعلمين والمراكز التعليمية والمدارس. لا توجد رسوم
+                  إعداد أو اشتراكات شهرية على المؤسسة.
+                </p>
+              </Card>
+
+              <Card className="p-5 bg-surface border-border space-y-2">
+                <h4 className="text-sm font-bold text-fg">كيف يتم سداد اشتراك الطالب الشهري؟</h4>
+                <p className="text-xs text-fg-muted leading-relaxed">
+                  يقوم الطالب أو ولي أمره برفع إشعار التحويل البنكي (10 ريال) عبر حسابه في المنصة، وتتم
+                  مراجعة المعاملة وتأكيدها مركزياً عبر إدارة المنصة لتفعيل الشهر فورياً.
+                </p>
+              </Card>
+
+              <Card className="p-5 bg-surface border-border space-y-2">
+                <h4 className="text-sm font-bold text-fg">هل يسدد طالب السنتر (الأوفلاين) نفس الرسوم؟</h4>
+                <p className="text-xs text-fg-muted leading-relaxed">
+                  نعم، يحصل طالب السنتر الأوفلاين على نفس الرسوم الرمزية للوصول لكارت الحضور الذكي بالـ QR،
+                  ومتابعة حل الواجبات ورصد درجات الكويزات الدورية، وتنبيهات ولي الأمر الفورية.
+                </p>
+              </Card>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
     </PublicPage>
   );
 }

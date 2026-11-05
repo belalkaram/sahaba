@@ -11,6 +11,8 @@ class PaymentReviewLog extends TenantModel
     protected $fillable = [
         'payment_request_id',
         'reviewed_by_user_id',
+        'reviewed_by_platform_user_id',
+        'reviewed_by_platform_user_name',
         'action',
         'reason',
         'logged_at',

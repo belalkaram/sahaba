@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [P4] - 2026-11-05 — Student 10 SAR/Month Manual Payment Reviewed by Super Admin (OD-27, ADR-004, F-17)
+### Added
+- **Centralized Platform Payment Architecture (OD-27, ADR-004):**
+  - Approved `ADR-004`: Superseded OD-7; centralized payment verification, subscription activation, and entitlement grants in the Platform Console under `platform_super_admin`.
+  - Control DB table `platform_pricing`: stores global baseline monthly fee (`student_monthly_fee`, default 10.00 SAR), currency (`SAR`), receiving account details (`receiving_account_type`, `bank_name`, `account_holder_name`, `iban`, `transfer_instructions`), and optional per-tenant overrides.
+  - Control DB table `platform_payment_reviews`: audit ledger recording all payment approval/rejection actions taken by platform super admins across all tenants (`period_month`, `amount`, `reviewer_id`, `action`, `notes`, `reviewed_at`).
+  - Tenant DB migration: added `period_month`, `reviewed_by_platform_user_id`, `reviewed_by_platform_user_name` to `payment_requests` and `payment_review_logs`, and added `period_month` to `subscriptions`. Made `package_id` nullable in `subscriptions` and `payment_requests`.
+- **Authorization & Security (OD-27):**
+  - Removed `payments.approve` and `payments.reject` from default tenant roles (`owner`, `center_admin`, `finance`) in `config/authorization.php`. Tenant staff retain `payments.view` (read-only visibility).
+  - Calling approve/reject from a tenant role returns HTTP 403 `FORBIDDEN`.
+- **Payment Review Service & Platform Endpoints:**
+  - `PaymentReviewService`: updated `approve` and `reject` to support `PlatformUser` reviewers, bound subscription start and end dates to the target calendar month (`period_month`), and dispatched dual notifications to student and parents (`NotificationCatalog::PAYMENT_APPROVED`, `PAYMENT_REJECTED`) per OD-33.
+  - `PlatformPaymentController`: cross-tenant review inbox (`GET /platform/payments`) with filters by tenant, status, month, and search; details (`GET /platform/payments/{tenantId}/{paymentId}`); proof streaming (`GET /platform/payments/{tenantId}/{paymentId}/proof`); and audited approval/rejection (`POST /platform/payments/{tenantId}/{paymentId}/approve`, `reject`).
+  - `PlatformPricingController`: super admin pricing settings (`GET /platform/pricing`, `PUT /platform/pricing`), public pricing (`GET /public/pricing`), and tenant billing pricing (`GET /billing/pricing`).
+- **Web Frontend (`apps/web`):**
+  - `/platform/payments`: New super admin review inbox UI with KPI summary cards (Total Requests, Pending Review with warning styling, Approved, and Total SAR collected), filter toolbar (search, tenant select, status tabs, month), receipt preview modal, approval confirmation with verification notes, and rejection dialog with mandatory reason.
+  - `/pricing`: Completely redesigned public pricing page (F-17) highlighting "مجانًا للمدرس والسنتر، 10 ريال للطالب في الشهر" dynamically fetched from `/public/pricing`, detailing 0 SAR features for teachers/centers, 10 SAR/month features for students, database tenant isolation guarantees, and pricing FAQ.
+  - `/teacher/payments`: Reconfigured to read-only with a notice banner indicating centralized platform review (OD-27). Removed approve/reject action modals.
+  - `/student/plans/[id]/pay`: Updated to dynamically display bank transfer credentials and instructions (IBAN, bank name) loaded from `/billing/pricing`, and added `period_month` selector with current month default.
+  - `navigation-registry.ts`: Added `platform-payments` item to platform console navigation.
+### Tests
+- `Tests\Feature\PlatformPaymentReviewTest` (6 tests PASS):
+  - Teacher role cannot approve payments (HTTP 403 FORBIDDEN).
+  - Super admin can view cross-tenant payment requests with filters.
+  - Super admin approves payment request, activating subscription and entitlements for that specific month only, writing to Control DB ledger and AuditLog.
+  - Re-approval is idempotent and returns 422 ALREADY_PROCESSED without duplicated records.
+  - Super admin can reject payment with required reason, writing to Control DB ledger and AuditLog.
+  - Pricing endpoints return dynamic student fee (10 SAR) and public marketing headline.
+- `Tests\Feature\BillingGateTest` (1 test PASS, 33 assertions): full lifecycle verification.
+- `Tests\Feature\OpenApiCoverageTest` (1 test PASS, 244 route entries).
+- `Tests\Feature\PermissionCatalogIntegrityTest` (4 tests PASS, 820 assertions).
+- Full web verification: `tsc --noEmit` (0 errors), `npm run lint:design` (PASS), `npm run test` (13 tests PASS), `npm run lint` (0 errors), and `npm run build` (all 70 routes compiled successfully).
+
 ## [P9] - 2026-11-05 — Mandatory Parent Link, Notification Routing & WhatsApp Adapter (OD-33, F-10)
 ### Added
 - **Mandatory Parent Link Enforced (OD-33, F-10):**

@@ -64,6 +64,15 @@ paths:
           description: Standard success envelope { data, meta }
         default:
           description: Standard error envelope { error, meta }
+  /billing/pricing:
+    get:
+      summary: "billing.pricing"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
   /branches:
     get:
       summary: "branches.index"
@@ -1737,6 +1746,89 @@ paths:
           description: Standard success envelope { data, meta }
         default:
           description: Standard error envelope { error, meta }
+  /platform/payments:
+    get:
+      summary: "platform.payments.index"
+      description: "Auth: platform.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /platform/payments/reports:
+    get:
+      summary: "platform.payments.reports"
+      description: "Auth: platform.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /platform/payments/{tenantId}/{paymentId}:
+    get:
+      summary: "platform.payments.show"
+      description: "Auth: platform.auth."
+      parameters:
+        - { name: tenantId, in: path, required: true, schema: { type: string } }
+        - { name: paymentId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /platform/payments/{tenantId}/{paymentId}/approve:
+    post:
+      summary: "platform.payments.approve"
+      description: "Auth: platform.auth."
+      parameters:
+        - { name: tenantId, in: path, required: true, schema: { type: string } }
+        - { name: paymentId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /platform/payments/{tenantId}/{paymentId}/proof:
+    get:
+      summary: "platform.payments.proof"
+      description: "Auth: platform.auth."
+      parameters:
+        - { name: tenantId, in: path, required: true, schema: { type: string } }
+        - { name: paymentId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /platform/payments/{tenantId}/{paymentId}/reject:
+    post:
+      summary: "platform.payments.reject"
+      description: "Auth: platform.auth."
+      parameters:
+        - { name: tenantId, in: path, required: true, schema: { type: string } }
+        - { name: paymentId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /platform/pricing:
+    get:
+      summary: "platform.pricing.show"
+      description: "Auth: platform.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    put:
+      summary: "platform.pricing.update"
+      description: "Auth: platform.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
   /platform/support-sessions:
     get:
       summary: "platform.support_sessions.index"
@@ -1846,6 +1938,16 @@ paths:
   /public/directory/teachers:
     get:
       summary: "public.directory.teachers"
+      description: "Auth: public."
+      security: []
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /public/pricing:
+    get:
+      summary: "public.pricing"
       description: "Auth: public."
       security: []
       responses:

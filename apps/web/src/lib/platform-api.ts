@@ -105,6 +105,75 @@ export interface ContactMessagesResponse {
   pagination: PageInfo;
 }
 
+export interface PlatformPaymentItem {
+  id: string;
+  student_id: string;
+  package_id?: string | null;
+  period_month?: string | null;
+  amount: number;
+  currency: string;
+  payment_method: string;
+  status: 'pending' | 'approved' | 'rejected';
+  sender_phone?: string | null;
+  reference_code?: string | null;
+  proof_url?: string | null;
+  proof_path?: string | null;
+  rejection_reason?: string | null;
+  submitted_at?: string | null;
+  reviewed_at?: string | null;
+  tenant: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+  student?: {
+    id: string;
+    student_code?: string;
+    user?: {
+      name: string;
+      email?: string;
+      phone?: string;
+    };
+  };
+  package?: {
+    id: string;
+    name: string;
+  };
+  reviewLogs?: Array<{
+    id: string;
+    action: string;
+    reason?: string | null;
+    logged_at: string;
+    reviewer?: { name?: string };
+    reviewed_by_platform_user_name?: string | null;
+  }>;
+}
+
+export interface PlatformPaymentMetrics {
+  total_requests: number;
+  pending_count: number;
+  approved_count: number;
+  rejected_count: number;
+  total_amount_collected: number;
+}
+
+export interface PlatformPaymentsResponse {
+  payment_requests: PlatformPaymentItem[];
+  metrics: PlatformPaymentMetrics;
+  pagination: PageInfo;
+}
+
+export interface PlatformPricingData {
+  id?: string;
+  student_monthly_fee: number;
+  currency: string;
+  receiving_account_type: 'platform' | 'teacher';
+  bank_name?: string | null;
+  account_holder_name?: string | null;
+  iban?: string | null;
+  transfer_instructions?: string | null;
+}
+
 export interface SupportSessionRecord {
   id: string;
   tenant_id: string;
@@ -349,5 +418,78 @@ export const platformApi = {
       headers: platformAuthHeader(),
       skipUnauthorizedHandler: true,
     });
+  },
+
+  // Platform Payments Review (OD-27, ADR-004)
+  async getPayments(params?: {
+    tenant_id?: string;
+    status?: string;
+    period_month?: string;
+    search?: string;
+    page?: number;
+    per_page?: number;
+  }): Promise<PlatformPaymentsResponse> {
+    const res = await apiClient.get<PlatformPaymentsResponse>('/platform/payments', {
+      headers: platformAuthHeader(),
+      skipUnauthorizedHandler: true,
+      params,
+    });
+    return res.data;
+  },
+
+  async getPayment(tenantId: string, paymentId: string): Promise<PlatformPaymentItem> {
+    const res = await apiClient.get<{ payment_request: PlatformPaymentItem }>(
+      `/platform/payments/${tenantId}/${paymentId}`,
+      {
+        headers: platformAuthHeader(),
+        skipUnauthorizedHandler: true,
+      }
+    );
+    return res.data.payment_request;
+  },
+
+  getPaymentProofUrl(tenantId: string, paymentId: string): string {
+    const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1').replace(/\/$/, '');
+    return `${baseUrl}/platform/payments/${tenantId}/${paymentId}/proof`;
+  },
+
+  async approvePayment(
+    tenantId: string,
+    paymentId: string,
+    payload?: { notes?: string; period_month?: string }
+  ): Promise<void> {
+    await apiClient.post(`/platform/payments/${tenantId}/${paymentId}/approve`, payload || {}, {
+      headers: platformAuthHeader(),
+      skipUnauthorizedHandler: true,
+    });
+  },
+
+  async rejectPayment(
+    tenantId: string,
+    paymentId: string,
+    payload: { reason: string }
+  ): Promise<void> {
+    await apiClient.post(`/platform/payments/${tenantId}/${paymentId}/reject`, payload, {
+      headers: platformAuthHeader(),
+      skipUnauthorizedHandler: true,
+    });
+  },
+
+  // Platform Pricing Management (OD-27)
+  async getPricing(tenantId?: string): Promise<PlatformPricingData> {
+    const res = await apiClient.get<{ pricing: PlatformPricingData }>('/platform/pricing', {
+      headers: platformAuthHeader(),
+      skipUnauthorizedHandler: true,
+      params: tenantId ? { tenant_id: tenantId } : {},
+    });
+    return res.data.pricing;
+  },
+
+  async updatePricing(payload: Partial<PlatformPricingData>): Promise<PlatformPricingData> {
+    const res = await apiClient.put<{ pricing: PlatformPricingData }>('/platform/pricing', payload, {
+      headers: platformAuthHeader(),
+      skipUnauthorizedHandler: true,
+    });
+    return res.data.pricing;
   },
 };

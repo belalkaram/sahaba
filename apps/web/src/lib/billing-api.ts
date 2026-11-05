@@ -51,7 +51,8 @@ export interface SubscriptionItem {
 export interface PaymentRequestItem {
   id: string;
   student_id: string;
-  package_id: string;
+  package_id?: string | null;
+  period_month?: string;
   amount: number;
   currency: string;
   payment_method: string;
@@ -125,6 +126,27 @@ export const billingApi = {
   },
 
   // Payment Requests
+  async getPricing(): Promise<{
+    student_monthly_fee: number;
+    currency: string;
+    receiving_account_type: string;
+    bank_name?: string | null;
+    account_holder_name?: string | null;
+    iban?: string | null;
+    transfer_instructions?: string | null;
+  }> {
+    const res = await apiClient.get<{
+      student_monthly_fee: number;
+      currency: string;
+      receiving_account_type: string;
+      bank_name?: string | null;
+      account_holder_name?: string | null;
+      iban?: string | null;
+      transfer_instructions?: string | null;
+    }>('/billing/pricing');
+    return res.data;
+  },
+
   async getPaymentRequests(): Promise<PaymentRequestItem[]> {
     const res = await apiClient.get<{ payment_requests: PaymentRequestItem[] }>('/payment-requests');
     return res.data.payment_requests ?? [];

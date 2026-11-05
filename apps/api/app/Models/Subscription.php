@@ -12,6 +12,7 @@ class Subscription extends TenantModel
     protected $fillable = [
         'student_id',
         'package_id',
+        'period_month',
         'payment_request_id',
         'status',
         'starts_at',

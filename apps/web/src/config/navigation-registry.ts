@@ -103,6 +103,7 @@ export const NAVIGATION_REGISTRY: NavItem[] = [
   // Platform console (only inside /platform)
   { id: 'platform-dashboard', href: '/platform/dashboard', label: 'نظرة عامة', iconName: 'dashboard', experience: 'admin', group: 'platform', area: 'platform', primary: true },
   { id: 'platform-tenants', href: '/platform/tenants', label: 'المؤسسات التعليمية', iconName: 'branches', experience: 'admin', group: 'platform', area: 'platform', primary: true },
+  { id: 'platform-payments', href: '/platform/payments', label: 'مراجعة المدفوعات', iconName: 'finance', experience: 'admin', group: 'platform', area: 'platform', primary: true },
   { id: 'platform-support-sessions', href: '/platform/support-sessions', label: 'جلسات الدعم الفني', iconName: 'support', experience: 'admin', group: 'platform', area: 'platform', primary: true },
   { id: 'platform-audit', href: '/platform/audit', label: 'سجل التدقيق العام', iconName: 'audit', experience: 'admin', group: 'platform', area: 'platform' },
   { id: 'platform-settings', href: '/platform/settings', label: 'إعدادات المنصة والرسائل', iconName: 'settings', experience: 'admin', group: 'platform', area: 'platform', primary: true },

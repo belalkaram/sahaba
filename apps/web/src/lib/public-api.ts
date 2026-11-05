@@ -26,6 +26,19 @@ export interface DirectoryTeacher {
   academy_url: string;
 }
 
+export interface PublicPricing {
+  student_monthly_fee: number;
+  currency: string;
+  teacher_fee: number;
+  organization_fee: number;
+  headline: string;
+  receiving_account_type?: string;
+  bank_name?: string | null;
+  account_holder_name?: string | null;
+  iban?: string | null;
+  transfer_instructions?: string | null;
+}
+
 /** Unauthenticated endpoints used by public pages. */
 export const publicApi = {
   async getConfig(): Promise<PublicConfig> {
@@ -44,6 +57,11 @@ export const publicApi = {
       { skipUnauthorizedHandler: true }
     );
     return res.data.teachers;
+  },
+
+  async getPricing(): Promise<PublicPricing> {
+    const res = await apiClient.get<PublicPricing>('/public/pricing', { skipUnauthorizedHandler: true });
+    return res.data;
   },
 };
 

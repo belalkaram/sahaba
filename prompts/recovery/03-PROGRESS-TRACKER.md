@@ -104,7 +104,7 @@
 | P6 | P6 | Camera QR attendance on all browsers | OD-29, R5-6 | DONE | `CameraAttendanceScanTest` (6 tests PASS), `useQrScanner` (BarcodeDetector + ZXing lazy fallback), `/staff/attendance/scan`, 30s undo, auto-absent |
 | P8 | P8 | Offline service: student mode, assistant workspace, homework checks, paper scores | OD-32 | DONE | `OfflineServiceTest` (8 tests PASS), `apps/web/tests/access-model.test.ts` (13 tests PASS), `/staff/sessions/[id]`, `offline_homework_checks`, `offline_assessments`, printable card |
 | P9 | P9 | Mandatory parent link, notification routing, WhatsApp adapter | OD-33, F-10 | DONE | ParentLinkRequiredTest (7 tests PASS), NotificationRoutingTest (7 tests PASS), WhatsAppChannelTest (7 tests PASS), admin users/new & /admin/users unlinked view |
-| P4 | P4 | Student 10 SAR/month manual payment reviewed by the super admin (ADR-004) | OD-27, F-17 | TODO | |
+| P4 | P4 | Student 10 SAR/month manual payment reviewed by the super admin (ADR-004) | OD-27, F-17 | DONE | `ADR-004`, `PlatformPaymentReviewTest` (6 tests PASS), `BillingGateTest` (1 test PASS), `/platform/payments` review inbox, `/pricing` updated, read-only teacher payments |
 | P2 | P2 | Leads inbox; organization sign-up reviewed first | OD-26 | TODO | |
 | P3 | P3 | Full platform console incl. student PII with audit (ADR-005), +PS-4 | OD-28, F-11, F-12 | TODO | |
 | P5 | P5 | Places, external centers, halls, recurring schedule, conflicts | OD-30 | TODO | |

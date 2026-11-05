@@ -51,4 +51,3 @@ class CreatePlatformAdminCommand extends Command
         return self::SUCCESS;
     }
 }
-

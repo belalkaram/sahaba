@@ -15,12 +15,8 @@ import { Select } from '../../../components/ui/select';
 import { PaymentStats } from '../../../features/payments/components/payment-stats';
 import { PaymentTable } from '../../../features/payments/components/payment-table';
 import { PaymentInspectionDrawer } from '../../../features/payments/components/payment-inspection-drawer';
-import {
-  PaymentApprovalModal,
-  PaymentRejectionModal,
-} from '../../../features/payments/components/payment-action-modals';
+import { ShieldCheck, X } from 'lucide-react';
 
-import { X } from 'lucide-react';
 export default function TeacherPaymentsPage() {
   const [payments, setPayments] = useState<PaymentRequestItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,11 +25,6 @@ export default function TeacherPaymentsPage() {
   const [methodFilter, setMethodFilter] = useState('all');
 
   const [inspectingPayment, setInspectingPayment] = useState<PaymentRequestItem | null>(null);
-  const [approvingPayment, setApprovingPayment] = useState<PaymentRequestItem | null>(null);
-  const [isApproving, setIsApproving] = useState(false);
-  const [rejectingPayment, setRejectingPayment] = useState<PaymentRequestItem | null>(null);
-  const [rejectionReason, setRejectionReason] = useState('');
-  const [isRejecting, setIsRejecting] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const loadPayments = async () => {
@@ -86,48 +77,28 @@ export default function TeacherPaymentsPage() {
     });
   }, [payments, statusFilter, methodFilter, search]);
 
-  const confirmApprove = async () => {
-    if (!approvingPayment) return;
-    setIsApproving(true);
-    try {
-      await billingApi.approvePayment(approvingPayment.id);
-      setFeedback({ type: 'success', text: `تم اعتماد التحويل وتفعيل الباقة للطالب بنجاح.` });
-      setApprovingPayment(null);
-      if (inspectingPayment?.id === approvingPayment.id) setInspectingPayment(null);
-      await loadPayments();
-    } catch {
-      setFeedback({ type: 'error', text: 'حدث خطأ أثناء اعتماد المعاملة. يرجى المحاولة لاحقاً.' });
-    } finally {
-      setIsApproving(false);
-    }
-  };
-
-  const confirmReject = async () => {
-    if (!rejectingPayment || !rejectionReason.trim()) return;
-    setIsRejecting(true);
-    try {
-      await billingApi.rejectPayment(rejectingPayment.id, rejectionReason.trim());
-      setFeedback({ type: 'success', text: 'تم رفض طلب السداد وتوثيق السبب للطالب.' });
-      setRejectingPayment(null);
-      if (inspectingPayment?.id === rejectingPayment.id) setInspectingPayment(null);
-      await loadPayments();
-    } catch {
-      setFeedback({ type: 'error', text: 'حدث خطأ أثناء رفض المعاملة. يرجى المحاولة لاحقاً.' });
-    } finally {
-      setIsRejecting(false);
-    }
-  };
-
   return (
-    <div className="space-y-6 text-start">
+    <div className="space-y-6 text-start pb-12">
       <PageHeader
-        title="مراجعة وتدقيق الاشتراكات والمدفوعات"
-        description="إدارة ومطابقة الحوالات البنكية لترقية اشتراكات الطلاب ومنح الصلاحيات فورياً."
+        title="متابعة سداد واشتراكات الطلاب"
+        description="متابعة حالة الحوالات وسداد الطلاب لشهرهم الدراسي (قراءة ومتابعة فقط)."
         breadcrumbs={[
           { label: 'لوحة التحكم', href: '/teacher/dashboard' },
           { label: 'الاشتراكات والمدفوعات' },
         ]}
       />
+
+      {/* Centralized Review Information Banner (OD-27) */}
+      <div className="p-4 rounded-xl border border-primary/20 bg-primary/5 flex items-start gap-3">
+        <ShieldCheck size={20} className="text-primary shrink-0 mt-0.5" />
+        <div className="space-y-0.5 text-xs">
+          <div className="font-bold text-fg">رقابة مركزية على الاشتراكات (OD-27)</div>
+          <p className="text-fg-muted leading-relaxed">
+            يتم فحص إيصالات التحويل البنكي وتأكيد سداد الطلاب واعتماد اشتراكاتهم الشهرية عبر إدارة المنصة المركزية.
+            تُعرض هذه القائمة للمعلم لمتابعة حالة سداد طلابه المسجلين للقراءة فقط.
+          </p>
+        </div>
+      </div>
 
       {feedback && (
         <div
@@ -181,12 +152,8 @@ export default function TeacherPaymentsPage() {
           payments={filteredPayments}
           loading={loading}
           onInspect={(p) => setInspectingPayment(p)}
-          onApprove={(p) => setApprovingPayment(p)}
-          onReject={(p) => {
-            setRejectingPayment(p);
-            setRejectionReason('');
-          }}
           getMethodLabel={getMethodLabel}
+          readOnly={true}
         />
       </Card>
 
@@ -194,30 +161,8 @@ export default function TeacherPaymentsPage() {
         payment={inspectingPayment}
         isOpen={Boolean(inspectingPayment)}
         onClose={() => setInspectingPayment(null)}
-        onApprove={(p) => setApprovingPayment(p)}
-        onReject={(p) => {
-          setRejectingPayment(p);
-          setRejectionReason('');
-        }}
         getMethodLabel={getMethodLabel}
-      />
-
-      <PaymentApprovalModal
-        payment={approvingPayment}
-        isOpen={Boolean(approvingPayment)}
-        onClose={() => !isApproving && setApprovingPayment(null)}
-        onConfirm={confirmApprove}
-        isLoading={isApproving}
-      />
-
-      <PaymentRejectionModal
-        payment={rejectingPayment}
-        isOpen={Boolean(rejectingPayment)}
-        onClose={() => !isRejecting && setRejectingPayment(null)}
-        onConfirm={confirmReject}
-        isLoading={isRejecting}
-        rejectionReason={rejectionReason}
-        onReasonChange={setRejectionReason}
+        readOnly={true}
       />
     </div>
   );

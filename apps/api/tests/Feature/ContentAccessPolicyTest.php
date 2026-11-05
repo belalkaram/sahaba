@@ -8,6 +8,7 @@ use App\Models\Entitlement;
 use App\Models\Lesson;
 use App\Models\Package;
 use App\Models\PackageEntitlement;
+use App\Models\Permission;
 use App\Models\Role;
 use App\Models\Student;
 use App\Models\Tenant;
@@ -126,6 +127,10 @@ class ContentAccessPolicyTest extends TestCase
         $role = Role::where('name', 'finance')->first();
         if ($role) {
             $user->roles()->attach($role->id);
+            $perm = Permission::where('name', 'payments.approve')->first();
+            if ($perm) {
+                $role->permissions()->syncWithoutDetaching([$perm->id => ['scope' => 'tenant']]);
+            }
         }
 
         $tokenData = TenantToken::createTokenFor($user);
