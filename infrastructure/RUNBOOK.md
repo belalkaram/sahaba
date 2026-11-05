@@ -28,7 +28,7 @@ Internet → Nginx (TLS termination, rate limiting)
               ├── /api/*  → PHP-FPM (Laravel 13 — apps/api)
               └── /*      → Next.js 16 (apps/web)
 
-Laravel → MySQL 8.4 (control plane DB + per-tenant DBs)
+Laravel → PostgreSQL via DB_URL (control plane in `public`, one schema per tenant; provider-agnostic — Neon today)
 Laravel → Redis 7.4 (cache, sessions, queues)
 Laravel → Queue Worker (report generation, async jobs)
 ```
@@ -40,7 +40,7 @@ Laravel → Queue Worker (report generation, async jobs)
 | `lms_api`   | PHP-FPM application      |
 | `lms_worker`| Queue worker             |
 | `lms_web`   | Next.js frontend         |
-| `lms_mysql` | MySQL 8.4 database       |
+| `lms_postgres` | Optional local Postgres (`--profile local-db`); production uses the managed Postgres in `DB_URL` |
 | `lms_redis` | Redis 7.4 cache/queue    |
 
 ---
@@ -122,7 +122,7 @@ docker exec lms_api php artisan lms:health-report --json
 ```
 
 Checks:
-- `control_database` — MySQL connectivity + tenant count
+- `control_database` — Postgres connectivity + tenant count
 - `cache` — Redis read/write roundtrip
 - `queue_depth` — Pending and failed job count
 - `tenant_count` — Active vs total tenants
@@ -156,8 +156,7 @@ Runs daily at 02:00 via cron. Backs up:
 ```bash
 BACKUP_STORAGE_PATH=/var/backups/lms \
 BACKUP_ENCRYPTION_KEY="$(grep BACKUP_ENCRYPTION_KEY .env | cut -d= -f2)" \
-DB_PASSWORD="$(grep DB_PASSWORD .env | cut -d= -f2)" \
-MYSQL_ROOT_PASSWORD="$(grep MYSQL_ROOT_PASSWORD .env | cut -d= -f2)" \
+DB_URL="$(grep '^DB_URL=' .env | cut -d= -f2-)" \
 bash infrastructure/scripts/backup.sh
 ```
 
@@ -237,15 +236,14 @@ docker exec lms_api php-fpm -t
 ### Database connectivity lost
 
 ```bash
-# 1. Check MySQL container
-docker ps | grep lms_mysql
-docker logs lms_mysql --tail=20
+# 1. Verify the database from the API container (control plane + every tenant schema)
+docker exec lms_api php artisan lms:db:check
 
-# 2. Test connection
-docker exec lms_mysql mysqladmin ping -h localhost -u root --password="$MYSQL_ROOT_PASSWORD"
+# 2. Test the raw connection (uses the same DB_URL as the app)
+docker exec lms_api sh -c 'psql "$DB_URL" -c "select 1"'
 
-# 3. Restart MySQL (last resort — will cause brief downtime)
-docker compose -f infrastructure/docker-compose.yml restart mysql
+# 3. Managed provider (Neon): check the provider status page and that the compute is not suspended/over quota.
+#    Local Postgres (profile local-db): docker compose --profile local-db restart postgres
 ```
 
 ### Redis down / cache miss storm
@@ -325,7 +323,7 @@ docker exec lms_api php artisan migrate:rollback --step=1
 | Secret | How to Rotate |
 |--------|--------------|
 | `APP_KEY` | `php artisan key:generate --show` → update .env → `config:clear` |
-| `DB_PASSWORD` | Update MySQL + .env + restart api, worker |
+| `DB_URL` (password) | Rotate in the DB provider console + .env + restart api, worker, scheduler |
 | `REDIS_PASSWORD` | Update Redis config + .env + restart api, worker |
 | `BACKUP_ENCRYPTION_KEY` | Rotate on a scheduled basis; re-encrypt old backups |
 | Webhook secrets | Update in .env + provider dashboard simultaneously |
@@ -347,7 +345,7 @@ docker compose -f infrastructure/docker-compose.yml up -d --scale api=3
 docker compose -f infrastructure/docker-compose.yml up -d --scale worker=2
 ```
 
-### MySQL read replicas
+### Postgres read replicas
 
 Add replica configuration in `infrastructure/docker-compose.yml` and configure Laravel's `read/write` connection splitting in `config/database.php`.
 
@@ -362,8 +360,7 @@ docker logs lms_api --follow
 # Nginx access logs
 docker logs lms_nginx --follow
 
-# MySQL slow query log
-docker exec lms_mysql tail -f /var/log/mysql/slow.log
+# Slow queries: use the DB provider's query insights (Neon: Monitoring -> Query performance)
 
 # All containers at once
 docker compose -f infrastructure/docker-compose.yml logs -f --tail=50
@@ -372,7 +369,7 @@ docker compose -f infrastructure/docker-compose.yml logs -f --tail=50
 **Log rotation:** All containers use `json-file` driver with:
 - `lms_api` / `lms_worker`: 50MB × 10 files
 - `lms_nginx`: 10MB × 5 files
-- `lms_web` / `lms_mysql`: 20MB × 5 files
+- `lms_web` / `lms_postgres`: 20MB × 5 files
 
 ---
 

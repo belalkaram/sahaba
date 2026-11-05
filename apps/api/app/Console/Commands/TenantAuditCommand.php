@@ -2,7 +2,9 @@
 
 namespace App\Console\Commands;
 
-use App\Domain\Tenancy\Models\Tenant;
+use App\Models\Tenant;
+use App\Models\TenantUser;
+use App\Tenancy\TenantRunner;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -36,7 +38,7 @@ class TenantAuditCommand extends Command
                     'tenants.slug',
                     'tenants.status',
                     'tenant_domains.domain',
-                    'tenant_databases.database_name',
+                    'tenant_databases.connection_identifier',
                     'tenants.created_at',
                 )
                 ->get();
@@ -44,15 +46,10 @@ class TenantAuditCommand extends Command
             $records = $tenants->map(function ($t) {
                 $userCount = 0;
                 try {
-                    if ($t->database_name) {
-                        // Attempt connection to tenant DB for user count
-                        config(['database.connections.tenant_audit' => [
-                            'driver' => 'sqlite',
-                            'database' => database_path("tenants/{$t->database_name}.sqlite"),
-                        ]]);
-                        $userCount = DB::connection('tenant_audit')->table('users')->count();
-                        DB::purge('tenant_audit');
-                    }
+                    $tenant = Tenant::with('databaseConfig')->find($t->id);
+                    $userCount = $tenant
+                        ? app(TenantRunner::class)->run($tenant, fn () => TenantUser::count())
+                        : 0;
                 } catch (Throwable) {
                     $userCount = -1; // unreachable
                 }
@@ -63,7 +60,7 @@ class TenantAuditCommand extends Command
                     'slug' => $t->slug,
                     'status' => $t->status,
                     'domain' => $t->domain ?? '—',
-                    'database' => $t->database_name ?? '—',
+                    'database' => $t->connection_identifier ?? '—',
                     'users' => $userCount < 0 ? 'unreachable' : (string) $userCount,
                     'created_at' => $t->created_at,
                 ];

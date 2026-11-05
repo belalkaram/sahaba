@@ -47,11 +47,11 @@ class PlatformMetricsService
                 'courses_count' => Course::count(),
             ]);
 
-            $path = $this->databases->getDatabasePath($tenant);
+            $storageBytes = $this->runner->run($tenant, fn () => $this->databases->storageBytes($tenant));
 
             TenantMetricSnapshot::updateOrCreate(['tenant_id' => $tenant->id], [
                 ...$counts,
-                'storage_bytes' => $path && file_exists($path) ? filesize($path) : null,
+                'storage_bytes' => $storageBytes,
                 'last_activity_at' => $lastActivity,
                 'status' => 'ok',
                 'computed_at' => now(),

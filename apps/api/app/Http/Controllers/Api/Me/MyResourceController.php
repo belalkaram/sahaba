@@ -14,6 +14,7 @@ use App\Support\Authorization\ScopeResolver;
 use App\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -127,12 +128,19 @@ class MyResourceController extends Controller
 
         $query = ScopeResolver::scopeSessions($query, $user, 'classes.view');
 
-        if ($request->filled('from')) {
-            $query->where('starts_at', '>=', $request->query('from'));
+        // Validated + parsed: a strict database (Postgres) rejects malformed timestamps instead of
+        // silently string-comparing them like SQLite did.
+        $filters = $request->validate([
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date'],
+        ]);
+
+        if (! empty($filters['from'])) {
+            $query->where('starts_at', '>=', Carbon::parse($filters['from']));
         }
 
-        if ($request->filled('to')) {
-            $query->where('starts_at', '<=', $request->query('to'));
+        if (! empty($filters['to'])) {
+            $query->where('starts_at', '<=', Carbon::parse($filters['to']));
         }
 
         $sessions = $query->orderBy('starts_at', 'asc')->get();

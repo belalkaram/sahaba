@@ -7,6 +7,9 @@
 
 ## Audit & Recovery (current source of truth for status)
 - `audit/2026-10-30-system-gap-analysis/README.md`
+- `audit/2026-11-05-database-audit/README.md` (database inventory, Postgres enablement)
+- `infrastructure/DATABASE-PORTABILITY.md` (Neon/Postgres setup and provider switching)
+- `decisions/ADR-002-postgres-schema-per-tenant-and-provider-portability.md`
 
 ## Master
 - `master/MASTER-SPECIFICATION.md`

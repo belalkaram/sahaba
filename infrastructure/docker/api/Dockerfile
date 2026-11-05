@@ -34,9 +34,13 @@ RUN apk add --no-cache \
         oniguruma-dev \
         sqlite-dev \
         sqlite-libs \
+        postgresql-dev \
+        postgresql-libs \
+        postgresql-client \
     && docker-php-ext-install \
         pdo \
-        pdo_mysql \
+        pdo_pgsql \
+        pgsql \
         pdo_sqlite \
         mbstring \
         intl \

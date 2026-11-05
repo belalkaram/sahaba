@@ -272,7 +272,7 @@ class MyEndpointsTest extends TestCase
         $filteredResponse = $this->withHeaders([
             'X-Tenant' => 'my-academy',
             'Authorization' => 'Bearer '.$tokenResult['plainTextToken'],
-        ])->getJson('/api/v1/me/sessions?from='.now()->startOfDay()->toIso8601String());
+        ])->getJson('/api/v1/me/sessions?from='.urlencode(now()->startOfDay()->toIso8601String()));
 
         $filteredResponse->assertStatus(200);
         $this->assertCount(1, $filteredResponse->json('data'));

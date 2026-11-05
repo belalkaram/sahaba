@@ -93,6 +93,7 @@
 | R9 | R9-6 | New release gate | T-QA-05 | TODO | |
 | R9 | R9-7 | Repository hygiene | T-QA-06, T-UX-11 | TODO | |
 | R9 | R9-8 | Documentation & status | C-09 | TODO | |
+| DB | DB-1 | PostgreSQL (Neon) enablement, provider portability, DB audit | — | PARTIAL | ADR-002, `docs/audit/2026-11-05-database-audit/README.md`; verified on local Postgres 16 (SQLite 200/200; Postgres 199/200 then fix re-verified); Neon deployment NOT VERIFIED (network blocked) |
 
 ## External prerequisites (owner action)
 

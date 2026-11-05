@@ -102,12 +102,16 @@ return [
             'sslmode' => env('DB_SSLMODE', 'prefer'),
         ],
 
+        // Per-tenant data store. sqlite: file per tenant. pgsql: one schema per tenant inside the same
+        // database (search_path is set by TenantDatabaseManager). See docs/decisions/ADR-002.
+        // On Neon, point DB_TENANT_URL at the DIRECT (non-pooled) endpoint: search_path is a
+        // session setting and is not reliable behind a transaction-mode pooler.
         'tenant' => [
             'driver' => env('DB_TENANT_DRIVER', env('DB_CONNECTION', 'sqlite')),
-            'url' => env('DB_URL'),
+            'url' => env('DB_TENANT_URL', env('DB_URL')),
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '5432'),
-            'database' => null,
+            'database' => env('DB_DATABASE'),
             'username' => env('DB_USERNAME', 'root'),
             'password' => env('DB_PASSWORD', ''),
             'charset' => 'utf8',

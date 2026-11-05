@@ -12,9 +12,7 @@ DRY_RUN="${2:-}"
 BACKUP_DIR="${BACKUP_STORAGE_PATH:-/var/backups/lms}"
 BACKUP_PATH="$BACKUP_DIR/$TIMESTAMP"
 ENCRYPTION_KEY="${BACKUP_ENCRYPTION_KEY:?BACKUP_ENCRYPTION_KEY is required}"
-MYSQL_HOST="${DB_HOST:-mysql}"
-MYSQL_PORT="${DB_PORT:-3306}"
-MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}"
+DB_URL="${DB_URL:?DB_URL is required}"
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 
@@ -46,35 +44,13 @@ if [ "$CONFIRM" != "yes" ]; then
     exit 1
 fi
 
-# ── Restore control DB ────────────────────────────────────────────────────────
-CONTROL_ENC="$BACKUP_PATH/control_db.sql.enc"
-if [ -f "$CONTROL_ENC" ]; then
-    log "Restoring control database..."
-    openssl enc -d -aes-256-cbc -pbkdf2 \
-        -k "$ENCRYPTION_KEY" \
-        -in "$CONTROL_ENC" \
-        | mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u root \
-            --password="$MYSQL_ROOT_PASSWORD"
-    log "Control database restored"
+# ── Restore database (control plane + all tenant schemas) ─────────────────────
+DUMP_ENC="$BACKUP_PATH/database.dump.enc"
+if [ ! -f "$DUMP_ENC" ]; then
+    echo "ERROR: $DUMP_ENC not found"
+    exit 1
 fi
-
-# ── Restore tenant DBs ────────────────────────────────────────────────────────
-TENANT_COUNT=0
-for ENC_FILE in "$BACKUP_PATH"/tenant_*.sql.enc; do
-    [ -f "$ENC_FILE" ] || continue
-    DB_NAME=$(basename "$ENC_FILE" .sql.enc)
-    log "Restoring tenant database: $DB_NAME"
-    mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u root \
-        --password="$MYSQL_ROOT_PASSWORD" \
-        -e "CREATE DATABASE IF NOT EXISTS \`$DB_NAME\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-    openssl enc -d -aes-256-cbc -pbkdf2 \
-        -k "$ENCRYPTION_KEY" \
-        -in "$ENC_FILE" \
-        | mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u root \
-            --password="$MYSQL_ROOT_PASSWORD" "$DB_NAME"
-    TENANT_COUNT=$((TENANT_COUNT + 1))
-done
-
-log "Tenant database restore complete — $TENANT_COUNT tenants"
-log "Restore finished. Run application migrations if schema has changed."
-log "  php artisan migrate --force"
+log "Restoring database with pg_restore (--clean --if-exists)..."
+openssl enc -d -aes-256-cbc -pbkdf2 -k "$ENCRYPTION_KEY" -in "$DUMP_ENC" \
+    | pg_restore --clean --if-exists --no-owner --no-privileges --exit-on-error --dbname="$DB_URL"
+log "Restore finished. Verify with:  php artisan lms:db:check"
