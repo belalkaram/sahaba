@@ -7,6 +7,10 @@
 
 ## Audit & Recovery (current source of truth for status)
 - `audit/2026-10-30-system-gap-analysis/README.md`
+- `audit/2026-11-05-documentation-hygiene.md` — duplicates, stubs and stale docs (proposed cleanup)
+
+## Plans (PROPOSED, not implemented)
+- `plans/2026-11-05-platform-console-tenancy-venues-qr-plan.md` — super-admin console, tenant types, venues/scheduling, camera QR attendance
 
 ## Master
 - `master/MASTER-SPECIFICATION.md`
