@@ -45,7 +45,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             {label}
           </FieldLabel>
         )}
-        <div className="relative flex items-center">
+        <div className="relative flex items-center" suppressHydrationWarning>
           {iconPrefix && (
             <span className="pointer-events-none absolute start-3 flex items-center text-fg-subtle">{iconPrefix}</span>
           )}
@@ -57,6 +57,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             aria-invalid={error ? true : undefined}
             aria-describedby={error || helperText ? msgId : undefined}
             onChange={handleChange}
+            suppressHydrationWarning
             className={cn(
               controlBase,
               error ? controlError : controlNormal,

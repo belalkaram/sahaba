@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import { Compass } from 'lucide-react';
 import { buttonClasses } from '../components/ui/button-styles';

@@ -133,7 +133,7 @@ function LoginForm() {
             />
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+          <form onSubmit={handleSubmit} className="space-y-5" noValidate suppressHydrationWarning>
             {/* Academy (tenant) — a technical code, collapsed once known */}
             <div data-enter>
               {editTenant ? (

@@ -43,7 +43,7 @@ export default function PlatformLoginPage() {
           <h1 className="font-display text-2xl text-fg">لوحة إدارة المنصة</h1>
           <p className="text-sm text-fg-muted">مخصّصة لفريق تشغيل المنصة فقط، وليست لحسابات الأكاديميات.</p>
         </div>
-        <form onSubmit={submit} className="space-y-4">
+        <form onSubmit={submit} className="space-y-4" suppressHydrationWarning>
           <Input
             label="البريد الإلكتروني"
             type="email"
