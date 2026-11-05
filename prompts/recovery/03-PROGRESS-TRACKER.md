@@ -94,20 +94,23 @@
 | R9 | R9-7 | Repository hygiene | T-QA-06, T-UX-11 | TODO | |
 | R9 | R9-8 | Documentation & status | C-09 | TODO | |
 
-### Program 2026-11-05 (plan: `docs/plans/2026-11-05-platform-console-tenancy-venues-qr-plan.md`); runs after the R9 rows above unless the owner reorders
+### Program 2026-11-05 (plan: `docs/plans/2026-11-05-platform-console-tenancy-venues-qr-plan.md`, order = plan §3)
 
 | Phase | Task | Title | Closes | Status | Evidence |
 |---|---|---|---|---|---|
 | PS | PS-1 | Platform create-tenant form: no default password, send domain, owner name | F-5 | TODO | |
-| PS | PS-2 | Teacher photo and public profile shown on `/a/{slug}` and `/`; cache-busting; branding refresh and logo upload | F-1..F-4 | TODO | |
-| P6 | P6 | Camera QR attendance on all browsers (OD-29) | R5-6, X-3 | TODO | |
-| P1 | P1 | Tenant types and profiles (ADR-002) | X-1 | TODO | |
-| P2 | P2 | Leads inbox and reviewed organization signup (OD-26) | X-2 | TODO | |
+| PS | PS-2 | Teacher photo and public profile on `/a/{slug}` and `/`, cache-busting, branding refresh | F-1..F-4 | TODO | |
+| P1 | P1 | Tenant types, simple teacher UI, service selection (ADR-002) | OD-23, 24, 31, F-6 | TODO | |
+| P6 | P6 | Camera QR attendance on all browsers | OD-29, R5-6 | TODO | |
+| P8 | P8 | Offline service: student mode, assistant workspace, homework checks, paper scores | OD-32 | TODO | |
+| P9 | P9 | Mandatory parent link, notification routing, WhatsApp adapter | OD-33, F-10 | TODO | |
+| P4 | P4 | Student 10 SAR/month manual payment reviewed by the super admin (ADR-004) | OD-27, F-17 | TODO | |
+| P2 | P2 | Leads inbox; organization sign-up reviewed first | OD-26 | TODO | |
+| P3 | P3 | Full platform console incl. student PII with audit (ADR-005), +PS-4 | OD-28, F-11, F-12 | TODO | |
+| P5 | P5 | Places, external centers, halls, recurring schedule, conflicts | OD-30 | TODO | |
 | PS | PS-3 | Exam creation UI and question-bank management | F-7..F-9 | TODO | |
-| P3 | P3 | Full platform console (+PS-4 admin tools) | F-6, F-10..F-12 | TODO | |
-| P5 | P5 | Venues, halls, recurring schedule, conflicts | — | TODO | |
-| P4 | P4 | Platform plans and tenant subscriptions (ADR-004) (+PS-5) | F-17, F-18 | TODO | |
-| P7 | P7 | Global staff identity and workspace switcher (OD-25, ADR-003) | — | TODO | |
+| P7 | P7 | Global staff identity and workspace switcher (ADR-003) | OD-25 | TODO | |
+| PS | PS-5 | Analytics UI, credential activation, live landing numbers | F-13, F-15, F-18 | TODO | |
 | PS | PS-6 | CI guard: unused API methods and routes | — | TODO | |
 
 ## External prerequisites (owner action)
@@ -118,4 +121,6 @@
 | R8-1 (email) | SMTP credentials (or keep `log` mailer) |
 | R0-1 | Set `PLATFORM_ADMIN_TOKEN` in `apps/api/.env` |
 | R1-A9 | `PLATFORM_ADMIN_EMAIL` / `PLATFORM_ADMIN_PASSWORD` in `apps/api/.env` |
+| P9 (WhatsApp) | Meta WhatsApp Business account: phone number ID, access token, approved message templates |
+| P4 | Receiving bank account(s) / IBAN shown to students for the 10 SAR transfer |
 | R0-9 (if flagged) | Rotate Google client secret in Google Cloud Console |

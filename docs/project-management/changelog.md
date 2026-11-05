@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 - Removed stale and duplicate docs (`lms-recovery/`, `source/`, phase copies, bootstrap manifests). See `docs/audit/2026-11-05-documentation-hygiene.md`.
 - Added `docs/audit/2026-11-05-frontend-backend-persistence-audit.md` (F-1..F-19; F-5 is a security issue).
-- Added plan `docs/plans/2026-11-05-platform-console-tenancy-venues-qr-plan.md`. Owner approved OD-25, OD-26 and OD-29.
+- Added plan `docs/plans/2026-11-05-platform-console-tenancy-venues-qr-plan.md` (v2). Owner approved OD-23..OD-33: tenant types, simple teacher UI, online/offline services, offline student mode, mandatory parent link + WhatsApp, 10 SAR/student/month reviewed by the super admin (supersedes OD-7), super-admin PII access with audit.
 - No application code changed.
 
 ## [UX-R7G] - 2026-11-05 -- DARK THEME, LOGO, CHROME, SECURE EXAM, IMAGES, PUBLIC ACADEMY PAGES
