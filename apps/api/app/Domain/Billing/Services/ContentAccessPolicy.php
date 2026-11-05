@@ -45,26 +45,36 @@ class ContentAccessPolicy
 
         // Free courses require active enrollment only
         if ($course->is_free) {
-            $isEnrolled = Enrollment::where('student_id', $user->student->id)
+            $enrollment = Enrollment::where('student_id', $user->student->id)
                 ->where('course_id', $course->id)
                 ->where('status', 'active')
-                ->exists();
+                ->first();
 
-            return $isEnrolled
-                ? ContentAccessDecision::allow()
-                : ContentAccessDecision::deny('not_enrolled', $this->getPackageIdsForCourse($course));
+            if (! $enrollment) {
+                return ContentAccessDecision::deny('not_enrolled', $this->getPackageIdsForCourse($course));
+            }
+
+            if ($enrollment->mode === 'offline') {
+                return ContentAccessDecision::deny('offline_mode_restricted');
+            }
+
+            return ContentAccessDecision::allow();
         }
 
         $packageIds = $this->getPackageIdsForCourse($course);
 
         // Check active enrollment
-        $isEnrolled = Enrollment::where('student_id', $user->student->id)
+        $enrollment = Enrollment::where('student_id', $user->student->id)
             ->where('course_id', $course->id)
             ->where('status', 'active')
-            ->exists();
+            ->first();
 
-        if (! $isEnrolled) {
+        if (! $enrollment) {
             return ContentAccessDecision::deny('not_enrolled', $packageIds);
+        }
+
+        if ($enrollment->mode === 'offline') {
+            return ContentAccessDecision::deny('offline_mode_restricted');
         }
 
         // Check active entitlement covering this course

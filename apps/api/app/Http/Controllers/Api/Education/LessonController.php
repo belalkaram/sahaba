@@ -6,6 +6,7 @@ use App\Domain\Billing\Services\ContentAccessPolicy;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\CourseModule;
+use App\Models\Enrollment;
 use App\Models\Lesson;
 use App\Models\LessonProgress;
 use App\Models\TenantUser;
@@ -41,6 +42,22 @@ class LessonController extends Controller
     public function index(Request $request, string $courseId, ContentAccessPolicy $policy): JsonResponse
     {
         $course = Course::findOrFail($courseId);
+
+        /** @var TenantUser|null $user */
+        $user = $request->user();
+        if ($user && $user->student) {
+            $enrollment = Enrollment::where('student_id', $user->student->id)
+                ->where('course_id', $course->id)
+                ->first();
+
+            if ($enrollment && $enrollment->mode === 'offline') {
+                return ApiResponse::error(
+                    'OFFLINE_STUDENT_RESTRICTED',
+                    'المحتوى الإلكتروني غير متاح لطلاب النمط الحضوري (أوفلاين).',
+                    Response::HTTP_FORBIDDEN
+                );
+            }
+        }
 
         $lessonsWithAccess = $course->lessons()->with(['materials', 'mediaAssets'])->get()->map(function ($lesson) use ($policy, $request) {
             $lessonArray = $lesson->toArray();
@@ -130,6 +147,13 @@ class LessonController extends Controller
         }
 
         if (! $decision->isAllowed()) {
+            if ($decision->reason === 'offline_mode_restricted') {
+                return ApiResponse::error(
+                    'OFFLINE_STUDENT_RESTRICTED',
+                    'المحتوى الإلكتروني غير متاح لطلاب النمط الحضوري (أوفلاين).',
+                    Response::HTTP_FORBIDDEN
+                );
+            }
             throw new AuthorizationException('You are not authorized to view this lesson.');
         }
 

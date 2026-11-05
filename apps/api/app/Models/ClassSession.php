@@ -40,4 +40,14 @@ class ClassSession extends TenantModel
     {
         return $this->hasMany(AttendanceRecord::class, 'session_id');
     }
+
+    public function homeworkChecks(): HasMany
+    {
+        return $this->hasMany(OfflineHomeworkCheck::class, 'session_id');
+    }
+
+    public function offlineAssessments(): HasMany
+    {
+        return $this->hasMany(OfflineAssessment::class, 'session_id');
+    }
 }

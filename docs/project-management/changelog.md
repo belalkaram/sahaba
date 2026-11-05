@@ -2,7 +2,50 @@
 
 All notable changes to this project will be documented in this file.
 
-## [P6] - 2026-11-05 — Universal Camera QR Attendance, Mobile Experience & Auto-Absent on Session End (OD-29, OD-4, F-14, R5-6)
+## [P8] - 2026-11-05 — Offline Service: Student Mode, Assistant Workspace, Homework Checks & Paper Scores (OD-31, OD-32)
+### Added
+- **Tenant DB Data Model for Offline Learning:**
+  - Added `mode` column (`'online'`, `'offline'`, `'both'`) to `enrollments` and `class_students` tables.
+  - Created `offline_homework_checks` table (`session_id`, `student_id`, `status: done|partial|not_done|absent`, `note`, `checked_by_staff_id`, `checked_at`).
+  - Created `offline_assessments` table (`class_id`, `session_id`, `title`, `max_score`, `date`, `description`, `created_by_staff_id`).
+  - Created `offline_assessment_scores` table (`offline_assessment_id`, `student_id`, `score`, `is_absent`, `notes`, `recorded_by_staff_id`).
+- **Canonical Authorization & Permissions (`config/authorization.php`):**
+  - Added `homework_checks.record` (module `offline`, scopes: `['assigned', 'own', 'branch', 'tenant']`).
+  - Added `offline_scores.record` (module `offline`, scopes: `['assigned', 'own', 'branch', 'tenant']`).
+  - Added `offline_assessments.manage` (module `offline`, scopes: `['own', 'branch', 'tenant']`).
+  - Granted permissions across `owner`, `center_admin`, `branch_manager`, `teacher`, and `assistant` (with `assigned` scope).
+  - Extended `ScopeResolver::canAccess` to support `ClassSession` and `OfflineAssessment` resources.
+- **Backend API Controllers & Endpoints:**
+  - Created `OfflineHomeworkCheckController`: `GET /sessions/{id}/homework-checks`, `POST /sessions/{id}/homework-checks`, `POST /sessions/{id}/homework-checks/bulk`.
+  - Created `OfflineAssessmentController`: `GET /classes/{id}/offline-assessments`, `POST /classes/{id}/offline-assessments`, `GET /offline-assessments/{id}`, `POST /offline-assessments/{id}/scores`.
+  - Auto-syncs recorded paper scores to canonical `grades` table with percentage calculation so students and parents see results on their transcripts.
+  - Server-side offline student restriction: `LessonController::index`, `LessonController::show`, and `ContentAccessPolicy` strictly reject offline students (`mode === 'offline'`) with 403 `OFFLINE_STUDENT_RESTRICTED` while allowing `both` and `online` students.
+  - Static printed QR card scan: `AttendanceController::qrScan` supports scanning student printed cards tied to `AccessCredential`, validating `active` status and rejecting revoked (`CREDENTIAL_REVOKED`) or expired credentials.
+- **Mobile-First Assistant Workspace (`/staff/sessions/[id]`):**
+  - Unified 3-tab mobile workspace:
+    1. **الحضور والغياب**: Live stats, quick launcher for mobile camera scanner, student roster with fast status toggles (present, late, absent).
+    2. **متابعة الواجب**: Student roster with 4-state buttons (✓ تم بالكامل, جزئي, ✗ لم يُحل, غائب), inline notes, and bulk save.
+    3. **الدرجات والكويزات الورقية**: Assessment selector, new quiz modal, numerical score input table, absence flag, and instant saving.
+  - Backward compatibility redirect: `/teacher/sessions/[id]` redirects to `/staff/sessions/[id]` (OD-8).
+- **Printable Student ID Card:**
+  - Added "معاينة وطباعة بطاقة الطالب الورقية" modal to `/student/card` displaying student info and static QR code ready for paper printing (`window.print()`).
+- **Student Navigation Mode Filtering:**
+  - `filterNavItems` hides online course items (`courses`, `meetings`, `exams`, `assignments`) for students with `mode === 'offline'`, keeping attendance, card, grades, payments, and profile.
+### Tests
+- Backend test suite: `Tests\Feature\OfflineServiceTest` (8 tests, 25 assertions PASS) testing:
+  - Offline student requesting `/courses/{id}/lessons` returns 403 `OFFLINE_STUDENT_RESTRICTED`.
+  - `both` mode student requesting `/courses/{id}/lessons` succeeds with 200.
+  - Assistant records homework checks for assigned classes.
+  - Assistant cannot record homework checks for unassigned classes (403 Forbidden).
+  - Bulk homework check recording.
+  - Teacher creating offline assessment & assistant recording paper scores with `grades` synchronization.
+  - Printed card `AccessCredential` attendance scan succeeds.
+  - Revoked printed card `AccessCredential` is rejected with 422 `CREDENTIAL_REVOKED`.
+- Regression suite: `CameraAttendanceScanTest`, `SecureAttendanceQrAndLifecycleTest`, `ModuleEnforcementTest` (21 tests, 72 assertions PASS).
+- Frontend tests: `apps/web/tests/access-model.test.ts` (13 tests PASS), including OD-32 navigation filtering for offline students.
+- Code quality & builds: `vendor/bin/pint --test` (PASS), `npx tsc --noEmit` (0 errors), `npm run lint:design` (PASS), `npm run lint` (0 errors), `npm run build` (all 69 static & dynamic routes compiled).
+
+## [P6] - 2026-11-05 â€” Universal Camera QR Attendance, Mobile Experience & Auto-Absent on Session End (OD-29, OD-4, F-14, R5-6)
 ### Added
 - **Universal QR Scanner Hook (`useQrScanner`):** Implemented mobile-first QR scanner supporting high-speed native `BarcodeDetector` on modern Chromium browsers with automatic lazy-loading fallback to `@zxing/browser` on iOS Safari, Firefox, and desktop (OD-29). Features 720p resolution, 8-10 fps frame throttling, 3-second duplicate scan cooldown, torch/flashlight toggle, camera flip, and automatic stream pausing on visibility change.
 - **Mobile Staff Attendance Portal (`/staff/attendance/scan` & `/staff/attendance/scan/[sessionId]`):**
@@ -23,7 +66,7 @@ All notable changes to this project will be documented in this file.
 - Frontend test suite: `access-model.test.ts` (12 tests PASS) testing `attendance.scan` navigation permissions.
 - Code quality & builds: `pint --test` (PASS), `tsc --noEmit` (0 errors), `npm run lint:design` (PASS), `npm run lint` (0 errors), `npm run build` (all 69 routes compiled).
 
-## [P1] - 2026-11-05 — Tenant Archetypes, Simplified Teacher UI, Service Bundles & ADR-002 (OD-23, OD-24, OD-31, F-6)
+## [P1] - 2026-11-05 â€” Tenant Archetypes, Simplified Teacher UI, Service Bundles & ADR-002 (OD-23, OD-24, OD-31, F-6)
 ### Added
 - **Architectural Decision Record (ADR-002):** Approved canonical tenant archetypes (`individual_teacher` vs `organization`), organizational kinds (`center`, `academy`, `school`, `institute`), role syncing isolation, and service bundles (`online`, `offline`, or both).
 - **Control DB Migration:** Added `organization_kind`, `city`, `contact_phone`, and `onboarding_source` to `tenants` table with backfill for legacy rows.
@@ -32,7 +75,7 @@ All notable changes to this project will be documented in this file.
 - **Tenant Conversion (`POST /tenants/{id}/convert-to-organization`):** Allows super admins to seamlessly upgrade an `individual_teacher` to an `organization` without data loss, expanding system roles and logging an audit event.
 - **Service Bundling:** `TenantProvisioningService` derives active tenant modules from selected services (`online`, `offline`, or both), populating `tenant_features` with explicit enabled/disabled states.
 - **Super Admin Module Management (F-6):** Added `TenantModulesModal` to the platform console (`/platform/tenants`), allowing super admins to inspect and toggle tenant modules and upgrade individual teachers.
-- **Simplified Independent Teacher UI (OD-24):** `filterNavItems` hides complex role management (`admin-roles`) for independent teachers and rebrands "الفروع والقاعات" to "أماكن التدريس والقاعات".
+- **Simplified Independent Teacher UI (OD-24):** `filterNavItems` hides complex role management (`admin-roles`) for independent teachers and rebrands "Ø§Ù„ÙØ±ÙˆØ¹ ÙˆØ§Ù„Ù‚Ø§Ø¹Ø§Øª" to "Ø£Ù…Ø§ÙƒÙ† Ø§Ù„ØªØ¯Ø±ÙŠØ³ ÙˆØ§Ù„Ù‚Ø§Ø¹Ø§Øª".
 - **Dynamic Service Navigation Filtering:** `filterNavItems` dynamically filters navigation items based on active tenant services (`online` vs `offline`).
 - **Registration Archetype Selector:** Updated `/register-school` with OD-23 type picker, organization kind, city, and service checkboxes.
 ### Tests
@@ -41,21 +84,21 @@ All notable changes to this project will be documented in this file.
 - Frontend test suite: `apps/web/tests/access-model.test.ts` (11 tests PASS) including OD-24 simplified UI and OD-31 services navigation filtering.
 - Verification passed: `pint --test` (PASS), `tsc --noEmit` (0 errors), `npm run lint:design` (PASS), `npm run lint` (0 errors), `npm run build` (68 routes compiled).
 
-## [PS-2] - 2026-11-05 — Teacher Public Directory, Cache-Busting, Logo Upload & Instant Public Switches (F-1 to F-4)
+## [PS-2] - 2026-11-05 â€” Teacher Public Directory, Cache-Busting, Logo Upload & Instant Public Switches (F-1 to F-4)
 ### Added
 - **Platform Public Directory (F-1):** Added `public_directory_entries` table in Control DB and `PublicDirectorySyncService` which automatically syncs opted-in (`is_public = true`, `status = active`) teacher public profiles and photos. Added `GET /api/v1/public/directory/teachers` and `PublicTeachersSection` on the landing page (`/`), allowing visitors to view and visit opted-in teachers and academies across the platform.
 - **Featured Directory Entries:** Added platform super-admin endpoints (`GET /platform/directory/teachers`, `POST /platform/directory/teachers/{id}/toggle-featured`) with audit logging.
 - **Tenant Logo Upload (F-4):** Added `POST /tenant/logo` and `DELETE /tenant/logo` using `ProfileImageService` and `GET /public/academy/logo`. Added `ImageUploader` component to Tenant Settings (`/admin/settings`).
 - **Session Refresh (F-4):** Added `refreshSession()` to `auth-context` so branding updates (logo, name, colors) are immediately reflected across the workspace shell and UI without a page reload.
 ### Fixed
-- **Instant Public Visibility (F-2):** Changed `is_public` switches in Teacher Profile (`/teacher/profile`) and Course Settings (`/teacher/courses/[id]`) to save immediately on toggle with feedback, state badges ("ظاهر للعامة" / "مخفي عن العامة"), and direct preview links to public academy pages (`/a/{slug}/teachers`, `/a/{slug}/courses/{id}`).
+- **Instant Public Visibility (F-2):** Changed `is_public` switches in Teacher Profile (`/teacher/profile`) and Course Settings (`/teacher/courses/[id]`) to save immediately on toggle with feedback, state badges ("Ø¸Ø§Ù‡Ø± Ù„Ù„Ø¹Ø§Ù…Ø©" / "Ù…Ø®ÙÙŠ Ø¹Ù† Ø§Ù„Ø¹Ø§Ù…Ø©"), and direct preview links to public academy pages (`/a/{slug}/teachers`, `/a/{slug}/courses/{id}`).
 - **Cache-Busting (F-3):** Added `&v=<hash>` query parameter to teacher photos, course covers, and tenant logos in `PublicAcademyController` and `PublicDirectorySyncService` so updated images are immediately served without being stale in browser or CDN caches.
 ### Tests
 - Added `Tests\Feature\PublicDirectoryAndBrandingTest` (4 tests, 51 assertions): teacher photo/profile sync to public directory, opt-out removal, super admin featured toggling, logo upload/serve/deletion, and cache-busting hashes.
 - Verified `PublicAcademyAndImagesTest` (8 tests, 71 assertions PASS).
 - Frontend tests: `tsc --noEmit` (0 errors), `npm run lint` (0 errors), `npm run lint:design` (PASS), `npm run test` (9 tests PASS), `npm run build` (all 68 routes build).
 
-## [PS-1] - 2026-11-05 — Platform Create-Tenant Form Security & Consistency (F-5 / RK-2)
+## [PS-1] - 2026-11-05 â€” Platform Create-Tenant Form Security & Consistency (F-5 / RK-2)
 ### Fixed
 - **Security:** Removed default owner password 'password123' when creating a tenant via the platform console. The owner password is now strictly required (min 8 chars) in both the frontend modal and backend validation (owner.password).
 - **Domain Persistence:** Fixed missing custom domain submission: the domain field is now sent from the frontend and persisted into tenant_domains as an active custom domain.
@@ -65,7 +108,7 @@ All notable changes to this project will be documented in this file.
 ### Tests
 - Added Tests\Feature\PlatformTenantProvisioningSecurityTest (7 tests, 24 assertions): validates rejection of missing/empty password (422), invalid type rejection (422), valid OD-23 type creation, custom domain persistence, and code hygiene verifying no password123 default remains.
 
-## 2026-11-05 — Documentation cleanup + platform/tenancy/QR/persistence plan
+## 2026-11-05 â€” Documentation cleanup + platform/tenancy/QR/persistence plan
 
 - Removed stale and duplicate docs (`lms-recovery/`, `source/`, phase copies, bootstrap manifests). See `docs/audit/2026-11-05-documentation-hygiene.md`.
 - Added `docs/audit/2026-11-05-frontend-backend-persistence-audit.md` (F-1..F-19; F-5 is a security issue).
@@ -101,7 +144,7 @@ All notable changes to this project will be documented in this file.
 
 ## [RECOVERY-R7] - 2026-11-04 -- SAHABA IDENTITY, DESIGN SYSTEM, PLATFORM CONSOLE LOGIN (PARTIAL)
 ### Added
-- Product identity **سحابة / Sahaba** (OD-22): `config/brand.ts`, brand mark, app icon, manifest.
+- Product identity **Ø³Ø­Ø§Ø¨Ø© / Sahaba** (OD-22): `config/brand.ts`, brand mark, app icon, manifest.
 - Design tokens (Deep Emerald-Teal + Sand), system/light/dark switcher, self-hosted IBM Plex Sans Arabic, Liftaswash display face (Arabic only).
 - `lib/format.ts` (Arabic-Indic digits, Gregorian + Hijri), Lucide icon system with semantic RTL arrows, GSAP motion layer.
 - Landing page with clearly marked sample content (OD-21), access-code login, unified public header/footer.
@@ -156,15 +199,15 @@ All notable changes to this project will be documented in this file.
   - Redirect route at `/staff` pointing to `/teacher/dashboard`.
   - Added `/staff` to `PROTECTED_PREFIXES` in Next.js middleware with matching experience evaluation.
 - **T-FEAT-30 Resolution & Teacher Analytics (`/teacher/analytics`)**:
-  - Removed hardcoded student UUID (`01a0ef9d-5232-7086-9129-5989e81a7dd9`) and hardcoded demo name ("عمر أحمد فاروق").
+  - Removed hardcoded student UUID (`01a0ef9d-5232-7086-9129-5989e81a7dd9`) and hardcoded demo name ("Ø¹Ù…Ø± Ø£Ø­Ù…Ø¯ ÙØ§Ø±ÙˆÙ‚").
   - Implemented dynamic student selector dropdown loading real tenant students via `educationApi.getStudents()`.
   - Added live search query filtering, instant metrics loading via `analyticsApi.getStudentDashboard()`, and metric cache refresh trigger via `analyticsApi.refreshStudentDashboard()`.
 - **Student Profile & Detailed Directory (`/teacher/students`, `/teacher/students/[id]`)**:
   - Student directory upgraded to semantic tokens with grade level filtering and direct action to view student details.
   - Comprehensive student detail page built with `DetailLayout` and 4 rich tabs (`overview`, `courses`, `credentials`, `parents`).
-  - Added student device binding inspection (`device_fingerprint`, `device_name`, `last_used_at`) per Master §64 hardware security specifications.
+  - Added student device binding inspection (`device_fingerprint`, `device_name`, `last_used_at`) per Master Â§64 hardware security specifications.
   - Extended `Student` TypeScript definition in `apps/web/src/types/index.ts` with `StudentEnrollment`, `StudentParent`, and `created_at`.
-- **Teaching Assistant Desk & Permission Model (OD-2 / Master §71-72)**:
+- **Teaching Assistant Desk & Permission Model (OD-2 / Master Â§71-72)**:
   - Teaching assistant workbench (`/teacher/assistant`) upgraded to real tenant metrics.
   - Permission check via `useCan('attendance.scan')` to conditionally authorize QR attendance scanning.
   - Added visual permission boundary reference clarifying allowed operations (attendance scanning, grading tasks) versus restricted operations (course deletion, billing modification).
@@ -233,7 +276,7 @@ All notable changes to this project will be documented in this file.
   - Created single universal `AppShell` component (`apps/web/src/components/layout/app-shell.tsx`) used across all experiences (admin, staff, student, parent, platform).
   - Sidebar dynamically generated from `navigation-registry.ts` filtered by experience, tenant modules, and user permissions.
   - Sadu ribbon on desktop sidebar, top header with tenant branding, global search, notifications bell placeholder, theme toggle, and authenticated user menu.
-  - Responsive mobile bottom navigation bar (top 4 primary links + "المزيد" drawer trigger).
+  - Responsive mobile bottom navigation bar (top 4 primary links + "Ø§Ù„Ù…Ø²ÙŠØ¯" drawer trigger).
   - Deleted dead layouts (`teacher-nav-layout.tsx`, `student-nav-layout.tsx`, `parent-nav-layout.tsx`, `platform-nav-layout.tsx`).
   - Strict elimination of mock identities; strictly bound to `useAuth().user`.
 - **Page Decomposition & Feature Architecture (R7-2)**:
@@ -258,7 +301,7 @@ All notable changes to this project will be documented in this file.
 - **Exam Lifecycle & Validation Engine (R6-1)**:
   - States: `draft` => `published` => `closed` => `archived`. Auto-publishing on exam creation removed; default is `draft`.
   - Publishing pre-requisite validation: exam cannot be published without >= 1 question and `total_points > 0` (`UNPUBLISHABLE_EXAM`).
-  - Master §34 attempt state progression strictly enforced.
+  - Master Â§34 attempt state progression strictly enforced.
 - **Server-Authoritative Timing & Anti-Cheat (R6-2)**:
   - Server-calculated expiration: `expires_at = min(started_at + duration, closes_at)`.
   - Synced timer endpoint `GET /attempts/{id}` returning `server_now`, `expires_at`, `remaining_seconds`.
@@ -336,7 +379,7 @@ All notable changes to this project will be documented in this file.
   - `LessonController`: Lessons CRUD, reordering (`POST /modules/{id}/lessons/reorder`), publish/unpublish, and manual completion (`POST /lessons/{id}/complete`).
   - `LessonMaterialController`: Multipart material upload and external links, secure downloads (`GET /materials/{id}/download`) gated by `ContentAccessPolicy`.
 - **Playback Tracking & Server-Authoritative Progress (R4-4)**:
-  - Domain Service `ProgressAggregator`: Processes batched playback events, computes watch percentages, auto-marks lessons completed at ≥ 90%, and detects skipping speed anomalies.
+  - Domain Service `ProgressAggregator`: Processes batched playback events, computes watch percentages, auto-marks lessons completed at â‰¥ 90%, and detects skipping speed anomalies.
   - `VideoEventController`: Playback event ingestion (`POST /lessons/{id}/events`), student personal progress (`GET /me/progress`), and teacher course progress overview (`GET /courses/{id}/progress`).
 - **Course Builder - Teacher UI (R4-5)**:
   - `/teacher/courses`: Course catalog grid with level, status, and access badges, search, filter tabs, and modal for creating new courses.
@@ -354,7 +397,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 - **Content Access Policy Engine (R3-1)**: `ContentAccessPolicy` & `ContentAccessDecision` value object attached to courses and lessons. Denies unpaid students with HTTP 403 `ACCESS_REQUIRES_SUBSCRIPTION`, permits staff bypass, and allows free preview lessons (`is_free_preview`).
 - **Gated Self-Enrollment (R3-2)**: `EnrollmentController` checks for `is_free` course or active student entitlement, denying unauthorized self-enrollment with HTTP 403 `ENROLLMENT_REQUIRES_PAYMENT`.
-- **Payment Proof File Upload & Private Streaming (R3-3)**: Multipart proof uploads (JPEG, PNG, PDF ≤5MB) stored in private tenant-isolated storage; private streaming endpoint `GET /api/v1/payment-requests/{id}/proof` gated by strict authorization boundary.
+- **Payment Proof File Upload & Private Streaming (R3-3)**: Multipart proof uploads (JPEG, PNG, PDF â‰¤5MB) stored in private tenant-isolated storage; private streaming endpoint `GET /api/v1/payment-requests/{id}/proof` gated by strict authorization boundary.
 - **Packages & Manual Entitlements API (R3-4)**: Full package update & archive endpoints in `PackageController`; manual entitlement grant & revoke with mandatory audit logging in `EntitlementController`; student self-service endpoints `GET /me/subscriptions` and `GET /me/entitlements`.
 - **Approval Side Effects & Auto-Enrollment (R3-7)**: `PaymentReviewService::approve` transactional execution activating subscriptions, granting entitlements, and auto-enrolling students into matching course entitlements (`course:{id}`).
 - **Student Billing Screen Suite (R3-5)**:
@@ -362,7 +405,7 @@ All notable changes to this project will be documented in this file.
   - `/student/plans/[id]/pay`: Payment submission with method instructions (InstaPay, Bank Transfer, Cash), reference code, and drag & drop proof uploader.
   - `/student/payments`: Payment requests tracking table, status badges (`pending`, `approved`, `rejected` with rejection reason), and drawer inspection.
   - `/student/subscriptions`: Active subscriptions and effective entitlements dashboard.
-  - Course Player Lock Integration: Course cards and lesson lists display lock states with "اشترك للوصول" linking to plans.
+  - Course Player Lock Integration: Course cards and lesson lists display lock states with "Ø§Ø´ØªØ±Ùƒ Ù„Ù„ÙˆØµÙˆÙ„" linking to plans.
 - **Admin / Finance Billing Suite (R3-6)**:
   - `/teacher/payments`: Review queue with status tabs, search, proof file inspection with full preview/download link, approve confirmation modal, and rejection modal with preset chips.
   - `/admin/packages`: Package management with CRUD, price, currency, billing cycle, course entitlements multiselect, and archiving.
@@ -396,7 +439,7 @@ All notable changes to this project will be documented in this file.
 - **Permission Hooks & Components (R1-B5)**: `useCan` hook (`src/hooks/useCan.ts`), `<Can>` component (`src/components/guards/Can.tsx`), and updated `<PermissionGate>` (`src/components/ui/permission-gate.tsx`).
 - **Data-State Layer (R1-B6)**: `src/components/ui/data-state.tsx` providing standard `loading`, `empty`, `error`, and `forbidden` states, eliminating swallowed `.catch(() => [])` errors.
 - **Tenant Role Management UI (R1-B8)**: `/admin/roles` route (`src/app/admin/roles/page.tsx`, `src/app/admin/layout.tsx`) with system role safeguards, custom role creation/deletion, and module-grouped permission matrix.
-- **Support Session Persistent Banner (R1-B9)**: `src/components/layout/support-session-banner.tsx` displaying active support session countdown and "إنهاء الجلسة" (End Session) trigger.
+- **Support Session Persistent Banner (R1-B9)**: `src/components/layout/support-session-banner.tsx` displaying active support session countdown and "Ø¥Ù†Ù‡Ø§Ø¡ Ø§Ù„Ø¬Ù„Ø³Ø©" (End Session) trigger.
 - **Frontend Test Suite (R1-B9)**: `apps/web/tests/access-model.test.ts` running on native Node.js test runner with 7 automated tests covering navigation registry filtering, module gating, and contract schema integrity.
 ### Changed
 - **AuthContext Rewrite (R1-B2 / R1-B7)**: `src/context/auth-context.tsx` completely rewritten to consume `/auth/me` payload, eliminating legacy `resolveRole()` heuristic. Global 401 handler registered with `apiClient` triggering auto-logout and redirect.
@@ -431,9 +474,9 @@ All notable changes to this project will be documented in this file.
 
 ## [AUDIT-2026-10-30] - 2026-10-30 -- FULL SYSTEM GAP ANALYSIS & RECOVERY PROGRAM
 ### Added
-- `docs/audit/2026-10-30-system-gap-analysis/` — conceptual problems (C-01..C-14), technical findings with file:line evidence (P0/P1/P2), target access model (roles, permissions, scopes, modules, navigation), capability coverage matrix, ordered recovery plan R0–R9, status/doc corrections.
+- `docs/audit/2026-10-30-system-gap-analysis/` â€” conceptual problems (C-01..C-14), technical findings with file:line evidence (P0/P1/P2), target access model (roles, permissions, scopes, modules, navigation), capability coverage matrix, ordered recovery plan R0â€“R9, status/doc corrections.
 ### Changed
-- `current-state.md` effective mode set to `RECOVERY — NOT PRODUCTION READY`.
+- `current-state.md` effective mode set to `RECOVERY â€” NOT PRODUCTION READY`.
 ### Security
 - Identified P0 issues: unauthenticated platform endpoints incl. support-token issuance; exam answers exposed via exam listing; payment-request IDOR; tenant audit log readable by any user.
 
@@ -473,10 +516,10 @@ All notable changes to this project will be documented in this file.
   - `apps/web/src/app/terms/page.tsx`: Terms of service, DRM, and device-binding policies.
   - `apps/web/src/app/privacy/page.tsx`: Privacy policy with strict tenant database isolation guarantees.
 - **Advanced Interactive Features**:
-  - **Interactive AI Tutor Chatbot Drawer** (`/student/courses`): Dedicated AI assistant tab in lesson viewer with prompt suggestions ("💡 لخص لي الدرس", "❓ اختبرني بسؤال", "📝 أهم التعريفات"), real-time chat input, and context-aware educational answers.
-  - **Virtual Classroom & Live Meeting Stage** (`/student/meetings`): In-browser interactive live classroom simulator with teacher webcam feed, screen sharing presentation, hand-raising counter (`✋`), audio/video toggles, and live in-meeting group chat stream.
+  - **Interactive AI Tutor Chatbot Drawer** (`/student/courses`): Dedicated AI assistant tab in lesson viewer with prompt suggestions ("ðŸ’¡ Ù„Ø®Øµ Ù„ÙŠ Ø§Ù„Ø¯Ø±Ø³", "â“ Ø§Ø®ØªØ¨Ø±Ù†ÙŠ Ø¨Ø³Ø¤Ø§Ù„", "ðŸ“ Ø£Ù‡Ù… Ø§Ù„ØªØ¹Ø±ÙŠÙØ§Øª"), real-time chat input, and context-aware educational answers.
+  - **Virtual Classroom & Live Meeting Stage** (`/student/meetings`): In-browser interactive live classroom simulator with teacher webcam feed, screen sharing presentation, hand-raising counter (`âœ‹`), audio/video toggles, and live in-meeting group chat stream.
 ### Verified
-- **TypeScript**: `tsc --noEmit` — 0 errors, strict mode.
+- **TypeScript**: `tsc --noEmit` â€” 0 errors, strict mode.
 - **Route Status**: All 7 public routes + 20 authenticated routes returning HTTP 200 OK.
 - **Backend Tests**: PHPUnit 37 tests / 407 assertions PASS.
 
@@ -532,9 +575,9 @@ All notable changes to this project will be documented in this file.
 - **Database Seeder**:
   - `DatabaseSeeder.php` with complete realistic data for tenant `almustaqbal` (courses, lessons, classes, attendance, assignments, exams, meetings, credentials, analytics).
 ### Verified
-- **TypeScript**: `tsc --noEmit` — 0 errors, strict mode.
+- **TypeScript**: `tsc --noEmit` â€” 0 errors, strict mode.
 - **Routes Check**: All 20 application routes compiled and verified HTTP 200 OK.
-- **Backend Test Suite**: PHPUnit 37 tests / 407 assertions — all passed.
+- **Backend Test Suite**: PHPUnit 37 tests / 407 assertions â€” all passed.
 
 ## [M14-001] - 2026-09-30 -- PRODUCTION_READY
 ### Verified
@@ -557,46 +600,46 @@ All notable changes to this project will be documented in this file.
 - Production Hardening (M13):
   - **Docker multi-stage images**: PHP 8.3 FPM (OPcache+JIT, non-root) and Next.js 16 standalone (non-root)
   - **Nginx reverse proxy**: TLS 1.2/1.3, HSTS preload, rate limiting (60 req/min general / 10 req/min auth), full security header suite
-  - **Docker Compose production stack**: Nginx, PHP-FPM API, Queue Worker, Next.js Web, MySQL 8.4, Redis 7.4 — all with health checks and log rotation
+  - **Docker Compose production stack**: Nginx, PHP-FPM API, Queue Worker, Next.js Web, MySQL 8.4, Redis 7.4 â€” all with health checks and log rotation
   - **MySQL 8.4 production config**: InnoDB buffer tuning, binary log for PITR, slow query log
-  - **Production secrets template**: `infrastructure/.env.production.example` — all required secrets documented
-  - **AES-256-CBC backup script**: `infrastructure/scripts/backup.sh` — control DB + all tenant DBs + Redis, encrypted, 30-day retention
-  - **Restore script**: `infrastructure/scripts/restore.sh` — decrypts + restores, dry-run mode, confirmation guard
-  - **Deploy script**: `infrastructure/scripts/deploy.sh` — pre-flight secret validation, DB migration, config/route/view cache warm, health-check gate with auto-rollback
-  - **`lms:health-report` command**: Checks DB, cache, queue depth, tenant count, config invariants — table + `--json` output
-  - **`lms:tenant-audit` command**: Full tenant registry report with domain, database, user count — table + `--json` output
+  - **Production secrets template**: `infrastructure/.env.production.example` â€” all required secrets documented
+  - **AES-256-CBC backup script**: `infrastructure/scripts/backup.sh` â€” control DB + all tenant DBs + Redis, encrypted, 30-day retention
+  - **Restore script**: `infrastructure/scripts/restore.sh` â€” decrypts + restores, dry-run mode, confirmation guard
+  - **Deploy script**: `infrastructure/scripts/deploy.sh` â€” pre-flight secret validation, DB migration, config/route/view cache warm, health-check gate with auto-rollback
+  - **`lms:health-report` command**: Checks DB, cache, queue depth, tenant count, config invariants â€” table + `--json` output
+  - **`lms:tenant-audit` command**: Full tenant registry report with domain, database, user count â€” table + `--json` output
   - **Enhanced CI/CD** (`.github/workflows/ci.yml`): Dependency caching, `--testdox` PHPUnit output, security audit jobs (`composer audit`, `npm audit`), Docker image build+push to GHCR with SHA tags, gated production deployment job
-  - **Operations runbook**: `infrastructure/RUNBOOK.md` — deployment, health monitoring, backup/restore, tenant management, incident response, rollback, secrets rotation, scaling, log access
-  - **Infrastructure documentation**: `docs/infrastructure/README.md` — full stack reference
+  - **Operations runbook**: `infrastructure/RUNBOOK.md` â€” deployment, health monitoring, backup/restore, tenant management, incident response, rollback, secrets rotation, scaling, log access
+  - **Infrastructure documentation**: `docs/infrastructure/README.md` â€” full stack reference
 - Verification:
   - Pint: 0 violations
-  - PHPUnit: 37 tests, 407 assertions — all passed
+  - PHPUnit: 37 tests, 407 assertions â€” all passed
 
 ## [M12-001] - 2026-09-30
 ### Verified
 - Full System Verification & End-to-End Gates:
-  - **Backend gate suite**: `php artisan test` → 37 tests, 407 assertions — all 37 passed
+  - **Backend gate suite**: `php artisan test` â†’ 37 tests, 407 assertions â€” all 37 passed
     - `HealthCheckTest`, `RequestCorrelationTest`, `ApiExceptionHandlingTest`
     - `TenantResolutionTest`, `TenantIsolationTest`
     - `IdentityGateTest`, `AuthenticationGateTest`, `AuthorizationGateTest`
     - `EducationGateTest`, `AttendanceGateTest`, `AssessmentGateTest`
     - `BillingGateTest`, `CredentialGateTest`, `IntegrationGateTest`
     - `AnalyticsAndReportingGateTest`
-    - `EndToEndLifecycleGateTest` (Cross-domain student lifecycle: enrollment → attendance → assessment → billing → credential)
+    - `EndToEndLifecycleGateTest` (Cross-domain student lifecycle: enrollment â†’ attendance â†’ assessment â†’ billing â†’ credential)
     - `SecurityInvariantsGateTest` (Cross-tenant isolation, plain-text secret protection, default-deny authorization)
     - `TenantBackupRestoreGateTest` (Tenant DB backup/restore integrity)
-  - **Backend code style**: `vendor/bin/pint --test` → 0 violations
-  - **Frontend linting**: `npm run lint` → 0 errors, 0 warnings (ESLint 9)
-  - **Frontend TypeScript**: `npx tsc --noEmit` → 0 errors (strict mode)
-  - **Frontend production build**: `npm run build` → Next.js 16.3.7 Turbopack, 4/4 pages generated, 2.3s compile
+  - **Backend code style**: `vendor/bin/pint --test` â†’ 0 violations
+  - **Frontend linting**: `npm run lint` â†’ 0 errors, 0 warnings (ESLint 9)
+  - **Frontend TypeScript**: `npx tsc --noEmit` â†’ 0 errors (strict mode)
+  - **Frontend production build**: `npm run build` â†’ Next.js 16.3.7 Turbopack, 4/4 pages generated, 2.3s compile
 - Documentation updates:
-  - `docs/project-management/current-state.md` — M12 VERIFIED, M13 next
-  - `docs/project-management/changelog.md` — M12 entry added
-  - `docs/project-management/implementation-ledger.md` — M12 row added
+  - `docs/project-management/current-state.md` â€” M12 VERIFIED, M13 next
+  - `docs/project-management/changelog.md` â€” M12 entry added
+  - `docs/project-management/implementation-ledger.md` â€” M12 row added
 
 ## [M11-001] - 2026-09-30
 ### Added
-- Frontend Foundation & Core Integration (Stream 18, Phase J §52–§55):
+- Frontend Foundation & Core Integration (Stream 18, Phase J Â§52â€“Â§55):
   - Comprehensive TypeScript domain interfaces matching backend models (`apps/web/src/types/index.ts`)
   - Pure SVG vector icon library (`apps/web/src/components/icons/index.tsx`)
   - UI Primitive component library (`Button`, `Badge`, `Card`)
@@ -643,14 +686,14 @@ All notable changes to this project will be documented in this file.
     - `DashboardController`: studentDashboard (fast read model serving), refresh (on-demand re-computation)
     - `ReportController`: Index, store (queued report creation and compilation), show, download (enforces download authorization)
   - Gates Verified in `AnalyticsAndReportingGateTest`:
-    - Phase J §45 Analytics Gate:
+    - Phase J Â§45 Analytics Gate:
       - Correct tenant isolation
       - Correct student mapping
       - Correct metric versioning
       - Accurate metric calculation
       - Historical measurement stability when definitions upgrade
       - Fast read model serving without synchronous heavy table scanning
-    - Phase J §47 Reporting Gate:
+    - Phase J Â§47 Reporting Gate:
       - Asynchronous report generation
       - Lifecycle job tracking
       - Graceful error/failure handling
@@ -694,7 +737,7 @@ All notable changes to this project will be documented in this file.
     - `MeetingController`: Index, store (with idempotency check and failover), show, joinUrl, cancel
     - `MediaController`: Index, store (with failover), show, embedUrl
     - `WebhookController`: Signed provider webhook ingestion with HMAC-SHA256 signature verification and lifecycle event execution
-  - Media / Meeting Gate verified in `IntegrationGateTest` (Phase J §40):
+  - Media / Meeting Gate verified in `IntegrationGateTest` (Phase J Â§40):
     - Provider success (meeting created, join URL generated, video uploaded, embed URL generated)
     - External ID mapping verified
     - Idempotency enforced on duplicate requests (200 OK replay)
@@ -724,7 +767,7 @@ All notable changes to this project will be documented in this file.
     - Strict cross-tenant credential isolation
   - Controllers:
     - `CredentialController`: Issuance (with one-time plain-text secret return), activation, device-bound verification, authorized device replacement, and revocation
-  - Credential Gate verified in `CredentialGateTest` (Phase J §37):
+  - Credential Gate verified in `CredentialGateTest` (Phase J Â§37):
     - Raw secret hashed and verified
     - Secret hidden from serialization and logs
     - Activation transitions status to active
@@ -747,16 +790,16 @@ All notable changes to this project will be documented in this file.
   - Tenant database migration for `packages`, `package_entitlements`, `payment_requests`, `payment_review_logs`, `subscriptions`, and `entitlements` tables
   - Eloquent domain models: `Package`, `PackageEntitlement`, `PaymentRequest`, `PaymentReviewLog`, `Subscription`, and `Entitlement`
   - Invariants strictly enforced:
-    - `Payment ≠ Subscription`
-    - `Subscription ≠ Entitlement`
-    - `Payment Approval ≠ Authentication`
+    - `Payment â‰  Subscription`
+    - `Subscription â‰  Entitlement`
+    - `Payment Approval â‰  Authentication`
     - No `student.is_paid` shortcut column; student capabilities checked via `hasEntitlement()`
   - Controllers:
     - `PackageController`: Commercial package creation and entitlement association
     - `PaymentRequestController`: Payment submission, review listing, reviewer approval, subscription activation, entitlement granting, and rejection with reason
     - `SubscriptionController`: Student subscription history inspection
     - `EntitlementController`: Active student entitlement querying
-  - Billing Gate verified in `BillingGateTest` (Phase J §33):
+  - Billing Gate verified in `BillingGateTest` (Phase J Â§33):
     - Commercial package creation with entitlement mappings
     - Student payment request submission (`pending`)
     - Review list and details retrieval
@@ -785,7 +828,7 @@ All notable changes to this project will be documented in this file.
     - `AssignmentController`: Creation, retrieval, deadline-aware submissions, duplicate submission rejection, grading, and grade publishing
     - `ExamController`: Creation, question management, student attempt lifecycle (start, answer, submit), duplicate attempt rejection, grading, and grade publishing
     - `GradeController`: Independent student grade reporting with publication visibility filtering
-  - Assessment Gate verified in `AssessmentGateTest` (Phase J §30):
+  - Assessment Gate verified in `AssessmentGateTest` (Phase J Â§30):
     - Assignment submission & deadline tracking
     - Late submission flagging (`is_late = true`)
     - Duplicate submission blocking (`422 DUPLICATE_SUBMISSION`)
@@ -807,12 +850,12 @@ All notable changes to this project will be documented in this file.
 - Classroom & Attendance Domain:
   - Tenant database migration for `branches`, `classrooms`, `classes`, `class_students`, `sessions`, and `attendance_records` tables
   - Eloquent domain models: `Branch`, `Classroom`, `SchoolClass`, `ClassSession`, and `AttendanceRecord` with relationships to `Staff` and `Student`
-  - Invariant strictly enforced: `Attendance ≠ Session`
+  - Invariant strictly enforced: `Attendance â‰  Session`
   - Controllers:
     - `ClassController`: Academic classes listing, creation, and student enrollment
     - `SessionController`: Class sessions scheduling and inspection
     - `AttendanceController`: Manual student attendance recording, QR code scanning, and session attendance reporting
-  - Attendance Gate verified in `AttendanceGateTest` (Phase J §27):
+  - Attendance Gate verified in `AttendanceGateTest` (Phase J Â§27):
     - Teacher creates class
     - Student enrolled in class
     - Teacher creates session
@@ -838,7 +881,7 @@ All notable changes to this project will be documented in this file.
     - `LessonController`: Course lesson creation and listing
     - `EnrollmentController`: Self and admin enrollment, student enrollment listings
     - `StudentController`: Student profile inspection with strict permission checks
-  - Education Gate verified in `EducationGateTest` (Phase J §24):
+  - Education Gate verified in `EducationGateTest` (Phase J Â§24):
     - Teacher creates course
     - Teacher creates lesson
     - Student enrolls in course
@@ -856,7 +899,7 @@ All notable changes to this project will be documented in this file.
 - Identity, Authentication & Authorization Core Foundation:
   - Control plane models and migrations for Global Identity: `GlobalIdentity`, `StudentIdentityLink`
   - Tenant database models and migrations: `TenantUser`, `Student`, `Staff`, `ParentProfile`, `Role`, `Permission`, `TenantToken`
-  - Invariants strictly enforced: `User ≠ Student`, `Teacher ≠ Role`, `Parent ≠ Student`, `Global Identity ≠ Tenant Authorization` (SEC-INV-006)
+  - Invariants strictly enforced: `User â‰  Student`, `Teacher â‰  Role`, `Parent â‰  Student`, `Global Identity â‰  Tenant Authorization` (SEC-INV-006)
   - Bearer token authentication: `POST /api/v1/auth/login`, `GET /api/v1/auth/me`, `POST /api/v1/auth/logout`
   - Granular RBAC authorization with default deny: `TenantAuthorize` middleware (`tenant.can:<permission>`)
   - Gates passed: `IdentityGateTest`, `AuthenticationGateTest`, `AuthorizationGateTest` (17 tests, 125 assertions passed)

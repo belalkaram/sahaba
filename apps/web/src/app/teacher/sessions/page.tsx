@@ -198,7 +198,7 @@ export default function TeacherSessionsPage() {
                 {/* Actions */}
                 <div className="mt-5 pt-4 border-t border-border flex items-center justify-between gap-2">
                   <Link
-                    href={`/teacher/sessions/${sess.id}`}
+                    href={`/staff/sessions/${sess.id}`}
                     className="flex-1 inline-flex items-center justify-center gap-1.5 bg-primary hover:opacity-90 text-primary-foreground font-semibold px-3 py-2 rounded-lg text-xs transition-opacity shadow-sm"
                   >
                     كشف الحضور

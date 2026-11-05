@@ -1964,6 +1964,81 @@ paths:
           description: Standard success envelope { data, meta }
         default:
           description: Standard error envelope { error, meta }
+  /sessions/{sessionId}/homework-checks:
+    get:
+      summary: "homework_checks.index"
+      description: "Auth: tenant.auth. Permission: sessions.view."
+      parameters:
+        - { name: sessionId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    post:
+      summary: "homework_checks.store"
+      description: "Auth: tenant.auth. Permission: homework_checks.record."
+      parameters:
+        - { name: sessionId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /sessions/{sessionId}/homework-checks/bulk:
+    post:
+      summary: "homework_checks.bulk"
+      description: "Auth: tenant.auth. Permission: homework_checks.record."
+      parameters:
+        - { name: sessionId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /classes/{classId}/offline-assessments:
+    get:
+      summary: "offline_assessments.index"
+      description: "Auth: tenant.auth. Permission: classes.view."
+      parameters:
+        - { name: classId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    post:
+      summary: "offline_assessments.store"
+      description: "Auth: tenant.auth. Permission: offline_assessments.manage."
+      parameters:
+        - { name: classId, in: path, required: true, schema: { type: string } }
+      responses:
+        '201':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /offline-assessments/{id}:
+    get:
+      summary: "offline_assessments.show"
+      description: "Auth: tenant.auth. Permission: classes.view."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /offline-assessments/{id}/scores:
+    post:
+      summary: "offline_assessments.scores"
+      description: "Auth: tenant.auth. Permission: offline_scores.record."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
   /staff:
     get:
       summary: "staff.index"

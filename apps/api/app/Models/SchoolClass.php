@@ -33,10 +33,15 @@ class SchoolClass extends TenantModel
         return $this->hasMany(ClassSession::class, 'class_id');
     }
 
+    public function offlineAssessments(): HasMany
+    {
+        return $this->hasMany(OfflineAssessment::class, 'class_id');
+    }
+
     public function students(): BelongsToMany
     {
         return $this->belongsToMany(Student::class, 'class_students', 'class_id', 'student_id')
-            ->withPivot(['id', 'status', 'enrolled_at'])
+            ->withPivot(['id', 'status', 'mode', 'enrolled_at'])
             ->withTimestamps();
     }
 }

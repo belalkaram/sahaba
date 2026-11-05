@@ -65,6 +65,7 @@ export interface Student {
   student_code: string;
   grade_level?: string;
   status: string;
+  mode?: 'online' | 'offline' | 'both';
   created_at?: string;
   user?: TenantUser;
   enrollments?: StudentEnrollment[];
@@ -311,6 +312,44 @@ export interface StudentAttendanceSummary {
     attendance_rate: number;
   }>;
   records: AttendanceRecord[];
+}
+
+export interface OfflineHomeworkCheck {
+  id: string;
+  session_id: string;
+  student_id: string;
+  status: 'done' | 'partial' | 'not_done' | 'absent';
+  note?: string | null;
+  checked_by_staff_id?: string | null;
+  checked_at: string;
+  student?: Student;
+  checkedByStaff?: Staff;
+}
+
+export interface OfflineAssessment {
+  id: string;
+  class_id: string;
+  session_id?: string | null;
+  title: string;
+  max_score: number;
+  date?: string | null;
+  description?: string | null;
+  scores_count?: number;
+  scores?: OfflineAssessmentScore[];
+  createdByStaff?: Staff;
+  schoolClass?: SchoolClass;
+}
+
+export interface OfflineAssessmentScore {
+  id: string;
+  offline_assessment_id: string;
+  student_id: string;
+  score?: number | null;
+  is_absent: boolean;
+  notes?: string | null;
+  recorded_by_staff_id?: string | null;
+  recorded_at?: string | null;
+  student?: Student;
 }
 
 export interface Assignment {

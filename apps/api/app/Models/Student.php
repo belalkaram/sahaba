@@ -37,20 +37,30 @@ class Student extends TenantModel
     public function courses(): BelongsToMany
     {
         return $this->belongsToMany(Course::class, 'enrollments', 'student_id', 'course_id')
-            ->withPivot(['id', 'status', 'enrolled_at', 'completed_at'])
+            ->withPivot(['id', 'status', 'mode', 'enrolled_at', 'completed_at'])
             ->withTimestamps();
     }
 
     public function classes(): BelongsToMany
     {
         return $this->belongsToMany(SchoolClass::class, 'class_students', 'student_id', 'class_id')
-            ->withPivot(['id', 'status', 'enrolled_at'])
+            ->withPivot(['id', 'status', 'mode', 'enrolled_at'])
             ->withTimestamps();
     }
 
     public function attendanceRecords(): HasMany
     {
         return $this->hasMany(AttendanceRecord::class, 'student_id');
+    }
+
+    public function homeworkChecks(): HasMany
+    {
+        return $this->hasMany(OfflineHomeworkCheck::class, 'student_id');
+    }
+
+    public function offlineScores(): HasMany
+    {
+        return $this->hasMany(OfflineAssessmentScore::class, 'student_id');
     }
 
     public function paymentRequests(): HasMany

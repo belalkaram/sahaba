@@ -1,5 +1,5 @@
 /**
- * R1B — Frontend Access Model & Navigation Registry Test Suite
+ * R1B â€” Frontend Access Model & Navigation Registry Test Suite
  * Executed with Node.js 24 native test runner:
  * node --experimental-strip-types --test apps/web/tests/access-model.test.ts
  */
@@ -112,13 +112,13 @@ describe('NavigationRegistry Filtering', () => {
     const orgItems = filterNavItems('admin', modules, allPerms, 'tenant', 'organization');
     assert.ok(orgItems.some((i) => i.id === 'admin-roles'), 'Organization has admin-roles');
     const orgBranch = orgItems.find((i) => i.id === 'admin-branches');
-    assert.strictEqual(orgBranch?.label, 'الفروع والقاعات');
+    assert.strictEqual(orgBranch?.label, 'Ø§Ù„ÙØ±ÙˆØ¹ ÙˆØ§Ù„Ù‚Ø§Ø¹Ø§Øª');
 
     // Individual teacher
     const teacherItems = filterNavItems('admin', modules, allPerms, 'tenant', 'individual_teacher');
     assert.ok(!teacherItems.some((i) => i.id === 'admin-roles'), 'Individual teacher has no admin-roles');
     const teacherBranch = teacherItems.find((i) => i.id === 'admin-branches');
-    assert.strictEqual(teacherBranch?.label, 'أماكن التدريس والقاعات');
+    assert.strictEqual(teacherBranch?.label, 'Ø£Ù…Ø§ÙƒÙ† Ø§Ù„ØªØ¯Ø±ÙŠØ³ ÙˆØ§Ù„Ù‚Ø§Ø¹Ø§Øª');
   });
 
   test('OD-31: services filter controls online vs offline module visibility', () => {
@@ -156,6 +156,33 @@ describe('NavigationRegistry Filtering', () => {
     const withoutPerms = filterNavItems('staff', modules, {});
     assert.ok(!withoutPerms.some((i) => i.id === 'admin-attendance'), 'Staff without attendance permission cannot see attendance');
   });
+
+  test('P8 / OD-32: offline student mode restricts online courses, meetings, exams and assignments', () => {
+    const modules = ['online', 'offline', 'assessment', 'billing'];
+    const studentPerms: PermissionsMap = {
+      'courses.view': 'self',
+      'attendance.view': 'self',
+      'exams.view': 'self',
+      'assignments.view': 'self',
+      'grades.view': 'self',
+    };
+
+    // Both / normal student
+    const bothStudent = filterNavItems('student', modules, studentPerms, 'tenant', 'organization', ['online', 'offline'], 'both');
+    assert.ok(bothStudent.some((i) => i.id === 'student-courses'), 'Both student sees online courses');
+    assert.ok(bothStudent.some((i) => i.id === 'student-attendance'), 'Both student sees attendance');
+    assert.ok(bothStudent.some((i) => i.id === 'student-card'), 'Both student sees card');
+
+    // Offline student
+    const offlineStudent = filterNavItems('student', modules, studentPerms, 'tenant', 'organization', ['online', 'offline'], 'offline');
+    assert.ok(!offlineStudent.some((i) => i.id === 'student-courses'), 'Offline student cannot see online courses');
+    assert.ok(!offlineStudent.some((i) => i.id === 'student-meetings'), 'Offline student cannot see online meetings');
+    assert.ok(!offlineStudent.some((i) => i.id === 'student-exams'), 'Offline student cannot see online exams');
+    assert.ok(!offlineStudent.some((i) => i.id === 'student-assignments'), 'Offline student cannot see online assignments');
+    assert.ok(offlineStudent.some((i) => i.id === 'student-attendance'), 'Offline student sees attendance');
+    assert.ok(offlineStudent.some((i) => i.id === 'student-grades'), 'Offline student sees grades');
+    assert.ok(offlineStudent.some((i) => i.id === 'student-card'), 'Offline student sees digital card');
+  });
 });
 
 describe('Canonical AuthSession Contract Validation', () => {
@@ -163,7 +190,7 @@ describe('Canonical AuthSession Contract Validation', () => {
     const samplePayload: AuthSession = {
       user: {
         id: 'usr-123',
-        name: 'أحمد محمود',
+        name: 'Ø£Ø­Ù…Ø¯ Ù…Ø­Ù…ÙˆØ¯',
         email: 'ahmed@school.edu',
         phone: '+966501234567',
         status: 'active',
@@ -179,7 +206,7 @@ describe('Canonical AuthSession Contract Validation', () => {
         },
         parent: null,
       },
-      roles: [{ name: 'teacher', label: 'معلم' }],
+      roles: [{ name: 'teacher', label: 'Ù…Ø¹Ù„Ù…' }],
       permissions: {
         'courses.view': 'assigned',
         'attendance.scan': 'own',
@@ -187,7 +214,7 @@ describe('Canonical AuthSession Contract Validation', () => {
       tenant: {
         id: 'ten-789',
         slug: 'almustaqbal',
-        name: 'مدارس المستقبل الأهلية',
+        name: 'Ù…Ø¯Ø§Ø±Ø³ Ø§Ù„Ù…Ø³ØªÙ‚Ø¨Ù„ Ø§Ù„Ø£Ù‡Ù„ÙŠØ©',
         modules: ['online', 'offline'],
         auth_mode: 'password',
         branding: {
@@ -199,7 +226,7 @@ describe('Canonical AuthSession Contract Validation', () => {
       support_session: null,
       // Legacy compat aliases
       id: 'usr-123',
-      name: 'أحمد محمود',
+      name: 'Ø£Ø­Ù…Ø¯ Ù…Ø­Ù…ÙˆØ¯',
       email: 'ahmed@school.edu',
       phone: '+966501234567',
       type: 'staff',

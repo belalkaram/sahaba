@@ -13,6 +13,8 @@ use App\Http\Controllers\Api\Attendance\AttendanceController;
 use App\Http\Controllers\Api\Attendance\BranchController;
 use App\Http\Controllers\Api\Attendance\ClassController;
 use App\Http\Controllers\Api\Attendance\ClassroomController;
+use App\Http\Controllers\Api\Attendance\OfflineAssessmentController;
+use App\Http\Controllers\Api\Attendance\OfflineHomeworkCheckController;
 use App\Http\Controllers\Api\Attendance\SessionController;
 use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\Auth\LoginController;
@@ -435,6 +437,31 @@ Route::middleware(['tenant', 'throttle:api'])->group(function () {
             Route::get('/sessions/{sessionId}/attendance/report', [AttendanceController::class, 'report'])
                 ->middleware('tenant.can:attendance.view')
                 ->name('api.attendance.report');
+
+            // Offline Homework Checks (OD-32)
+            Route::get('/sessions/{sessionId}/homework-checks', [OfflineHomeworkCheckController::class, 'index'])
+                ->middleware('tenant.can:sessions.view')
+                ->name('api.homework_checks.index');
+            Route::post('/sessions/{sessionId}/homework-checks', [OfflineHomeworkCheckController::class, 'store'])
+                ->middleware('tenant.can:homework_checks.record')
+                ->name('api.homework_checks.store');
+            Route::post('/sessions/{sessionId}/homework-checks/bulk', [OfflineHomeworkCheckController::class, 'bulk'])
+                ->middleware('tenant.can:homework_checks.record')
+                ->name('api.homework_checks.bulk');
+
+            // Offline Assessments & Paper Scores (OD-32)
+            Route::get('/classes/{classId}/offline-assessments', [OfflineAssessmentController::class, 'index'])
+                ->middleware('tenant.can:classes.view')
+                ->name('api.offline_assessments.index');
+            Route::post('/classes/{classId}/offline-assessments', [OfflineAssessmentController::class, 'store'])
+                ->middleware('tenant.can:offline_assessments.manage')
+                ->name('api.offline_assessments.store');
+            Route::get('/offline-assessments/{id}', [OfflineAssessmentController::class, 'show'])
+                ->middleware('tenant.can:classes.view')
+                ->name('api.offline_assessments.show');
+            Route::post('/offline-assessments/{id}/scores', [OfflineAssessmentController::class, 'recordScores'])
+                ->middleware('tenant.can:offline_scores.record')
+                ->name('api.offline_assessments.scores');
         });
 
         // Assessment Module (assignments, exams, grades, question banks, grading inbox)

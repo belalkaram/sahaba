@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import QRCode from 'qrcode';
+import { Printer } from 'lucide-react';
 import { attendanceApi } from '../../../lib/attendance-api';
 import type { StudentQrTokenData } from '../../../types';
 import {
@@ -21,9 +22,24 @@ export default function StudentCardPage() {
   const [error, setError] = useState<string | null>(null);
   const [secondsRemaining, setSecondsRemaining] = useState<number>(60);
   const [copied, setCopied] = useState(false);
+  const [showPrintCard, setShowPrintCard] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const printCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    if (showPrintCard && data?.student.student_code && printCanvasRef.current) {
+      QRCode.toCanvas(printCanvasRef.current, data.student.student_code, {
+        width: 180,
+        margin: 1,
+        color: {
+          dark: '#0f172a',
+          light: '#ffffff',
+        },
+      }).catch(() => {});
+    }
+  }, [showPrintCard, data?.student.student_code]);
 
   const fetchToken = useCallback(async (isManual = false) => {
     try {
@@ -114,7 +130,7 @@ export default function StudentCardPage() {
       </div>
 
       {/* Screen Brightness Hint Banner */}
-      <div className="p-3 rounded-lg bg-primary-subtle border border-primary/20 flex items-center gap-2.5 text-xs text-fg">
+      <div className="p-3 rounded-sm bg-primary-subtle border border-primary/20 flex items-center gap-2.5 text-xs text-fg">
         <SparklesIcon size={18} className="text-primary shrink-0" />
         <span className="leading-relaxed">
           <strong>تلميح:</strong> يُفضل رفع سطوع شاشة هاتفك لتسهيل قراءة الرمز عبر ماسح الكاميرا في السنتر.
@@ -123,12 +139,12 @@ export default function StudentCardPage() {
 
       {/* Error state */}
       {error && (
-        <div className="p-4 rounded-lg bg-danger-subtle border border-danger/20 text-danger text-xs font-semibold text-center">
+        <div className="p-4 rounded-sm bg-danger-subtle border border-danger/20 text-danger text-xs font-semibold text-center">
           {error}
           <div className="mt-2">
             <button
               onClick={() => fetchToken(true)}
-              className="px-4 py-1.5 rounded-md bg-danger text-danger-fg text-xs font-bold hover:bg-danger-hover transition-colors"
+              className="px-4 py-1.5 rounded-xs bg-danger text-danger-fg text-xs font-bold hover:bg-danger-hover transition-colors"
             >
               إعادة المحاولة
             </button>
@@ -137,7 +153,7 @@ export default function StudentCardPage() {
       )}
 
       {/* Student ID Card Container */}
-      <div className="relative rounded-xl bg-surface border-2 border-border shadow-lg overflow-hidden p-6 space-y-5 text-center transition-all">
+      <div className="relative rounded-md bg-surface border-2 border-border shadow-lg overflow-hidden p-6 space-y-5 text-center transition-all">
         {/* Card Header (Tenant Info) */}
         <div className="flex items-center justify-between border-b border-border pb-3">
           <div className="flex items-center gap-2 text-start">
@@ -162,7 +178,7 @@ export default function StudentCardPage() {
             <button
               onClick={handleCopyCode}
               title="انقر لنسخ الكود"
-              className="font-mono text-xs font-bold text-primary px-2.5 py-0.5 rounded-sm bg-primary-subtle border border-primary/20 hover:bg-primary/20 transition-colors flex items-center gap-1.5"
+              className="font-mono text-xs font-bold text-primary px-2.5 py-0.5 rounded-xs bg-primary-subtle border border-primary/20 hover:bg-primary/20 transition-colors flex items-center gap-1.5"
             >
               <span>{data?.student.student_code || '---'}</span>
               {copied ? <CheckCircleIcon size={12} className="text-success" /> : null}
@@ -176,18 +192,18 @@ export default function StudentCardPage() {
         </div>
 
         {/* QR Code Canvas Box */}
-        <div className="relative mx-auto w-[270px] h-[270px] rounded-lg bg-surface border-2 border-border p-1 flex items-center justify-center shadow-inner group">
+        <div className="relative mx-auto w-[270px] h-[270px] rounded-sm bg-surface border-2 border-border p-1 flex items-center justify-center shadow-inner group">
           {loading ? (
             <div className="text-center text-xs text-fg-muted space-y-2">
               <div className="inline-block animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
               <p>جارٍ توليد الرمز الآمن...</p>
             </div>
           ) : (
-            <canvas ref={canvasRef} className="rounded-md" />
+            <canvas ref={canvasRef} className="rounded-xs" />
           )}
 
           {refreshing && (
-            <div className="absolute inset-0 bg-fg/80 backdrop-blur-[1px] rounded-lg flex items-center justify-center text-xs font-semibold text-primary gap-2">
+            <div className="absolute inset-0 bg-fg/80 backdrop-blur-[1px] rounded-sm flex items-center justify-center text-xs font-semibold text-primary gap-2">
               <RefreshCwIcon size={16} className="animate-spin" />
               جارٍ التحديث...
             </div>
@@ -215,18 +231,69 @@ export default function StudentCardPage() {
           </p>
         </div>
 
-        {/* Manual Refresh Action */}
-        <div className="pt-2 border-t border-border flex items-center justify-between gap-3">
+        {/* Card Actions */}
+        <div className="pt-2 border-t border-border flex flex-col gap-2">
           <button
             onClick={() => fetchToken(true)}
             disabled={refreshing}
-            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-primary text-primary-fg font-semibold text-xs hover:bg-primary-hover transition-colors shadow-xs disabled:opacity-50"
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xs bg-primary text-primary-fg font-semibold text-xs hover:bg-primary-hover transition-colors shadow-xs disabled:opacity-50"
           >
             <RefreshCwIcon size={14} className={refreshing ? 'animate-spin' : ''} />
             {refreshing ? 'جارٍ التحديث...' : 'تحديث الرمز الآن'}
           </button>
+
+          <button
+            type="button"
+            onClick={() => setShowPrintCard(true)}
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xs bg-surface-raised border border-border text-fg font-semibold text-xs hover:bg-surface-sunken transition-colors"
+          >
+            <Printer size={14} />
+            <span>معاينة وطباعة بطاقة الطالب الورقية</span>
+          </button>
         </div>
       </div>
+
+      {/* Printable Card Modal */}
+      {showPrintCard && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-sunken/50 backdrop-blur-sm">
+          <div className="bg-surface rounded-lg max-w-sm w-full p-6 shadow-xl space-y-4 text-center">
+            <div className="border-2 border-dashed border-border rounded-md p-5 bg-surface-muted space-y-3">
+              <div className="text-xs font-bold text-fg-muted uppercase tracking-wider">
+                {data?.tenant.name || 'المركز التعليمي'}
+              </div>
+              <h3 className="text-base font-bold text-fg">{data?.student.name}</h3>
+              <div className="text-xs font-mono font-bold text-primary bg-primary-subtle py-1 px-2.5 rounded-xs inline-block border border-primary/30">
+                {data?.student.student_code}
+              </div>
+              {data?.student.grade_level && (
+                <div className="text-xs text-fg-muted">{data.student.grade_level}</div>
+              )}
+              <div className="flex justify-center p-2 bg-surface rounded-sm border border-border shadow-sm mx-auto w-fit">
+                <canvas ref={printCanvasRef} />
+              </div>
+              <p className="text-xs text-fg-muted">بطاقة دخول وحضور الطالب الرسمية</p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowPrintCard(false)}
+                className="px-4 py-2 rounded-md text-xs font-bold text-fg-subtle hover:bg-surface-muted"
+              >
+                إغلاق
+              </button>
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="px-4 py-2 bg-primary text-primary-fg rounded-md text-xs font-bold hover:bg-primary flex items-center gap-1.5 shadow-sm"
+              >
+                <Printer size={14} />
+                <span>طباعة الكارت</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Link to attendance history */}
       <div className="text-center pt-1">

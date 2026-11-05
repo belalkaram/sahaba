@@ -4,6 +4,7 @@ namespace App\Support\Authorization;
 
 use App\Models\Course;
 use App\Models\Enrollment;
+use App\Models\OfflineAssessment;
 use App\Models\PaymentRequest;
 use App\Models\SchoolClass;
 use App\Models\StaffAssignment;
@@ -356,6 +357,18 @@ class ScopeResolver
                 'self' => $resource->students()->where('students.id', $user->student?->id)->exists(),
                 default => false,
             };
+        }
+
+        if ($resource instanceof \App\Models\ClassSession) {
+            $class = $resource->schoolClass;
+
+            return $class ? self::canAccess($user, $permission, $class) : false;
+        }
+
+        if ($resource instanceof OfflineAssessment) {
+            $class = $resource->schoolClass;
+
+            return $class ? self::canAccess($user, $permission, $class) : false;
         }
 
         if ($resource instanceof Student) {

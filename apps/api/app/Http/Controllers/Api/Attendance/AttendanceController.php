@@ -8,6 +8,7 @@ use App\Domain\Communication\NotificationCatalog;
 use App\Domain\Communication\NotificationService;
 use App\Http\Controllers\Controller;
 use App\Jobs\ComputeStudentAnalytics;
+use App\Models\AccessCredential;
 use App\Models\AttendanceRecord;
 use App\Models\AttendanceRecordChange;
 use App\Models\ClassSession;
@@ -189,9 +190,40 @@ class AttendanceController extends Controller
             }
         }
 
-        // 5. Resolve Student from Dynamic Token or Legacy qr_data
+        // 5. Resolve Student from Static AccessCredential (OD-32), Dynamic Token, or Legacy qr_data
         $student = null;
-        if ($request->filled('token')) {
+        $rawScan = trim((string) ($request->input('token') ?? $request->input('qr_data')));
+
+        // Check if raw scan matches a printed card AccessCredential (OD-32)
+        if ($rawScan !== '') {
+            $credential = AccessCredential::where('credential_code', $rawScan)->first();
+            if ($credential) {
+                if ($credential->status === 'revoked') {
+                    return ApiResponse::error(
+                        'CREDENTIAL_REVOKED',
+                        'بطاقة الدخول ملغاة وغير صالحة للاستخدام.',
+                        Response::HTTP_UNPROCESSABLE_ENTITY
+                    );
+                }
+                if ($credential->expires_at && $credential->expires_at->isPast()) {
+                    return ApiResponse::error(
+                        'CREDENTIAL_EXPIRED',
+                        'بطاقة الدخول منتهية الصلاحية.',
+                        Response::HTTP_UNPROCESSABLE_ENTITY
+                    );
+                }
+                if ($credential->status !== 'active') {
+                    return ApiResponse::error(
+                        'CREDENTIAL_INACTIVE',
+                        'بطاقة الدخول غير مفعلة.',
+                        Response::HTTP_UNPROCESSABLE_ENTITY
+                    );
+                }
+                $student = $credential->student()->with('user')->first();
+            }
+        }
+
+        if (! $student && $request->filled('token')) {
             try {
                 $verified = $qrService->verifyToken((string) $request->input('token'), $tenant);
                 $student = $verified['student'];
@@ -203,7 +235,7 @@ class AttendanceController extends Controller
                     $e->getExtra()
                 );
             }
-        } elseif ($request->filled('qr_data')) {
+        } elseif (! $student && $request->filled('qr_data')) {
             // Legacy / barcode card scan path
             $allowStatic = (bool) ($tenant->brand_settings['allow_static_student_code_scan'] ?? false);
             if (! $allowStatic) {
@@ -229,7 +261,7 @@ class AttendanceController extends Controller
                     Response::HTTP_UNPROCESSABLE_ENTITY
                 );
             }
-        } else {
+        } elseif (! $student) {
             return ApiResponse::error(
                 'MISSING_SCAN_DATA',
                 'يرجى إرسال رمز الـ QR (token).',

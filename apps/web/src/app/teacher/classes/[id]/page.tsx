@@ -367,7 +367,7 @@ export default function TeacherClassDetailPage() {
 
                   <div className="pt-3 border-t border-border/80 flex items-center justify-between gap-2">
                     <Link
-                      href={`/teacher/sessions/${sess.id}`}
+                      href={`/staff/sessions/${sess.id}`}
                       className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-md bg-primary hover:opacity-90 text-primary-foreground font-semibold text-xs shadow-sm"
                     >
                       كشف الحضور

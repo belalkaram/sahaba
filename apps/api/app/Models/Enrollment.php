@@ -12,6 +12,7 @@ class Enrollment extends TenantModel
         'student_id',
         'course_id',
         'status',
+        'mode',
         'enrolled_at',
         'completed_at',
     ];

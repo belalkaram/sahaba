@@ -1,4 +1,4 @@
-# Progress Tracker — Recovery Program
+# Progress Tracker â€” Recovery Program
 
 > Claude Code updates this file after every task. Status values: `TODO`, `IN_PROGRESS`, `DONE`, `PARTIAL`, `BLOCKED (<reason>)`, `DEFERRED (<ADR/OD>)`, `ALREADY_FIXED`.
 > Evidence = path to report section, test name, or commit.
@@ -34,18 +34,18 @@
 | R1B | R1-B8 | Role management screens | FR-AUTHZ-004 | DONE | `src/app/admin/roles/page.tsx`, `src/app/admin/layout.tsx` |
 | R1B | R1-B9 | Playwright + role navigation tests | T-QA-03 | DONE | `apps/web/tests/access-model.test.ts` (7 tests PASS), `support-session-banner.tsx` |
 | R2 | R2-1 | Users API | T-FEAT-34 | DONE | `UserManagementApiTest` |
-| R2 | R2-2 | CSV import | — | DONE | `StudentImportTest` |
+| R2 | R2-2 | CSV import | â€” | DONE | `StudentImportTest` |
 | R2 | R2-3 | Branches & classrooms API | T-FEAT-15 | DONE | `BranchClassroomApiTest` |
 | R2 | R2-4 | Tenant provisioning service | T-RBAC-03, C-11 | DONE | `TenantProvisioningTest` |
 | R2 | R2-5 | Real self-registration | T-FEAT-24 | DONE | `SchoolRegistrationController`, `TenantProvisioningTest` |
 | R2 | R2-6 | Platform console real | T-FEAT-25, 26, T-SEC-02 | PARTIAL | `PlatformTenantApiTest`, `PlatformIdentityTest`, `PlatformSettingsAndContactTest`; platform login UI added 2026-11-04; no E2E |
-| R2 | R2-7 | Admin screens | — | PARTIAL | `/admin/users`, `/admin/branches`, `/admin/students/import` exist; no E2E |
+| R2 | R2-7 | Admin screens | â€” | PARTIAL | `/admin/users`, `/admin/branches`, `/admin/students/import` exist; no E2E |
 | R3 | R3-1 | ContentAccessPolicy | T-SEC-07, C-05 | DONE | `ContentAccessPolicyTest` |
 | R3 | R3-2 | Enrollment rules | T-SEC-07 | DONE | `ContentAccessPolicyTest::test_student_cannot_self_enroll_in_paid_course_without_entitlement` |
 | R3 | R3-3 | Payment proof upload | T-FEAT-21 | DONE | `ContentAccessPolicyTest::test_payment_proof_upload_and_authorized_access` |
 | R3 | R3-4 | Packages & manual entitlements API | T-FEAT-22 | DONE | `ContentAccessPolicyTest::test_manual_entitlement_grant_and_revoke_with_audit`, `BillingGateTest` |
 | R3 | R3-5 | Student billing UI | T-FEAT-20 | PARTIAL | `/student/plans`, `/student/payments`, `/student/subscriptions` exist; no E2E |
-| R3 | R3-6 | Admin/finance billing UI | — | PARTIAL | `/teacher/payments`, `/admin/packages` exist; no E2E |
+| R3 | R3-6 | Admin/finance billing UI | â€” | PARTIAL | `/teacher/payments`, `/admin/packages` exist; no E2E |
 | R3 | R3-7 | Approval side effects | T-FEAT-23 | DONE | `ContentAccessPolicyTest::test_approved_payment_unlocks_content_and_auto_enrolls_student` |
 | R4 | R4-1 | Content model | T-FEAT-02 | DONE | `course_modules`, `lessons` updates, `lesson_materials`, backfill |
 | R4 | R4-2 | Content API | T-FEAT-01 | DONE | `CourseModuleController`, `CourseController` outline, `LessonController`, `LessonMaterialController` |
@@ -56,7 +56,7 @@
 | R4 | R4-7 | Remove simulated AI Tutor | T-FEAT-33 | DONE | Removed `setTimeout` canned chat from student courses; clean catalog & progress tracking |
 | R5 | R5-1 | Student QR token | T-SEC-10 | DONE | `SecureAttendanceQrAndLifecycleTest` |
 | R5 | R5-2 | Scan endpoint validation | T-SEC-10 | DONE | `SecureAttendanceQrAndLifecycleTest` |
-| R5 | R5-3 | Session QR | — | DEFERRED (OD-4) | |
+| R5 | R5-3 | Session QR | â€” | DEFERRED (OD-4) | |
 | R5 | R5-4 | Corrections & modes | T-FEAT-16 | DONE | `SecureAttendanceQrAndLifecycleTest::test_attendance_correction_requires_reason_and_audit_history` |
 | R5 | R5-5 | Student "My Card" | T-FEAT-13 | PARTIAL | `/student/card` exists; no E2E |
 | R5 | R5-6 | Mobile scanner | T-FEAT-13, 14 | DONE | `/staff/attendance/scan/[sessionId]`, `CameraAttendanceScanTest`, `useQrScanner` |
@@ -66,17 +66,17 @@
 | R6 | R6-3 | Questions API + bank | T-FEAT-18 | DONE | `AssessmentLifecycleAndServerTimingTest::test_question_bank_crud_and_import_to_exam` |
 | R6 | R6-4 | Assignment file submissions | T-FEAT-18 | DONE | `AssessmentLifecycleAndServerTimingTest::test_assignment_file_submission_and_secure_download` |
 | R6 | R6-5 | Builders & grading UI | T-FEAT-17, 19, T-UX-05 | PARTIAL | exam builder and `/teacher/grading` exist; no E2E |
-| R6 | R6-6 | Student assessment UI | — | PARTIAL | `/student/exams`, exam take/results exist; no E2E |
+| R6 | R6-6 | Student assessment UI | â€” | PARTIAL | `/student/exams`, exam take/results exist; no E2E |
 | R7A | R7-0a | Tokens & themes | T-UX-03 | PARTIAL | `styles/tokens.css`, `lint:design` guard, light/dark checked on sample pages; no Playwright screenshots, no axe |
 | R7A | R7-0b | Primitives & patterns | T-UX-10, 08 | PARTIAL | `components/ui/*`, dev-only `/components`; keyboard/axe not audited |
 | R7A | R7-1 | App Shell | T-UX-07, 04 | PARTIAL | `components/layout/app-shell.tsx`, checked 1280 and 390 on sample pages; no E2E |
 | R7A | R7-2 | Break up God pages | T-UX-06 | PARTIAL | `features/*` for some pages; several pages still > 300 lines (builder 1110, `teacher/courses/[id]` 914) |
 | R7A | R7-3 | Detail page pattern | T-UX-09 | PARTIAL | `components/layout/detail-layout.tsx`; not used on every detail page |
-| R7B | R7B | Student experience | Master §70 | PARTIAL | codemod + sample visual check only; `docs/recovery-reports/R7B.md` |
-| R7C | R7C | Staff experience | Master §71-72, T-FEAT-30 | PARTIAL | codemod + nav links added 2026-11-04; `docs/recovery-reports/R7C.md` |
-| R7D | R7D | Parent experience | Master §73 | PARTIAL | codemod only; `docs/recovery-reports/R7D.md` |
+| R7B | R7B | Student experience | Master Â§70 | PARTIAL | codemod + sample visual check only; `docs/recovery-reports/R7B.md` |
+| R7C | R7C | Staff experience | Master Â§71-72, T-FEAT-30 | PARTIAL | codemod + nav links added 2026-11-04; `docs/recovery-reports/R7C.md` |
+| R7D | R7D | Parent experience | Master Â§73 | PARTIAL | codemod only; `docs/recovery-reports/R7D.md` |
 | R7E | R7E | Tenant admin experience | F8 | PARTIAL | `/admin`, `/admin/audit` checked in browser; `/admin/integrations` shows "not available" (no status endpoint); `docs/recovery-reports/R7E-R7F.md` |
-| R7F | R7F | Platform, support & public (landing, coupon login) | T-UX-02, Master §74 | PARTIAL | Landing, login + access code, contact, platform login/audit/settings; `PlatformSettingsAndContactTest`; `docs/recovery-reports/R7E-R7F.md` |
+| R7F | R7F | Platform, support & public (landing, coupon login) | T-UX-02, Master Â§74 | PARTIAL | Landing, login + access code, contact, platform login/audit/settings; `PlatformSettingsAndContactTest`; `docs/recovery-reports/R7E-R7F.md` |
 | R7G | UX-R7G | Dark theme, logo, chrome, secure exam, images, public academy pages | owner request (outside audit IDs) | PARTIAL | `PublicAcademyAndImagesTest` (8 tests); tsc/build/lint:design pass; real fullscreen + tab-switch not verified; `docs/recovery-reports/UX-R7G.md` |
 | R8 | R8-1 | Domain events & notification service | T-FEAT-28 | DONE | `NotificationEventsTest` |
 | R8 | R8-2 | Notification center UI | T-FEAT-28 | PARTIAL | Bell, `/notifications`, preferences; no E2E; `docs/recovery-reports/R8.md` |
@@ -88,13 +88,13 @@
 | R9 | R9-1 | E2E suite | T-QA-03 | TODO | |
 | R9 | R9-2 | Contract tests | T-QA-04 | TODO | |
 | R9 | R9-3 | Role matrix in CI | T-QA-01, 02 | TODO | |
-| R9 | R9-4 | Visual QA | — | TODO | |
-| R9 | R9-5 | Accessibility | — | TODO | |
+| R9 | R9-4 | Visual QA | â€” | TODO | |
+| R9 | R9-5 | Accessibility | â€” | TODO | |
 | R9 | R9-6 | New release gate | T-QA-05 | TODO | |
 | R9 | R9-7 | Repository hygiene | T-QA-06, T-UX-11 | TODO | |
 | R9 | R9-8 | Documentation & status | C-09 | TODO | |
 
-### Program 2026-11-05 (plan: `docs/plans/2026-11-05-platform-console-tenancy-venues-qr-plan.md`, order = plan §3)
+### Program 2026-11-05 (plan: `docs/plans/2026-11-05-platform-console-tenancy-venues-qr-plan.md`, order = plan Â§3)
 
 | Phase | Task | Title | Closes | Status | Evidence |
 |---|---|---|---|---|---|
@@ -102,7 +102,7 @@
 | PS | PS-2 | Teacher photo and public profile on `/a/{slug}` and `/`, cache-busting, branding refresh | F-1..F-4 | DONE | `PublicDirectoryAndBrandingTest` (4 tests PASS), `PublicAcademyAndImagesTest` (8 tests PASS), landing `PublicTeachersSection`, `refreshSession` |
 | P1 | P1 | Tenant types, simple teacher UI, service selection (ADR-002) | OD-23, 24, 31, F-6 | DONE | `ADR-002`, `TenantTypeProfileTest` (7 tests PASS), `apps/web/tests/access-model.test.ts` (11 tests PASS), `TenantModulesModal`, `convertToOrganization` |
 | P6 | P6 | Camera QR attendance on all browsers | OD-29, R5-6 | DONE | `CameraAttendanceScanTest` (6 tests PASS), `useQrScanner` (BarcodeDetector + ZXing lazy fallback), `/staff/attendance/scan`, 30s undo, auto-absent |
-| P8 | P8 | Offline service: student mode, assistant workspace, homework checks, paper scores | OD-32 | TODO | |
+| P8 | P8 | Offline service: student mode, assistant workspace, homework checks, paper scores | OD-32 | DONE | `OfflineServiceTest` (8 tests PASS), `apps/web/tests/access-model.test.ts` (13 tests PASS), `/staff/sessions/[id]`, `offline_homework_checks`, `offline_assessments`, printable card |
 | P9 | P9 | Mandatory parent link, notification routing, WhatsApp adapter | OD-33, F-10 | TODO | |
 | P4 | P4 | Student 10 SAR/month manual payment reviewed by the super admin (ADR-004) | OD-27, F-17 | TODO | |
 | P2 | P2 | Leads inbox; organization sign-up reviewed first | OD-26 | TODO | |
@@ -111,7 +111,7 @@
 | PS | PS-3 | Exam creation UI and question-bank management | F-7..F-9 | TODO | |
 | P7 | P7 | Global staff identity and workspace switcher (ADR-003) | OD-25 | TODO | |
 | PS | PS-5 | Analytics UI, credential activation, live landing numbers | F-13, F-15, F-18 | TODO | |
-| PS | PS-6 | CI guard: unused API methods and routes | — | TODO | |
+| PS | PS-6 | CI guard: unused API methods and routes | â€” | TODO | |
 
 ## External prerequisites (owner action)
 
