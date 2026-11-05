@@ -3,7 +3,7 @@
 | ID | Risk | Impact | Mitigation |
 |---|---|---|---|
 | RK-1 | UI shows success while the change is not persisted or not reflected (see `audit/2026-11-05-frontend-backend-persistence-audit.md`) | Owner and user trust | Plan phase PS |
-| RK-2 | The "create tenant" form on the platform console defaults the owner password to `password123` when left empty | Account takeover | PS-1 (fix first) |
+| RK-2 | The "create tenant" form on the platform console defaults the owner password to `password123` when left empty | Account takeover | CLOSED in PS-1 (2026-11-05): owner password required (min: 8), real owner-name field, no default password, tested in PlatformTenantProvisioningSecurityTest |
 | RK-3 | QR scanner has no camera decoding on iOS Safari or Firefox | Manual entry only on iPhone | P6 (OD-29 approved) |
 | RK-4 | Tenant `type` holds free-form values | Wrong behaviour per tenant type | P1 |
 | RK-6 | Super admin reads students' personal data (OD-28) | Privacy / Saudi PDPL compliance | ADR-005: role-limited, every read audited, privacy notice |

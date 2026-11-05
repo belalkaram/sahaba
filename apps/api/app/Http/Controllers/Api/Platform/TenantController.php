@@ -12,11 +12,30 @@ use App\Support\Audit\AuditLogger;
 use App\Tenancy\TenantProvisioningService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
 class TenantController extends Controller
 {
+    public const ALLOWED_TYPES = [
+        'individual_teacher',
+        'organization',
+        'center',
+        'academy',
+        'school',
+        'institute',
+        'educational_center',
+        'university',
+    ];
+
+    public const ALLOWED_ORGANIZATION_KINDS = [
+        'center',
+        'academy',
+        'school',
+        'institute',
+    ];
+
     /**
      * List all tenants on the platform.
      */
@@ -45,7 +64,9 @@ class TenantController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'required|string|max:50|unique:tenants,slug',
-            'type' => 'required|string',
+            'domain' => 'nullable|string|max:255|unique:tenant_domains,domain',
+            'type' => ['required', 'string', Rule::in(self::ALLOWED_TYPES)],
+            'organization_kind' => ['nullable', 'string', Rule::in(self::ALLOWED_ORGANIZATION_KINDS)],
             'auth_mode' => 'nullable|string|in:password,coupon,hybrid',
             'logo_url' => 'nullable|string|max:500',
             'primary_color' => 'nullable|string|max:30',
@@ -58,7 +79,7 @@ class TenantController extends Controller
             'owner.name' => 'required_with:owner|string|max:255',
             'owner.email' => 'required_with:owner|email|max:255',
             'owner.phone' => 'nullable|string|max:30',
-            'owner.password' => 'required_with:owner|string|min:6',
+            'owner.password' => 'required_with:owner|string|min:8',
         ]);
 
         try {
@@ -87,7 +108,8 @@ class TenantController extends Controller
 
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
-            'type' => 'sometimes|string',
+            'type' => ['sometimes', 'string', Rule::in(self::ALLOWED_TYPES)],
+            'organization_kind' => ['nullable', 'string', Rule::in(self::ALLOWED_ORGANIZATION_KINDS)],
             'auth_mode' => 'sometimes|string|in:password,coupon,hybrid',
             'status' => 'sometimes|string|in:active,suspended,provisioning,archived',
             'logo_url' => 'nullable|string|max:500',

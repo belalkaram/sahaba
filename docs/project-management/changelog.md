@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [PS-1] - 2026-11-05 — Platform Create-Tenant Form Security & Consistency (F-5 / RK-2)
+### Fixed
+- **Security:** Removed default owner password 'password123' when creating a tenant via the platform console. The owner password is now strictly required (min 8 chars) in both the frontend modal and backend validation (owner.password).
+- **Domain Persistence:** Fixed missing custom domain submission: the domain field is now sent from the frontend and persisted into tenant_domains as an active custom domain.
+- **Owner Identity:** Added a real owner-name input field (adminName) in the creation modal, removing the auto-generated "<Name> Admin" fallback.
+- **Tenant Types (OD-23):** Restricted type selection to fixed OD-23 types (individual_teacher, organization + organization_kind for center, academy, school, institute). Enforced server-side with Rule::in on both store and update in TenantController.
+- Closed risk **RK-2** and finding **F-5**.
+### Tests
+- Added Tests\Feature\PlatformTenantProvisioningSecurityTest (7 tests, 24 assertions): validates rejection of missing/empty password (422), invalid type rejection (422), valid OD-23 type creation, custom domain persistence, and code hygiene verifying no password123 default remains.
+
 ## 2026-11-05 — Documentation cleanup + platform/tenancy/QR/persistence plan
 
 - Removed stale and duplicate docs (`lms-recovery/`, `source/`, phase copies, bootstrap manifests). See `docs/audit/2026-11-05-documentation-hygiene.md`.

@@ -2562,20 +2562,35 @@ paths:
           application/json:
             schema:
               type: object
-              required: [name, slug, type, owner_name, owner_email, owner_password]
+              required: [name, slug, type]
               properties:
                 name:
                   type: string
                 slug:
                   type: string
+                domain:
+                  type: string
+                  nullable: true
                 type:
                   type: string
-                owner_name:
+                  enum: [individual_teacher, organization, center, academy, school, institute, educational_center, university]
+                organization_kind:
                   type: string
-                owner_email:
-                  type: string
-                owner_password:
-                  type: string
+                  enum: [center, academy, school, institute]
+                  nullable: true
+                owner:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    email:
+                      type: string
+                    phone:
+                      type: string
+                      nullable: true
+                    password:
+                      type: string
+                      minLength: 8
       responses:
         '201':
           description: Tenant provisioned

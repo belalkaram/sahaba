@@ -40,17 +40,22 @@ class TenantProvisioningService
             // 2. Create control records
             DB::beginTransaction();
 
+            $brandSettings = $data['brand_settings'] ?? [];
+            if (! empty($data['organization_kind'])) {
+                $brandSettings['organization_kind'] = $data['organization_kind'];
+            }
+
             $tenant = Tenant::create([
                 'name' => $data['name'],
                 'slug' => $slug,
-                'type' => $data['type'] ?? 'school',
+                'type' => $data['type'] ?? 'individual_teacher',
                 'auth_mode' => $data['auth_mode'] ?? 'hybrid',
                 'status' => 'active',
                 'logo_url' => $data['logo_url'] ?? null,
                 'primary_color' => $data['primary_color'] ?? null,
                 'secondary_color' => $data['secondary_color'] ?? null,
                 'brand_tagline' => $data['brand_tagline'] ?? null,
-                'brand_settings' => $data['brand_settings'] ?? null,
+                'brand_settings' => ! empty($brandSettings) ? $brandSettings : null,
             ]);
 
             TenantDatabase::create([
@@ -62,8 +67,21 @@ class TenantProvisioningService
             TenantDomain::create([
                 'tenant_id' => $tenant->id,
                 'domain' => $slug.'.localhost',
+                'type' => 'subdomain',
                 'active' => true,
             ]);
+
+            if (! empty($data['domain'])) {
+                $customDomain = strtolower(trim($data['domain']));
+                if ($customDomain !== $slug.'.localhost') {
+                    TenantDomain::create([
+                        'tenant_id' => $tenant->id,
+                        'domain' => $customDomain,
+                        'type' => 'custom',
+                        'active' => true,
+                    ]);
+                }
+            }
 
             // Save requested modules
             $modules = $data['modules'] ?? array_keys(config('authorization.modules', []));

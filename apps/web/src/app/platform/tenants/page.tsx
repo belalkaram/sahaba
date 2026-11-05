@@ -24,8 +24,10 @@ import { partial } from '../../../lib/partial-failure';
 const initialFormData: CreateTenantFormData = {
   name: '',
   slug: '',
-  type: 'مدرسة خاصة / دولية',
+  type: 'organization',
+  organizationKind: 'center',
   domain: '',
+  adminName: '',
   adminEmail: '',
   adminPassword: '',
 };
@@ -66,7 +68,15 @@ export default function PlatformTenantsPage() {
 
   const handleStartProvisioning = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.slug || !formData.adminEmail) return;
+    if (
+      !formData.name.trim() ||
+      !formData.slug.trim() ||
+      !formData.adminName.trim() ||
+      !formData.adminEmail.trim() ||
+      !formData.adminPassword
+    ) {
+      return;
+    }
 
     setIsProvisioning(true);
     setProvisionError(null);
@@ -74,13 +84,15 @@ export default function PlatformTenantsPage() {
     try {
       const slug = formData.slug.toLowerCase().trim().replace(/[^a-z0-9_-]/g, '-');
       const newTenant = await platformApi.provisionTenant({
-        name: formData.name,
+        name: formData.name.trim(),
         slug,
         type: formData.type,
+        organization_kind: formData.type === 'organization' ? formData.organizationKind : undefined,
+        domain: formData.domain.trim() ? formData.domain.trim() : undefined,
         owner: {
-          name: `${formData.name} Admin`,
-          email: formData.adminEmail,
-          password: formData.adminPassword || 'password123',
+          name: formData.adminName.trim(),
+          email: formData.adminEmail.trim(),
+          password: formData.adminPassword,
         },
       });
 

@@ -130,6 +130,8 @@ export interface ProvisionTenantPayload {
   name: string;
   slug: string;
   type?: string;
+  organization_kind?: string;
+  domain?: string;
   auth_mode?: string;
   modules?: string[];
   owner?: {

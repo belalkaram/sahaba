@@ -5,13 +5,15 @@ import { Modal } from '../../../components/ui/modal';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Select } from '../../../components/ui/select';
-
 import { Loader2, PartyPopper } from 'lucide-react';
+
 export interface CreateTenantFormData {
   name: string;
   slug: string;
   type: string;
+  organizationKind?: string;
   domain: string;
+  adminName: string;
   adminEmail: string;
   adminPassword: string;
 }
@@ -27,6 +29,18 @@ export interface CreateTenantModalProps {
   provisionError: string | null;
 }
 
+const TENANT_TYPE_OPTIONS = [
+  { value: 'organization', label: 'مؤسسة كاملة (Organization)' },
+  { value: 'individual_teacher', label: 'معلم مستقل (Individual Teacher)' },
+];
+
+const ORGANIZATION_KIND_OPTIONS = [
+  { value: 'center', label: 'مركز تعليمي / سنتر (Center)' },
+  { value: 'academy', label: 'أكاديمية تدريب (Academy)' },
+  { value: 'school', label: 'مدرسة (School)' },
+  { value: 'institute', label: 'معهد (Institute)' },
+];
+
 export const CreateTenantModal: React.FC<CreateTenantModalProps> = ({
   isOpen,
   onClose,
@@ -41,7 +55,7 @@ export const CreateTenantModal: React.FC<CreateTenantModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={() => !isProvisioning && onClose()}
-      title="معالج تهيئة مؤسسة تعليمية جديدة (Tenant Provisioning)"
+      title="معالج تهيئة مستأجر جديد (Tenant Provisioning)"
       subtitle="عزل تلقائي للمستأجر، تشغيل الهجرات، وإنشاء المستخدم الإداري الأول."
       size="lg"
     >
@@ -75,7 +89,7 @@ export const CreateTenantModal: React.FC<CreateTenantModalProps> = ({
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input
-                label="اسم المؤسسة التعليمية (بالعربية) *"
+                label="اسم المؤسسة / مساحة المعلم (بالعربية) *"
                 required
                 placeholder="مثال: مدارس القمة العالمية"
                 value={formData.name}
@@ -97,29 +111,55 @@ export const CreateTenantModal: React.FC<CreateTenantModalProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Select
-                label="نوع المؤسسة"
-                options={[
-                  { value: 'مدرسة خاصة / دولية', label: 'مدرسة خاصة / دولية' },
-                  { value: 'أكاديمية تدريب مهني', label: 'أكاديمية تدريب مهني' },
-                  { value: 'معهد لغات وعلوم', label: 'معهد لغات وعلوم' },
-                  { value: 'مركز تعليمي / دروس تقوية', label: 'مركز تعليمي / دروس تقوية' },
-                ]}
+                label="نوع المشترك (Tenant Type) *"
+                options={TENANT_TYPE_OPTIONS}
                 value={formData.type}
-                onChange={(e) => onFormChange({ ...formData, type: e.target.value })}
+                onChange={(e) =>
+                  onFormChange({
+                    ...formData,
+                    type: e.target.value,
+                    organizationKind: e.target.value === 'organization' ? (formData.organizationKind || 'center') : undefined,
+                  })
+                }
               />
+              {formData.type === 'organization' ? (
+                <Select
+                  label="تصنيف المؤسسة (Organization Kind) *"
+                  options={ORGANIZATION_KIND_OPTIONS}
+                  value={formData.organizationKind || 'center'}
+                  onChange={(e) => onFormChange({ ...formData, organizationKind: e.target.value })}
+                />
+              ) : (
+                <Input
+                  label="النطاق المخصص (Custom Domain)"
+                  placeholder={formData.slug ? `${formData.slug}.localhost` : 'alqimmah.localhost'}
+                  value={formData.domain}
+                  onChange={(e) => onFormChange({ ...formData, domain: e.target.value })}
+                />
+              )}
+            </div>
+
+            {formData.type === 'organization' && (
               <Input
-                label="النطاق المخصص"
+                label="النطاق المخصص (Custom Domain)"
                 placeholder={formData.slug ? `${formData.slug}.localhost` : 'alqimmah.localhost'}
                 value={formData.domain}
                 onChange={(e) => onFormChange({ ...formData, domain: e.target.value })}
               />
-            </div>
+            )}
 
             <div className="p-4 rounded-md bg-surface-sunken border border-border space-y-3">
               <span className="text-xs font-bold text-primary block uppercase tracking-wider">
-                بيانات حساب المدير التنفيذي الأول (Owner User)
+                بيانات حساب المدير التنفيذي / المالك (Owner Account)
               </span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <Input
+                  label="اسم المالك / المدير *"
+                  required
+                  placeholder="مثال: أ. محمد أحمد"
+                  value={formData.adminName}
+                  onChange={(e) => onFormChange({ ...formData, adminName: e.target.value })}
+                />
                 <Input
                   label="البريد الإلكتروني للإدارة *"
                   type="email"
@@ -129,9 +169,11 @@ export const CreateTenantModal: React.FC<CreateTenantModalProps> = ({
                   onChange={(e) => onFormChange({ ...formData, adminEmail: e.target.value })}
                 />
                 <Input
-                  label="كلمة المرور المؤقتة"
+                  label="كلمة مرور حساب المالك *"
                   type="password"
-                  placeholder="password123"
+                  required
+                  minLength={8}
+                  placeholder="••••••••••••"
                   value={formData.adminPassword}
                   onChange={(e) => onFormChange({ ...formData, adminPassword: e.target.value })}
                 />
@@ -152,4 +194,3 @@ export const CreateTenantModal: React.FC<CreateTenantModalProps> = ({
     </Modal>
   );
 };
-
