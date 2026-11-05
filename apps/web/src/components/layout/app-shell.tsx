@@ -68,8 +68,8 @@ export const AppShell: React.FC<AppShellProps> = ({ children, experienceOverride
 
   const activeExperience: Experience = experienceOverride || authExp || 'student';
   const navItems = useMemo(
-    () => filterNavItems(activeExperience, tenant?.modules ?? [], permissions, area),
-    [activeExperience, tenant?.modules, permissions, area],
+    () => filterNavItems(activeExperience, tenant?.modules ?? [], permissions, area, tenant?.type, tenant?.services),
+    [activeExperience, tenant?.modules, permissions, area, tenant?.type, tenant?.services],
   );
   const groups = useMemo(() => groupItems(navItems), [navItems]);
   const mobilePrimary = useMemo(() => navItems.filter((i) => i.primary).slice(0, 4), [navItems]);

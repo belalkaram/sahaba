@@ -8,6 +8,7 @@ use App\Support\ApiResponse;
 use App\Tenancy\TenantProvisioningService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
@@ -59,7 +60,11 @@ class SchoolRegistrationController extends Controller
                 'max:40',
                 'regex:/^[a-z0-9][a-z0-9-]*[a-z0-9]$/',
             ],
-            'type' => 'nullable|string|in:school,center,tutor,academy,university',
+            'type' => ['nullable', 'string', Rule::in(['individual_teacher', 'organization', 'school', 'center', 'tutor', 'academy', 'university'])],
+            'organization_kind' => ['nullable', 'string', Rule::in(['center', 'academy', 'school', 'institute'])],
+            'services' => 'nullable|array',
+            'services.*' => 'string|in:online,offline',
+            'city' => 'nullable|string|max:100',
             'admin_name' => 'required|string|min:2|max:255',
             'admin_email' => 'required|email|max:255',
             'admin_phone' => 'nullable|string|max:30',
@@ -67,6 +72,18 @@ class SchoolRegistrationController extends Controller
         ]);
 
         $slug = strtolower($validated['slug']);
+
+        $rawType = $validated['type'] ?? 'organization';
+        if (in_array($rawType, ['individual_teacher', 'tutor'], true)) {
+            $type = 'individual_teacher';
+            $organizationKind = null;
+        } else {
+            $type = 'organization';
+            $organizationKind = $validated['organization_kind']
+                ?? (in_array($rawType, ['center', 'academy', 'school', 'institute'], true) ? $rawType : 'center');
+        }
+
+        $services = $validated['services'] ?? ['online', 'offline'];
 
         // 3. Reserved slug validation
         if (in_array($slug, self::RESERVED_SLUGS, true)) {
@@ -87,7 +104,11 @@ class SchoolRegistrationController extends Controller
             $tenant = $this->provisioningService->provision([
                 'name' => $validated['school_name'],
                 'slug' => $slug,
-                'type' => $validated['type'] ?? 'school',
+                'type' => $type,
+                'organization_kind' => $organizationKind,
+                'services' => $services,
+                'city' => $validated['city'] ?? null,
+                'contact_phone' => $validated['admin_phone'] ?? null,
                 'auth_mode' => 'password',
                 'owner' => [
                     'name' => $validated['admin_name'],
@@ -95,8 +116,6 @@ class SchoolRegistrationController extends Controller
                     'phone' => $validated['admin_phone'] ?? null,
                     'password' => $validated['password'],
                 ],
-                // Default enabled modules for self-registered schools
-                'modules' => ['courses', 'attendance', 'billing', 'assessments', 'offline'],
             ], actorType: 'self_registration');
 
             return ApiResponse::success([

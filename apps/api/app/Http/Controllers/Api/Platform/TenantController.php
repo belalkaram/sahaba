@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Platform;
 
+use App\Domain\Authorization\Services\RoleSynchronizer;
 use App\Domain\Platform\PlatformMetricsService;
 use App\Http\Controllers\Controller;
 use App\Models\SupportAccessLog;
@@ -9,6 +10,8 @@ use App\Models\Tenant;
 use App\Models\TenantFeature;
 use App\Support\ApiResponse;
 use App\Support\Audit\AuditLogger;
+use App\Tenancy\TenantContext;
+use App\Tenancy\TenantDatabaseManager;
 use App\Tenancy\TenantProvisioningService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -67,11 +70,17 @@ class TenantController extends Controller
             'domain' => 'nullable|string|max:255|unique:tenant_domains,domain',
             'type' => ['required', 'string', Rule::in(self::ALLOWED_TYPES)],
             'organization_kind' => ['nullable', 'string', Rule::in(self::ALLOWED_ORGANIZATION_KINDS)],
+            'city' => 'nullable|string|max:100',
+            'contact_phone' => 'nullable|string|max:50',
+            'services' => 'nullable|array',
+            'services.*' => 'string|in:online,offline',
             'auth_mode' => 'nullable|string|in:password,coupon,hybrid',
             'logo_url' => 'nullable|string|max:500',
             'primary_color' => 'nullable|string|max:30',
             'secondary_color' => 'nullable|string|max:30',
             'brand_tagline' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:100',
+            'contact_phone' => 'nullable|string|max:50',
             'brand_settings' => 'nullable|array',
             'modules' => 'nullable|array',
             'modules.*' => 'string',
@@ -116,6 +125,8 @@ class TenantController extends Controller
             'primary_color' => 'nullable|string|max:30',
             'secondary_color' => 'nullable|string|max:30',
             'brand_tagline' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:100',
+            'contact_phone' => 'nullable|string|max:50',
             'brand_settings' => 'nullable|array',
         ]);
 
@@ -218,6 +229,43 @@ class TenantController extends Controller
         return ApiResponse::success([
             'tenant' => $tenant->fresh(['domains', 'databaseConfig', 'features']),
             'message' => 'Tenant modules updated successfully.',
+        ]);
+    }
+
+    /**
+     * Convert an independent teacher to a full organization without data loss (P1 / OD-23).
+     */
+    public function convertToOrganization(Request $request, string $id): JsonResponse
+    {
+        $tenant = Tenant::findOrFail($id);
+
+        $validated = $request->validate([
+            'organization_kind' => ['required', 'string', Rule::in(self::ALLOWED_ORGANIZATION_KINDS)],
+        ]);
+
+        $tenant->update([
+            'type' => 'organization',
+            'organization_kind' => $validated['organization_kind'],
+        ]);
+
+        // Synchronize full organizational roles (OD-24)
+        $dbManager = app(TenantDatabaseManager::class);
+        $dbManager->configureConnection($tenant);
+        app(TenantContext::class)->setTenant($tenant);
+        app(RoleSynchronizer::class)->sync(config('tenant_profiles.types.organization.roles'));
+
+        AuditLogger::log(
+            action: 'tenant.converted_to_organization',
+            tenantId: $tenant->id,
+            entityType: 'Tenant',
+            entityId: $tenant->id,
+            payload: ['organization_kind' => $validated['organization_kind']],
+            actorType: 'platform_admin'
+        );
+
+        return ApiResponse::success([
+            'tenant' => $tenant->fresh(['domains', 'databaseConfig', 'features']),
+            'message' => 'تمت ترقية المشترك إلى مؤسسة بنجاح.',
         ]);
     }
 

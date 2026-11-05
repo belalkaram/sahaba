@@ -19,11 +19,12 @@ class RoleSynchronizer
     /**
      * Synchronize permissions and system roles in the current tenant database.
      *
+     * @param  string[]|null  $roleNames
      * @return array{permissions: int, roles: int}
      */
-    public function sync(): array
+    public function sync(?array $roleNames = null): array
     {
-        return DB::connection('tenant')->transaction(function () {
+        return DB::connection('tenant')->transaction(function () use ($roleNames) {
             // 1. Upsert all permissions from the catalog
             $catalogPermissions = PermissionCatalog::permissions();
             $permissionMap = [];
@@ -40,8 +41,11 @@ class RoleSynchronizer
                 $permissionMap[$name] = $permission->id;
             }
 
-            // 2. Synchronize all system roles
+            // 2. Synchronize system roles (optionally filtered by profile)
             $catalogRoles = PermissionCatalog::roles();
+            if ($roleNames !== null) {
+                $catalogRoles = array_intersect_key($catalogRoles, array_flip($roleNames));
+            }
             $rolesCount = 0;
 
             foreach ($catalogRoles as $roleName => $def) {

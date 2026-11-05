@@ -209,6 +209,18 @@ export const platformApi = {
     return res.data.tenant;
   },
 
+  async convertToOrganization(id: string, organizationKind: string): Promise<Tenant> {
+    const res = await apiClient.post<{ tenant: Tenant }>(
+      `/tenants/${id}/convert-to-organization`,
+      { organization_kind: organizationKind },
+      {
+        headers: platformAuthHeader(),
+        skipUnauthorizedHandler: true,
+      }
+    );
+    return res.data.tenant;
+  },
+
   /**
    * Get platform aggregated metrics.
    */

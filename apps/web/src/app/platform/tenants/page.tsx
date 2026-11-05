@@ -19,6 +19,7 @@ import {
   CreateTenantFormData,
 } from '../../../features/platform/components/create-tenant-modal';
 import { SupportAccessModal } from '../../../features/platform/components/support-access-modal';
+import { TenantModulesModal } from '../../../features/platform/components/tenant-modules-modal';
 
 import { partial } from '../../../lib/partial-failure';
 const initialFormData: CreateTenantFormData = {
@@ -42,6 +43,7 @@ export default function PlatformTenantsPage() {
   const [supportTenant, setSupportTenant] = useState<Tenant | null>(null);
   const [supportReason, setSupportReason] = useState('');
   const [isGeneratingSupport, setIsGeneratingSupport] = useState(false);
+  const [modulesTenant, setModulesTenant] = useState<Tenant | null>(null);
 
   const [isProvisioning, setIsProvisioning] = useState(false);
   const [provisionSuccess, setProvisionSuccess] = useState(false);
@@ -194,6 +196,7 @@ export default function PlatformTenantsPage() {
           }}
           onOpenSupportModal={setSupportTenant}
           onOpenCreateModal={() => setIsModalOpen(true)}
+          onOpenModulesModal={setModulesTenant}
         />
       </Card>
 
@@ -216,6 +219,16 @@ export default function PlatformTenantsPage() {
         onReasonChange={setSupportReason}
         onConfirm={handleCreateSupportSession}
         isLoading={isGeneratingSupport}
+      />
+
+      <TenantModulesModal
+        tenant={modulesTenant}
+        isOpen={Boolean(modulesTenant)}
+        onClose={() => setModulesTenant(null)}
+        onUpdated={(updatedTenant) => {
+          setTenants((prev) => prev.map((t) => (t.id === updatedTenant.id ? updatedTenant : t)));
+          setModulesTenant(updatedTenant);
+        }}
       />
     </div>
   );

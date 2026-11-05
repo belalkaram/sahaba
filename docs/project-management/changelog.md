@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [P1] - 2026-11-05 — Tenant Archetypes, Simplified Teacher UI, Service Bundles & ADR-002 (OD-23, OD-24, OD-31, F-6)
+### Added
+- **Architectural Decision Record (ADR-002):** Approved canonical tenant archetypes (`individual_teacher` vs `organization`), organizational kinds (`center`, `academy`, `school`, `institute`), role syncing isolation, and service bundles (`online`, `offline`, or both).
+- **Control DB Migration:** Added `organization_kind`, `city`, `contact_phone`, and `onboarding_source` to `tenants` table with backfill for legacy rows.
+- **Tenant Profiles Config (`apps/api/config/tenant_profiles.php`):** Central definition of tenant archetypes, permitted roles, archetype-specific UI terminology, and service module bundles.
+- **Tenant Role Filtering & Staff Type:** `RoleSynchronizer` now supports filtering by archetype permitted roles (`sync(?array $roleNames = null)`). `individual_teacher` provisions with 4 roles (`owner`, `assistant`, `student`, `parent`) and owner staff type `teacher`. `organization` provisions with all 8 roles and owner staff type `admin`.
+- **Tenant Conversion (`POST /tenants/{id}/convert-to-organization`):** Allows super admins to seamlessly upgrade an `individual_teacher` to an `organization` without data loss, expanding system roles and logging an audit event.
+- **Service Bundling:** `TenantProvisioningService` derives active tenant modules from selected services (`online`, `offline`, or both), populating `tenant_features` with explicit enabled/disabled states.
+- **Super Admin Module Management (F-6):** Added `TenantModulesModal` to the platform console (`/platform/tenants`), allowing super admins to inspect and toggle tenant modules and upgrade individual teachers.
+- **Simplified Independent Teacher UI (OD-24):** `filterNavItems` hides complex role management (`admin-roles`) for independent teachers and rebrands "الفروع والقاعات" to "أماكن التدريس والقاعات".
+- **Dynamic Service Navigation Filtering:** `filterNavItems` dynamically filters navigation items based on active tenant services (`online` vs `offline`).
+- **Registration Archetype Selector:** Updated `/register-school` with OD-23 type picker, organization kind, city, and service checkboxes.
+### Tests
+- Backend test suite: `Tests\Feature\TenantTypeProfileTest` (7 tests, 39 assertions PASS) testing teacher role restriction, organization role expansion, service bundling module states, conversion without data loss, validation, and `/tenant/current`.
+- Tenancy test suite: `TenantProvisioningTest` (4 tests PASS), `PlatformTenantApiTest` (2 tests PASS), `PlatformTenantProvisioningSecurityTest` (7 tests PASS), `ModuleEnforcementTest` (4 tests PASS). Total 24 tests, 114 assertions PASS.
+- Frontend test suite: `apps/web/tests/access-model.test.ts` (11 tests PASS) including OD-24 simplified UI and OD-31 services navigation filtering.
+- Verification passed: `pint --test` (PASS), `tsc --noEmit` (0 errors), `npm run lint:design` (PASS), `npm run lint` (0 errors), `npm run build` (68 routes compiled).
+
 ## [PS-2] - 2026-11-05 — Teacher Public Directory, Cache-Busting, Logo Upload & Instant Public Switches (F-1 to F-4)
 ### Added
 - **Platform Public Directory (F-1):** Added `public_directory_entries` table in Control DB and `PublicDirectorySyncService` which automatically syncs opted-in (`is_public = true`, `status = active`) teacher public profiles and photos. Added `GET /api/v1/public/directory/teachers` and `PublicTeachersSection` on the landing page (`/`), allowing visitors to view and visit opted-in teachers and academies across the platform.

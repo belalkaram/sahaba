@@ -16,6 +16,7 @@ class Tenant extends Model
 
     protected $fillable = [
         'type',
+        'organization_kind',
         'auth_mode',
         'status',
         'name',
@@ -24,11 +25,18 @@ class Tenant extends Model
         'primary_color',
         'secondary_color',
         'brand_tagline',
+        'city',
+        'contact_phone',
+        'onboarding_source',
         'brand_settings',
     ];
 
     protected $casts = [
         'brand_settings' => 'array',
+    ];
+
+    protected $appends = [
+        'services',
     ];
 
     /**
@@ -91,5 +99,50 @@ class Tenant extends Model
         $module = config("authorization.modules.{$featureKey}");
 
         return $module ? (bool) ($module['is_default'] ?? true) : false;
+    }
+
+    /**
+     * Determine active services (OD-31): online, offline, or both.
+     *
+     * @return string[]
+     */
+    public function getServicesAttribute(): array
+    {
+        $features = $this->relationLoaded('features')
+            ? $this->features->where('enabled', true)->pluck('feature_key')->all()
+            : $this->features()->where('enabled', true)->pluck('feature_key')->all();
+
+        $hasOnline = in_array('online', $features, true) || in_array('courses', $features, true);
+        $hasOffline = in_array('offline', $features, true) || in_array('attendance', $features, true);
+
+        $services = [];
+        if ($hasOnline) {
+            $services[] = 'online';
+        }
+        if ($hasOffline) {
+            $services[] = 'offline';
+        }
+
+        return ! empty($services) ? $services : ['online', 'offline'];
+    }
+
+    /**
+     * Active services accessor helper.
+     *
+     * @return string[]
+     */
+    public function services(): array
+    {
+        return $this->getServicesAttribute();
+    }
+
+    /**
+     * Active services accessor helper.
+     *
+     * @return string[]
+     */
+    public function activeServices(): array
+    {
+        return $this->getServicesAttribute();
     }
 }

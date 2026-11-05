@@ -87,6 +87,11 @@ export interface AuthTenant {
   id: string;
   slug: string;
   name: string;
+  type?: 'individual_teacher' | 'organization' | string;
+  organization_kind?: 'center' | 'academy' | 'school' | 'institute' | string | null;
+  city?: string | null;
+  contact_phone?: string | null;
+  services?: ('online' | 'offline' | string)[];
   modules: string[];
   auth_mode: 'password' | 'coupon' | 'hybrid' | string;
   branding: AuthTenantBranding;

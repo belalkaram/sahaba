@@ -100,7 +100,7 @@
 |---|---|---|---|---|---|
 | PS | PS-1 | Platform create-tenant form: no default password, send domain, owner name | F-5 | DONE | PlatformTenantProvisioningSecurityTest (7 tests PASS), create-tenant-modal.tsx, page.tsx |
 | PS | PS-2 | Teacher photo and public profile on `/a/{slug}` and `/`, cache-busting, branding refresh | F-1..F-4 | DONE | `PublicDirectoryAndBrandingTest` (4 tests PASS), `PublicAcademyAndImagesTest` (8 tests PASS), landing `PublicTeachersSection`, `refreshSession` |
-| P1 | P1 | Tenant types, simple teacher UI, service selection (ADR-002) | OD-23, 24, 31, F-6 | TODO | |
+| P1 | P1 | Tenant types, simple teacher UI, service selection (ADR-002) | OD-23, 24, 31, F-6 | DONE | `ADR-002`, `TenantTypeProfileTest` (7 tests PASS), `apps/web/tests/access-model.test.ts` (11 tests PASS), `TenantModulesModal`, `convertToOrganization` |
 | P6 | P6 | Camera QR attendance on all browsers | OD-29, R5-6 | TODO | |
 | P8 | P8 | Offline service: student mode, assistant workspace, homework checks, paper scores | OD-32 | TODO | |
 | P9 | P9 | Mandatory parent link, notification routing, WhatsApp adapter | OD-33, F-10 | TODO | |

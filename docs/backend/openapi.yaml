@@ -2309,6 +2309,28 @@ paths:
           description: Standard success envelope { data, meta }
         default:
           description: Standard error envelope { error, meta }
+  /tenants/{id}/convert-to-organization:
+    post:
+      summary: "platform.tenants.convert_to_organization"
+      description: "Upgrade independent teacher to full organization (OD-23, P1). Auth: platform.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [organization_kind]
+              properties:
+                organization_kind:
+                  type: string
+                  enum: [center, academy, school, institute]
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
   /tenants/{id}/suspend:
     post:
       summary: "platform.tenants.suspend"

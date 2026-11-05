@@ -33,7 +33,10 @@ export default function RegisterSchoolPage() {
   const [formData, setFormData] = useState({
     institutionName: '',
     slug: '',
-    institutionType: 'school',
+    institutionType: 'individual_teacher',
+    organizationKind: 'center',
+    services: ['online', 'offline'] as string[],
+    city: '',
     adminName: '',
     adminEmail: '',
     adminPhone: '',
@@ -61,10 +64,18 @@ export default function RegisterSchoolPage() {
     setIsSubmitting(true);
 
     try {
+      if (formData.services.length === 0) {
+        setError('يرجى اختيار خدمة واحدة على الأقل (أونلاين أو أوفلاين)');
+        return;
+      }
+
       const response = await apiClient.post<RegistrationSuccessData>('/public/register-school', {
         school_name: formData.institutionName.trim(),
         slug: formData.slug.trim().toLowerCase(),
         type: formData.institutionType,
+        organization_kind: formData.institutionType === 'organization' ? formData.organizationKind : undefined,
+        services: formData.services,
+        city: formData.city.trim() || undefined,
         admin_name: formData.adminName.trim(),
         admin_email: formData.adminEmail.trim().toLowerCase(),
         admin_phone: formData.adminPhone.trim() || null,
@@ -165,20 +176,94 @@ export default function RegisterSchoolPage() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-secondary mb-1.5">
-                    نوع المؤسسة
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-secondary mb-1.5">
+                      أنا... *
+                    </label>
+                    <select aria-label="نوع الحساب"
+                      value={formData.institutionType}
+                      onChange={(e) => setFormData({ ...formData, institutionType: e.target.value })}
+                      className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs text-fg focus:outline-none focus:border-primary"
+                    >
+                      <option value="individual_teacher">معلم مستقل (Individual Teacher)</option>
+                      <option value="organization">مؤسسة تعليمية كاملة (Organization)</option>
+                    </select>
+                  </div>
+
+                  {formData.institutionType === 'organization' && (
+                    <div>
+                      <label className="block text-xs font-semibold text-secondary mb-1.5">
+                        نوع المؤسسة *
+                      </label>
+                      <select aria-label="نوع المؤسسة"
+                        value={formData.organizationKind}
+                        onChange={(e) => setFormData({ ...formData, organizationKind: e.target.value })}
+                        className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs text-fg focus:outline-none focus:border-primary"
+                      >
+                        <option value="center">مركز تعليمي / سنتر (Center)</option>
+                        <option value="academy">أكاديمية تعليمية (Academy)</option>
+                        <option value="school">مدرسة (School)</option>
+                        <option value="institute">معهد (Institute)</option>
+                      </select>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-xs font-semibold text-secondary mb-1.5">
+                      المدينة / المقر
+                    </label>
+                    <input aria-label="المدينة / المقر"
+                      type="text"
+                      placeholder="مثال: الرياض أو القاهرة"
+                      value={formData.city}
+                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                      className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs text-fg placeholder-fg-subtle focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl border border-border bg-surface-raised space-y-2">
+                  <label className="block text-xs font-bold text-fg">
+                    الخدمات التي تحتاجها (اختر واحدة على الأقل) *
                   </label>
-                  <select aria-label="نوع المؤسسة"
-                    value={formData.institutionType}
-                    onChange={(e) => setFormData({ ...formData, institutionType: e.target.value })}
-                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs text-fg focus:outline-none focus:border-primary"
-                  >
-                    <option value="school">مدرسة خاصة / دولية</option>
-                    <option value="center">مركز تدريب / دروس تقوية</option>
-                    <option value="academy">أكاديمية تعليمية</option>
-                    <option value="tutor">معلم مستقل / دورات</option>
-                  </select>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <label className="flex items-start gap-2.5 p-2.5 rounded-lg border border-border bg-surface cursor-pointer text-xs">
+                      <input
+                        type="checkbox"
+                        checked={formData.services.includes('online')}
+                        onChange={(e) => {
+                          const next = e.target.checked
+                            ? [...formData.services, 'online']
+                            : formData.services.filter((s) => s !== 'online');
+                          setFormData({ ...formData, services: next });
+                        }}
+                        className="mt-0.5 rounded border-border text-primary focus:ring-primary"
+                      />
+                      <div>
+                        <span className="font-bold text-fg block">الخدمة الأونلاين (Online)</span>
+                        <span className="text-secondary text-[0.6875rem] block">المقررات، الفيديوهات، الحصص المباشرة، الاختبارات الرقمية</span>
+                      </div>
+                    </label>
+
+                    <label className="flex items-start gap-2.5 p-2.5 rounded-lg border border-border bg-surface cursor-pointer text-xs">
+                      <input
+                        type="checkbox"
+                        checked={formData.services.includes('offline')}
+                        onChange={(e) => {
+                          const next = e.target.checked
+                            ? [...formData.services, 'offline']
+                            : formData.services.filter((s) => s !== 'offline');
+                          setFormData({ ...formData, services: next });
+                        }}
+                        className="mt-0.5 rounded border-border text-primary focus:ring-primary"
+                      />
+                      <div>
+                        <span className="font-bold text-fg block">الخدمة الأوفلاين (Offline)</span>
+                        <span className="text-secondary text-[0.6875rem] block">الحضور بالـQR، الفصول، الحصص، القاعات والمقرات، المساعدين</span>
+                      </div>
+                    </label>
+                  </div>
                 </div>
               </div>
 

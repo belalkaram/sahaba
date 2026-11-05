@@ -135,8 +135,12 @@ export function filterNavItems(
   experience: Experience,
   modules: string[],
   permissions: PermissionsMap,
-  area: 'tenant' | 'platform' = 'tenant'
+  area: 'tenant' | 'platform' = 'tenant',
+  tenantType?: string,
+  services?: string[]
 ): NavItem[] {
+  const isIndividualTeacher = tenantType === 'individual_teacher';
+
   return NAVIGATION_REGISTRY.filter((item) => {
     // Platform-console items live only in the platform area (and vice versa)
     if ((item.area === 'platform') !== (area === 'platform')) return false;
@@ -144,8 +148,20 @@ export function filterNavItems(
     // Must match experience
     if (!experienceMatches(item.experience, experience)) return false;
 
+    // OD-24: Independent teacher UI is simplified (no complex roles management)
+    if (isIndividualTeacher && item.id === 'admin-roles') return false;
+
     // If module restriction, tenant must have it
     if (item.module && !modules.includes(item.module)) return false;
+
+    // OD-31: If explicit services list provided, filter items by service domain
+    if (services && services.length > 0) {
+      const isOnlineModule = ['courses', 'meetings', 'media', 'online'].includes(item.module ?? '');
+      const isOfflineModule = ['attendance', 'classes', 'sessions', 'offline', 'credentials'].includes(item.module ?? '');
+
+      if (isOnlineModule && !services.includes('online')) return false;
+      if (isOfflineModule && !services.includes('offline')) return false;
+    }
 
     // If permission restriction, user must have at least one
     if (item.anyOf && item.anyOf.length > 0) {
@@ -154,6 +170,12 @@ export function filterNavItems(
     }
 
     return true;
+  }).map((item) => {
+    // OD-24: For individual teacher, rename "الفروع والقاعات" to "أماكن التدريس والقاعات"
+    if (isIndividualTeacher && item.id === 'admin-branches') {
+      return { ...item, label: 'أماكن التدريس والقاعات' };
+    }
+    return item;
   });
 }
 

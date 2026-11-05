@@ -2,11 +2,23 @@
  * Global TypeScript domain types matching Laravel Backend API contracts.
  */
 
+export interface TenantFeatureItem {
+  id?: string;
+  tenant_id?: string;
+  feature_key: string;
+  enabled: boolean;
+}
+
 export interface Tenant {
   id: string;
   name: string;
   slug: string;
   type: string;
+  organization_kind?: 'center' | 'academy' | 'school' | 'institute' | null;
+  city?: string | null;
+  contact_phone?: string | null;
+  services?: string[] | null;
+  features?: TenantFeatureItem[] | null;
   auth_mode?: 'password' | 'coupon' | 'hybrid';
   status: 'active' | 'suspended' | 'provisioning' | 'archived';
   logo_url?: string | null;

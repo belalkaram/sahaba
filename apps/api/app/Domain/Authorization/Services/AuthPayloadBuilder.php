@@ -91,6 +91,10 @@ class AuthPayloadBuilder
             'id' => $tenant->id,
             'slug' => $tenant->slug,
             'name' => $tenant->name,
+            'type' => $tenant->type,
+            'organization_kind' => $tenant->organization_kind,
+            'city' => $tenant->city,
+            'services' => $tenant->services(),
             'modules' => $activeModules,
             'auth_mode' => $tenant->auth_mode ?? 'hybrid',
             'branding' => [

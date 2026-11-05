@@ -99,6 +99,50 @@ describe('NavigationRegistry Filtering', () => {
     const staffItems = filterNavItems('staff', modules, staffPerms);
     assert.ok(!staffItems.some((i) => i.id === 'admin-roles'), 'Staff cannot see admin-roles');
   });
+
+  test('OD-24: individual_teacher simplifies UI by hiding admin-roles and rebranding branches', () => {
+    const modules = ['online', 'offline', 'billing'];
+    const allPerms: PermissionsMap = {
+      'roles.view': 'tenant',
+      'branches.manage': 'tenant',
+      'courses.view': 'tenant',
+    };
+
+    // Standard organization
+    const orgItems = filterNavItems('admin', modules, allPerms, 'tenant', 'organization');
+    assert.ok(orgItems.some((i) => i.id === 'admin-roles'), 'Organization has admin-roles');
+    const orgBranch = orgItems.find((i) => i.id === 'admin-branches');
+    assert.strictEqual(orgBranch?.label, 'الفروع والقاعات');
+
+    // Individual teacher
+    const teacherItems = filterNavItems('admin', modules, allPerms, 'tenant', 'individual_teacher');
+    assert.ok(!teacherItems.some((i) => i.id === 'admin-roles'), 'Individual teacher has no admin-roles');
+    const teacherBranch = teacherItems.find((i) => i.id === 'admin-branches');
+    assert.strictEqual(teacherBranch?.label, 'أماكن التدريس والقاعات');
+  });
+
+  test('OD-31: services filter controls online vs offline module visibility', () => {
+    const modules = ['online', 'offline', 'courses', 'attendance'];
+    const allPerms: PermissionsMap = {
+      'courses.view': 'tenant',
+      'attendance.view': 'tenant',
+    };
+
+    // Online-only tenant
+    const onlineOnly = filterNavItems('staff', modules, allPerms, 'tenant', 'organization', ['online']);
+    assert.ok(onlineOnly.some((i) => i.id === 'admin-courses'), 'Online tenant has courses');
+    assert.ok(!onlineOnly.some((i) => i.id === 'admin-attendance'), 'Online tenant hides offline attendance');
+
+    // Offline-only tenant
+    const offlineOnly = filterNavItems('staff', modules, allPerms, 'tenant', 'organization', ['offline']);
+    assert.ok(!offlineOnly.some((i) => i.id === 'admin-courses'), 'Offline tenant hides online courses');
+    assert.ok(offlineOnly.some((i) => i.id === 'admin-attendance'), 'Offline tenant has attendance');
+
+    // Both online and offline
+    const both = filterNavItems('staff', modules, allPerms, 'tenant', 'organization', ['online', 'offline']);
+    assert.ok(both.some((i) => i.id === 'admin-courses'), 'Both tenant has courses');
+    assert.ok(both.some((i) => i.id === 'admin-attendance'), 'Both tenant has attendance');
+  });
 });
 
 describe('Canonical AuthSession Contract Validation', () => {

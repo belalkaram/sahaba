@@ -6,13 +6,14 @@ import { Button } from '../../../components/ui/button';
 import { EmptyState } from '../../../components/ui/empty-state';
 import type { Tenant } from '../../../types';
 
-import { Link, School, ShieldCheck } from 'lucide-react';
+import { Link, School, ShieldCheck, Layers } from 'lucide-react';
 export interface TenantTableProps {
   tenants: Tenant[];
   onToggleStatus: (id: string, status: string) => void;
   onCopyLoginUrl: (slug: string) => void;
   onOpenSupportModal: (tenant: Tenant) => void;
   onOpenCreateModal: () => void;
+  onOpenModulesModal: (tenant: Tenant) => void;
 }
 
 export const TenantTable: React.FC<TenantTableProps> = ({
@@ -21,6 +22,7 @@ export const TenantTable: React.FC<TenantTableProps> = ({
   onCopyLoginUrl,
   onOpenSupportModal,
   onOpenCreateModal,
+  onOpenModulesModal,
 }) => {
   if (tenants.length === 0) {
     return (
@@ -101,9 +103,16 @@ export const TenantTable: React.FC<TenantTableProps> = ({
                     onClick={() => onOpenSupportModal(t)}
                     title="جلسة دعم فني مؤقتة"
                   >
-                    
- <ShieldCheck size={16} strokeWidth={1.75} aria-hidden /> دعم فني
- </Button>
+                    <ShieldCheck size={16} strokeWidth={1.75} aria-hidden /> دعم فني
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onOpenModulesModal(t)}
+                    title="إدارة الوحدات والخدمات والترقية"
+                  >
+                    <Layers size={16} strokeWidth={1.75} aria-hidden /> الوحدات
+                  </Button>
                 </div>
               </td>
             </tr>

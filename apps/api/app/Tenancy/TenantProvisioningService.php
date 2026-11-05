@@ -40,15 +40,31 @@ class TenantProvisioningService
             // 2. Create control records
             DB::beginTransaction();
 
+            $type = $data['type'] ?? 'individual_teacher';
+            $organizationKind = $type === 'organization'
+                ? ($data['organization_kind'] ?? $data['brand_settings']['organization_kind'] ?? 'center')
+                : null;
+
+            $city = $data['city'] ?? $data['brand_settings']['city'] ?? null;
+            $contactPhone = $data['contact_phone'] ?? $data['owner']['phone'] ?? null;
+            $onboardingSource = $data['onboarding_source'] ?? ($actorType === 'self_registration' ? 'landing' : 'direct');
+
             $brandSettings = $data['brand_settings'] ?? [];
-            if (! empty($data['organization_kind'])) {
-                $brandSettings['organization_kind'] = $data['organization_kind'];
+            if ($organizationKind) {
+                $brandSettings['organization_kind'] = $organizationKind;
+            }
+            if ($city) {
+                $brandSettings['city'] = $city;
             }
 
             $tenant = Tenant::create([
                 'name' => $data['name'],
                 'slug' => $slug,
-                'type' => $data['type'] ?? 'individual_teacher',
+                'type' => $type,
+                'organization_kind' => $organizationKind,
+                'city' => $city,
+                'contact_phone' => $contactPhone,
+                'onboarding_source' => $onboardingSource,
                 'auth_mode' => $data['auth_mode'] ?? 'hybrid',
                 'status' => 'active',
                 'logo_url' => $data['logo_url'] ?? null,
@@ -83,13 +99,28 @@ class TenantProvisioningService
                 }
             }
 
-            // Save requested modules
-            $modules = $data['modules'] ?? array_keys(config('authorization.modules', []));
-            foreach ($modules as $moduleKey) {
+            // Save requested modules (or derived from OD-31 services)
+            if (! empty($data['services']) && is_array($data['services'])) {
+                $resolvedModules = config('tenant_profiles.services.core.modules', ['core', 'billing', 'analytics']);
+                foreach ($data['services'] as $serviceKey) {
+                    $svcModules = config("tenant_profiles.services.{$serviceKey}.modules", []);
+                    $resolvedModules = array_merge($resolvedModules, $svcModules);
+                }
+                $enabledModules = array_values(array_unique($resolvedModules));
+            } else {
+                $enabledModules = $data['modules'] ?? array_keys(config('authorization.modules', []));
+            }
+
+            $allModulesToRecord = array_values(array_unique(array_merge(
+                array_keys(config('authorization.modules', [])),
+                $enabledModules
+            )));
+
+            foreach ($allModulesToRecord as $moduleKey) {
                 TenantFeature::create([
                     'tenant_id' => $tenant->id,
                     'feature_key' => $moduleKey,
-                    'enabled' => true,
+                    'enabled' => in_array($moduleKey, $enabledModules, true),
                 ]);
             }
 
@@ -98,10 +129,11 @@ class TenantProvisioningService
             // 3. Migrate tenant DB
             $this->dbManager->migrateTenant($tenant);
 
-            // 4. Synchronize standard system roles (R1-A3)
+            // 4. Synchronize standard system roles for this archetype (OD-24)
             $this->dbManager->configureConnection($tenant);
             app(TenantContext::class)->setTenant($tenant);
-            $this->roleSynchronizer->sync();
+            $allowedRoles = config("tenant_profiles.types.{$type}.roles");
+            $this->roleSynchronizer->sync($allowedRoles);
 
             // 5. Create Owner user in tenant DB if owner details provided
             if (! empty($data['owner'])) {
@@ -117,7 +149,7 @@ class TenantProvisioningService
 
                 $staff = Staff::create([
                     'user_id' => $ownerUser->id,
-                    'staff_type' => 'admin',
+                    'staff_type' => $type === 'individual_teacher' ? 'teacher' : 'admin',
                     'status' => 'active',
                 ]);
 
@@ -136,7 +168,7 @@ class TenantProvisioningService
                 payload: [
                     'name' => $tenant->name,
                     'slug' => $tenant->slug,
-                    'modules' => $modules,
+                    'modules' => $enabledModules,
                     'has_owner' => ! empty($data['owner']),
                 ],
                 actorId: $actorId,

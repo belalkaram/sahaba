@@ -107,6 +107,7 @@ Route::middleware(['platform.auth'])->group(function () {
         Route::post('/{id}/suspend', [TenantController::class, 'suspend'])->name('api.platform.tenants.suspend');
         Route::post('/{id}/activate', [TenantController::class, 'activate'])->name('api.platform.tenants.activate');
         Route::put('/{id}/modules', [TenantController::class, 'updateModules'])->name('api.platform.tenants.update_modules');
+        Route::post('/{id}/convert-to-organization', [TenantController::class, 'convertToOrganization'])->name('api.platform.tenants.convert_to_organization');
 
         // Support Access — returns a one-time exchange code (R0-5), not the token directly
         Route::post('/{id}/support-access', [SupportAccessController::class, 'generateToken'])->name('api.platform.tenants.support_access');
