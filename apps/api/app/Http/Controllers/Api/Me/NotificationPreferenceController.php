@@ -31,15 +31,24 @@ class NotificationPreferenceController extends Controller
             'preferences.*.event' => ['required', 'string', Rule::in(array_keys(NotificationCatalog::all()))],
             'preferences.*.in_app' => 'required|boolean',
             'preferences.*.mail' => 'required|boolean',
+            'preferences.*.whatsapp' => 'sometimes|boolean',
         ]);
 
         /** @var TenantUser $user */
         $user = $request->user();
 
         foreach ($validated['preferences'] as $item) {
+            $data = [
+                'in_app' => $item['in_app'],
+                'mail' => $item['mail'],
+            ];
+            if (array_key_exists('whatsapp', $item)) {
+                $data['whatsapp'] = $item['whatsapp'];
+            }
+
             NotificationPreference::updateOrCreate(
                 ['user_id' => $user->id, 'event_key' => $item['event']],
-                ['in_app' => $item['in_app'], 'mail' => $item['mail']]
+                $data
             );
         }
 
@@ -59,6 +68,7 @@ class NotificationPreferenceController extends Controller
                 'label' => $template['label'],
                 'in_app' => $saved->get($event)?->in_app ?? true,
                 'mail' => $saved->get($event)?->mail ?? $template['mail'],
+                'whatsapp' => $saved->get($event)?->whatsapp ?? true,
             ])
             ->values()
             ->all();

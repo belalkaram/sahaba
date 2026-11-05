@@ -355,11 +355,11 @@ export default function TeacherCoursesPage() {
                   <select aria-label="المستوى"
                     value={newLevel}
                     onChange={(e) => setNewLevel(e.target.value as 'beginner' | 'intermediate' | 'advanced')}
-                    className="w-full bg-background border border-border rounded-lg px-3.5 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full bg-surface border border-border rounded-lg px-3.5 py-2 text-xs text-fg focus:outline-none focus:border-primary focus:shadow-[var(--focus-ring)] transition-colors cursor-pointer font-medium"
                   >
-                    <option value="beginner">مبتدئ</option>
-                    <option value="intermediate">متوسط</option>
-                    <option value="advanced">متقدم</option>
+                    <option className="bg-surface text-fg py-1.5" value="beginner">مبتدئ</option>
+                    <option className="bg-surface text-fg py-1.5" value="intermediate">متوسط</option>
+                    <option className="bg-surface text-fg py-1.5" value="advanced">متقدم</option>
                   </select>
                 </div>
               </div>

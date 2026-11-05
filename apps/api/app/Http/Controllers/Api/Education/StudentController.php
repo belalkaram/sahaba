@@ -11,6 +11,7 @@ use App\Support\Authorization\ScopeResolver;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 
 class StudentController extends Controller
@@ -40,6 +41,10 @@ class StudentController extends Controller
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
+        }
+
+        if ($request->boolean('without_parent')) {
+            $query->doesntHave('parents');
         }
 
         if ($request->filled('search')) {
@@ -102,6 +107,12 @@ class StudentController extends Controller
             'parent_phone' => 'nullable|string|max:30',
             'relation_type' => 'nullable|string|in:father,mother,guardian',
         ]);
+
+        if (empty($validated['parent_id']) && (empty($validated['parent_name']) || empty($validated['parent_phone']))) {
+            throw ValidationException::withMessages([
+                'parent' => ['بيانات ولي الأمر إلزامية (يرجى اختيار ولي أمر موجود، أو إدخال اسم ورقم هاتف ولي الأمر).'],
+            ]);
+        }
 
         $student = $this->userService->createStudent($validated, $user);
 

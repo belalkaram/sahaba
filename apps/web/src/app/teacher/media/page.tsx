@@ -202,11 +202,11 @@ export default function TeacherMediaPage() {
                     setCourseId(e.target.value);
                     setLessonId('');
                   }}
-                  className="w-full bg-background border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-info transition-all"
+                  className="w-full bg-surface border border-border rounded-lg px-3.5 py-2.5 text-sm text-fg focus:outline-none focus:border-info focus:shadow-[var(--focus-ring)] transition-colors cursor-pointer font-medium"
                 >
-                  <option value="">-- اختياري: اختر المقرر المرتبط --</option>
+                  <option className="bg-surface text-fg py-1.5" value="">-- اختياري: اختر المقرر المرتبط --</option>
                   {courses.map((crs) => (
-                    <option key={crs.id} value={crs.id}>
+                    <option className="bg-surface text-fg py-1.5" key={crs.id} value={crs.id}>
                       {crs.code} - {crs.title}
                     </option>
                   ))}
@@ -223,11 +223,11 @@ export default function TeacherMediaPage() {
                   value={lessonId}
                   onChange={(e) => setLessonId(e.target.value)}
                   disabled={!selectedCourse || !selectedCourse.lessons || selectedCourse.lessons.length === 0}
-                  className="w-full bg-background border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-info transition-all disabled:opacity-50"
+                  className="w-full bg-surface border border-border rounded-lg px-3.5 py-2.5 text-sm text-fg focus:outline-none focus:border-info focus:shadow-[var(--focus-ring)] transition-colors cursor-pointer font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <option value="">-- اختياري: اختر درساً محدداً --</option>
+                  <option className="bg-surface text-fg py-1.5" value="">-- اختياري: اختر درساً محدداً --</option>
                   {selectedCourse?.lessons?.map((les: Lesson) => (
-                    <option key={les.id} value={les.id}>
+                    <option className="bg-surface text-fg py-1.5" key={les.id} value={les.id}>
                       {les.sort_order ? `${les.sort_order}. ` : ''}{les.title}
                     </option>
                   ))}

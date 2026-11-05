@@ -184,14 +184,13 @@ class SessionController extends Controller
                 ]);
                 $markedAbsentCount++;
 
-                // Notification to parent if enabled (OD-33 / P9)
+                // Notification to student and parent if enabled (OD-33 / P9)
                 if (TenantSetting::getValue(TenantSetting::NOTIFY_PARENTS_ON_ABSENCE, true)) {
-                    $notifier = app(NotificationService::class);
-                    $notifier->send(
+                    app(NotificationService::class)->sendToStudent(
                         NotificationCatalog::ATTENDANCE_ABSENT,
-                        $notifier->parentUsers($student),
+                        $student,
                         ['student' => $student->user?->name, 'title' => $session->title],
-                        '/parent/dashboard'
+                        '/student/attendance'
                     );
                 }
             }

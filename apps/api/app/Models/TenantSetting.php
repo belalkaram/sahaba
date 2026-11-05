@@ -13,6 +13,14 @@ class TenantSetting extends TenantModel
 
     public const AT_RISK_SCORE_BELOW = 'at_risk_score_below';
 
+    public const WHATSAPP_ENABLED = 'whatsapp_enabled';
+
+    public const WHATSAPP_PHONE_NUMBER_ID = 'whatsapp_phone_number_id';
+
+    public const WHATSAPP_ACCESS_TOKEN = 'whatsapp_access_token';
+
+    public const WHATSAPP_EVENTS = 'whatsapp_events';
+
     protected $primaryKey = 'key';
 
     protected $keyType = 'string';

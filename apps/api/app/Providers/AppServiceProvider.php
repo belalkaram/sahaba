@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Domain\Communication\Channels\MessagingChannel;
+use App\Domain\Communication\Channels\MessagingManager;
 use App\Tenancy\TenantContext;
 use App\Tenancy\TenantDatabaseManager;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -22,6 +24,10 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton(TenantDatabaseManager::class, function () {
             return new TenantDatabaseManager;
+        });
+
+        $this->app->bind(MessagingChannel::class, function ($app) {
+            return $app->make(MessagingManager::class)->channel();
         });
     }
 

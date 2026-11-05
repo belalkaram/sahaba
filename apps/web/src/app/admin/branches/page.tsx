@@ -539,12 +539,12 @@ export default function BranchesPage() {
                   onChange={(e) =>
                     setClassroomFormData({ ...classroomFormData, room_type: e.target.value })
                   }
-                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-xs text-fg focus:outline-none focus:border-primary"
+                  className="w-full bg-surface border border-border rounded-md px-3 py-2 text-xs text-fg focus:outline-none focus:border-primary focus:shadow-[var(--focus-ring)] transition-colors cursor-pointer"
                 >
-                  <option value="قاعة تدريس عامة">قاعة تدريس عامة</option>
-                  <option value="مختبر حاسوب">مختبر حاسوب</option>
-                  <option value="مدرج محاضرات كبير">مدرج محاضرات كبير</option>
-                  <option value="قاعة ورش عمل وتدريب">قاعة ورش عمل وتدريب</option>
+                  <option className="bg-surface text-fg py-1.5" value="قاعة تدريس عامة">قاعة تدريس عامة</option>
+                  <option className="bg-surface text-fg py-1.5" value="مختبر حاسوب">مختبر حاسوب</option>
+                  <option className="bg-surface text-fg py-1.5" value="مدرج محاضرات كبير">مدرج محاضرات كبير</option>
+                  <option className="bg-surface text-fg py-1.5" value="قاعة ورش عمل وتدريب">قاعة ورش عمل وتدريب</option>
                 </select>
               </div>
 

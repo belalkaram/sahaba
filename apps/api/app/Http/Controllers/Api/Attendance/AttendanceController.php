@@ -505,15 +505,16 @@ class AttendanceController extends Controller
             ComputeStudentAnalytics::dispatch($tenantId, $record->student_id);
         }
 
-        if ($record->status !== 'absent' || ! TenantSetting::getValue(TenantSetting::NOTIFY_PARENTS_ON_ABSENCE, true)) {
+        if (! in_array($record->status, ['absent', 'late'], true) || ! TenantSetting::getValue(TenantSetting::NOTIFY_PARENTS_ON_ABSENCE, true)) {
             return;
         }
 
         $student = Student::with('user', 'parents.user')->find($record->student_id);
         if ($student) {
+            $event = $record->status === 'late' ? NotificationCatalog::ATTENDANCE_LATE : NotificationCatalog::ATTENDANCE_ABSENT;
             $notifier = app(NotificationService::class);
             $notifier->send(
-                NotificationCatalog::ATTENDANCE_ABSENT,
+                $event,
                 $notifier->parentUsers($student),
                 ['student' => $student->user?->name, 'title' => $session->title],
                 '/parent/dashboard'

@@ -179,11 +179,11 @@ export default function TeacherMeetingsPage() {
                 <select aria-label="المقرر الدراسي المرتبط"
                   value={courseId}
                   onChange={(e) => setCourseId(e.target.value)}
-                  className="w-full bg-background border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+                  className="w-full bg-surface border border-border rounded-lg px-3.5 py-2.5 text-sm text-fg focus:outline-none focus:border-primary focus:shadow-[var(--focus-ring)] transition-colors cursor-pointer font-medium"
                 >
-                  <option value="">-- اختياري: اختر المقرر المرتبط بالبث --</option>
+                  <option className="bg-surface text-fg py-1.5" value="">-- اختياري: اختر المقرر المرتبط بالبث --</option>
                   {courses.map((crs) => (
-                    <option key={crs.id} value={crs.id}>
+                    <option className="bg-surface text-fg py-1.5" key={crs.id} value={crs.id}>
                       {crs.code} - {crs.title}
                     </option>
                   ))}
@@ -207,13 +207,13 @@ export default function TeacherMeetingsPage() {
                 <select aria-label="مدة الجلسة بالدقائق"
                   value={durationMinutes}
                   onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                  className="w-full bg-background border border-border rounded-lg px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+                  className="w-full bg-surface border border-border rounded-lg px-3.5 py-2.5 text-sm text-fg focus:outline-none focus:border-primary focus:shadow-[var(--focus-ring)] transition-colors cursor-pointer font-medium"
                 >
-                  <option value={30}>30 دقيقة (نصف ساعة)</option>
-                  <option value={45}>45 دقيقة (حصة دراسية)</option>
-                  <option value={60}>60 دقيقة (ساعة كاملة)</option>
-                  <option value={90}>90 دقيقة (ساعة ونصف)</option>
-                  <option value={120}>120 دقيقة (ساعتان)</option>
+                  <option className="bg-surface text-fg py-1.5" value={30}>30 دقيقة (نصف ساعة)</option>
+                  <option className="bg-surface text-fg py-1.5" value={45}>45 دقيقة (حصة دراسية)</option>
+                  <option className="bg-surface text-fg py-1.5" value={60}>60 دقيقة (ساعة كاملة)</option>
+                  <option className="bg-surface text-fg py-1.5" value={90}>90 دقيقة (ساعة ونصف)</option>
+                  <option className="bg-surface text-fg py-1.5" value={120}>120 دقيقة (ساعتان)</option>
                 </select>
               </div>
 

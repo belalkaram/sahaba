@@ -1,5 +1,28 @@
 import { apiClient, type ApiMeta } from './api-client';
 
+export interface ParentProfileItem {
+  id: string;
+  status: string;
+  whatsapp_opt_in?: boolean;
+  user: {
+    id: string;
+    name: string;
+    email: string | null;
+    phone: string | null;
+  };
+  students?: {
+    id: string;
+    student_code: string;
+    user?: {
+      name: string;
+      phone: string | null;
+    };
+    pivot?: {
+      relation_type?: string;
+    };
+  }[];
+}
+
 export interface UserSummary {
   id: string;
   name: string;
@@ -23,7 +46,21 @@ export interface UserSummary {
   parent?: {
     id: string;
     national_id: string | null;
+    whatsapp_opt_in?: boolean;
   } | null;
+  parent_profile?: {
+    id: string;
+    national_id: string | null;
+    whatsapp_opt_in?: boolean;
+    students?: {
+      id: string;
+      student_code: string;
+      user?: { name: string; phone: string | null };
+      pivot?: { relation_type?: string };
+    }[];
+  } | null;
+  children?: { id: string; name: string; student_code: string; relation_type?: string }[];
+  parents?: { id: string; name: string; phone: string | null; relation_type?: string }[];
 }
 
 export interface UserDetail extends UserSummary {
@@ -137,6 +174,7 @@ export const adminApi = {
     branch_id?: string;
     search?: string;
     page?: number;
+    per_page?: number;
   }): Promise<{ users: UserSummary[]; meta: ApiMeta }> {
     const res = await apiClient.get<UserSummary[]>('/users', {
       params: params as Record<string, string | number | boolean>,
@@ -182,6 +220,7 @@ export const adminApi = {
     student_code?: string | null;
     grade_level?: string | null;
     branch_id?: string | null;
+    parent_id?: string | null;
     parent_name?: string | null;
     parent_phone?: string | null;
     relation_type?: string | null;
@@ -252,13 +291,22 @@ export const adminApi = {
   ): Promise<void> {
     await apiClient.post(`/staff/${id}/assignments`, payload);
   },
-
   // ── Parents (R2-1) ──────────────────────────────────────────────────────
-  async getParents(params?: { search?: string; page?: number }): Promise<{ parents: unknown[]; meta: ApiMeta }> {
-    const res = await apiClient.get<unknown[]>('/parents', {
+  async getParents(params?: { search?: string; page?: number }): Promise<{ parents: ParentProfileItem[]; meta: ApiMeta }> {
+    const res = await apiClient.get<{ parents?: ParentProfileItem[] } | ParentProfileItem[]>('/parents', {
       params: params as Record<string, string | number | boolean>,
     });
-    return { parents: res.data, meta: res.meta };
+    const list = Array.isArray(res.data) ? res.data : (res.data?.parents ?? []);
+    return { parents: list, meta: res.meta };
+  },
+
+  async getStudentsWithoutParent(): Promise<{ students: unknown[] }> {
+    const res = await apiClient.get<{ students: unknown[] }>('/students?without_parent=1');
+    return res.data;
+  },
+
+  async setParentWhatsAppOptIn(parentId: string, optIn: boolean): Promise<void> {
+    await apiClient.post(`/parents/${parentId}/whatsapp-opt-in`, { opt_in: optIn });
   },
 
   async createParent(payload: {

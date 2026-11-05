@@ -248,11 +248,11 @@ export default function SupportSessionsPage() {
                   required
                   value={selectedTenantId}
                   onChange={(e) => setSelectedTenantId(e.target.value)}
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs text-fg focus:outline-none focus:border-warning"
+                  className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-xs text-fg focus:outline-none focus:border-warning focus:shadow-[var(--focus-ring)] transition-colors cursor-pointer"
                 >
-                  <option value="">-- اختر مدرسة / مؤسسة --</option>
+                  <option className="bg-surface text-fg py-1.5" value="">-- اختر مدرسة / مؤسسة --</option>
                   {tenants.map((t) => (
-                    <option key={t.id} value={t.id}>
+                    <option className="bg-surface text-fg py-1.5" key={t.id} value={t.id}>
                       {t.name} ({t.slug})
                     </option>
                   ))}

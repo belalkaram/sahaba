@@ -1,5 +1,5 @@
 /**
- * R1B â€” Frontend Access Model & Navigation Registry Test Suite
+ * R1B — Frontend Access Model & Navigation Registry Test Suite
  * Executed with Node.js 24 native test runner:
  * node --experimental-strip-types --test apps/web/tests/access-model.test.ts
  */
@@ -112,13 +112,13 @@ describe('NavigationRegistry Filtering', () => {
     const orgItems = filterNavItems('admin', modules, allPerms, 'tenant', 'organization');
     assert.ok(orgItems.some((i) => i.id === 'admin-roles'), 'Organization has admin-roles');
     const orgBranch = orgItems.find((i) => i.id === 'admin-branches');
-    assert.strictEqual(orgBranch?.label, 'Ø§Ù„ÙØ±ÙˆØ¹ ÙˆØ§Ù„Ù‚Ø§Ø¹Ø§Øª');
+    assert.strictEqual(orgBranch?.label, 'الفروع والقاعات');
 
     // Individual teacher
     const teacherItems = filterNavItems('admin', modules, allPerms, 'tenant', 'individual_teacher');
     assert.ok(!teacherItems.some((i) => i.id === 'admin-roles'), 'Individual teacher has no admin-roles');
     const teacherBranch = teacherItems.find((i) => i.id === 'admin-branches');
-    assert.strictEqual(teacherBranch?.label, 'Ø£Ù…Ø§ÙƒÙ† Ø§Ù„ØªØ¯Ø±ÙŠØ³ ÙˆØ§Ù„Ù‚Ø§Ø¹Ø§Øª');
+    assert.strictEqual(teacherBranch?.label, 'أماكن التدريس والقاعات');
   });
 
   test('OD-31: services filter controls online vs offline module visibility', () => {
@@ -190,7 +190,7 @@ describe('Canonical AuthSession Contract Validation', () => {
     const samplePayload: AuthSession = {
       user: {
         id: 'usr-123',
-        name: 'Ø£Ø­Ù…Ø¯ Ù…Ø­Ù…ÙˆØ¯',
+        name: 'أحمد محمود',
         email: 'ahmed@school.edu',
         phone: '+966501234567',
         status: 'active',
@@ -206,7 +206,7 @@ describe('Canonical AuthSession Contract Validation', () => {
         },
         parent: null,
       },
-      roles: [{ name: 'teacher', label: 'Ù…Ø¹Ù„Ù…' }],
+      roles: [{ name: 'teacher', label: 'معلم' }],
       permissions: {
         'courses.view': 'assigned',
         'attendance.scan': 'own',
@@ -214,7 +214,7 @@ describe('Canonical AuthSession Contract Validation', () => {
       tenant: {
         id: 'ten-789',
         slug: 'almustaqbal',
-        name: 'Ù…Ø¯Ø§Ø±Ø³ Ø§Ù„Ù…Ø³ØªÙ‚Ø¨Ù„ Ø§Ù„Ø£Ù‡Ù„ÙŠØ©',
+        name: 'مدارس المستقبل الأهلية',
         modules: ['online', 'offline'],
         auth_mode: 'password',
         branding: {
@@ -226,7 +226,7 @@ describe('Canonical AuthSession Contract Validation', () => {
       support_session: null,
       // Legacy compat aliases
       id: 'usr-123',
-      name: 'Ø£Ø­Ù…Ø¯ Ù…Ø­Ù…ÙˆØ¯',
+      name: 'أحمد محمود',
       email: 'ahmed@school.edu',
       phone: '+966501234567',
       type: 'staff',

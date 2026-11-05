@@ -306,7 +306,7 @@ return [
         'sessions.update' => [
             'module' => 'offline',
             'label' => 'تعديل موعد أو تفاصيل الحصة',
-            'scopes' => ['own', 'branch', 'tenant'],
+            'scopes' => ['own', 'assigned', 'branch', 'tenant'],
         ],
         'attendance.view' => [
             'module' => 'offline',

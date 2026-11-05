@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
+## [P9] - 2026-11-05 — Mandatory Parent Link, Notification Routing & WhatsApp Adapter (OD-33, F-10)
+### Added
+- **Mandatory Parent Link Enforced (OD-33, F-10):**
+  - Student creation (`POST /api/v1/students`) strictly requires either `parent_id` OR (`parent_name` AND `parent_phone`), returning HTTP 422 if missing.
+  - Automatic sibling linking: `findOrCreateParentByPhone` searches for existing parent users with identical mobile numbers and links new children to the existing parent profile.
+  - CSV Bulk Student Import (`StudentImportService`): validates that every row contains `parent_name` and `parent_phone`, marking rows without parent info as failed.
+  - Filter `GET /api/v1/students?without_parent=1` to query legacy students missing parent relationships.
+- **WhatsApp Channel Adapter (AGENTS §3):**
+  - Contract interface `MessagingChannel` and value object `MessageSendResult`.
+  - Meta WhatsApp Business Cloud API adapter `WhatsAppCloudApiChannel` (Graph API v19.0) with automatic phone number sanitization, template payloads in Arabic (`ar`), and secure error logging without leaking tokens or auth headers (AGENTS §7).
+  - Local/testing fallback channel `LogMessagingChannel` logging to Laravel logs and persisting to database.
+  - Database table `whatsapp_message_logs` tracking message status (`queued`, `sent`, `failed`, `logged`), recipient phone, template name, parameters, provider message IDs, and errors.
+  - Queue worker job `SendWhatsAppMessage` with exponential retry policy (`$tries = 3`, `$backoff = 60`) executing within `TenantRunner` context to guarantee strict tenant data isolation.
+  - Parent opt-in support: `whatsapp_opt_in` and `whatsapp_opted_out_at` on `parents` table; `POST /api/v1/parents/{id}/whatsapp-opt-in` endpoint; opt-out prevents WhatsApp message dispatch.
+- **Canonical Notification Routing & Catalog:**
+  - Expanded `NotificationCatalog` with canonical events: `attendance_late`, `homework_missing`, `session_reminder`, `weekly_report`.
+  - Target recipient metadata (`recipients: both | student | parent | staff`) per approved OD-33 routing matrix.
+  - Approved WhatsApp templates mapped to canonical events.
+  - Automated dispatch: `OfflineHomeworkCheckController` dispatches `HOMEWORK_MISSING` on `not_done` checks; `AttendanceController` dispatches `ATTENDANCE_ABSENT` and `ATTENDANCE_LATE`.
+- **Web Admin Interface Updates:**
+  - `/admin/users/new`: Mandatory parent link section with toggle between "تسجيل ولي أمر جديد" and "اختيار ولي أمر مسجل", with relation type selector. Removed "password123".
+  - `/admin/users`: Added tab "طلاب بدون ولي أمر" displaying counter badge for unlinked students, with quick modal to link existing or create new parents.
+  - `/admin/users`: Parent management (F-10) with child linking (`LinkChildModal`) and unlinking (`handleUnlinkChild`), plus WhatsApp opt-in toggle button per parent.
+  - `/admin/students/import`: Updated guidance and column definitions specifying `parent_name` and `parent_phone` as mandatory fields.
+### Tests
+- `Tests\Feature\ParentLinkRequiredTest` (7 tests PASS): mandatory parent on student creation, sibling linking by phone, CSV row rejection, link/unlink child endpoints, and unlinked student query filter.
+- `Tests\Feature\NotificationRoutingTest` (7 tests PASS): event routing matrix (absent/late/homework/grade to both, reminder to student, weekly report to parent) and user preferences.
+- `Tests\Feature\WhatsAppChannelTest` (7 tests PASS): Cloud API template sending with fake HTTP, phone sanitization, error handling, log channel fallback, parent opt-out respect, and cross-tenant isolation.
+- Full regression suites (`PermissionCatalogIntegrityTest`, `StudentImportTest`, `UserManagementApiTest`, `OfflineServiceTest`) PASS.
+- Web checks (`tsc --noEmit`, `npm run lint:design`, `npm run test`, `npm run build` all 69 routes) PASS.
+
 ## [P8] - 2026-11-05 — Offline Service: Student Mode, Assistant Workspace, Homework Checks & Paper Scores (OD-31, OD-32)
 ### Added
 - **Tenant DB Data Model for Offline Learning:**

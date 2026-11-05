@@ -96,7 +96,7 @@ class StudentImportTest extends TestCase
     {
         $csvContent = "name,phone,email,grade_level,parent_name,parent_phone\n"
             ."Zaid Khaled,+966512345678,zaid@test.com,11,Abu Zaid,+966598765432\n"
-            ."Fatima Ahmed,,fatima@test.com,10,,\n"
+            ."Fatima Ahmed,,fatima@test.com,10,,\n" // Invalid: missing parent (OD-33)
             .',+966500000000,noname@test.com,12,,'; // Invalid: missing name
 
         $file = UploadedFile::fake()->createWithContent('students.csv', $csvContent);
@@ -112,24 +112,24 @@ class StudentImportTest extends TestCase
         $import = $response->json('data.import');
 
         $this->assertEquals(3, $import['total_rows']);
-        $this->assertEquals(2, $import['successful_rows']);
-        $this->assertEquals(1, $import['failed_rows']);
+        $this->assertEquals(1, $import['successful_rows']);
+        $this->assertEquals(2, $import['failed_rows']);
 
         // Check students created
-        $this->assertEquals(2, Student::count());
+        $this->assertEquals(1, Student::count());
         $this->assertDatabaseHas('students', ['grade_level' => '11'], 'tenant');
 
         // Check results list
         $results = $import['results'];
         $this->assertCount(3, $results);
         $this->assertEquals('success', $results[0]['status']);
-        $this->assertEquals('success', $results[1]['status']);
+        $this->assertEquals('failed', $results[1]['status']);
         $this->assertEquals('failed', $results[2]['status']);
     }
 
     public function test_get_import_results(): void
     {
-        $csvContent = "name,email\nLayla Noor,layla@test.com\n";
+        $csvContent = "name,email,parent_name,parent_phone\nLayla Noor,layla@test.com,Wali Layla,+966500112233\n";
         $file = UploadedFile::fake()->createWithContent('batch.csv', $csvContent);
 
         $createRes = $this->withHeaders([

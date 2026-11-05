@@ -174,6 +174,8 @@ class UserManagementApiTest extends TestCase
             'name' => 'Reem Khalid',
             'email' => 'reem@test.com',
             'grade_level' => '9',
+            'parent_name' => 'خالد الغامدي',
+            'parent_phone' => '+966511223344',
         ]);
         $studentId = $createRes->json('data.student.id');
 
@@ -198,6 +200,8 @@ class UserManagementApiTest extends TestCase
         ])->postJson('/api/v1/students', [
             'name' => 'Omar Hani',
             'email' => 'omar@test.com',
+            'parent_name' => 'هاني فهد',
+            'parent_phone' => '+966511223355',
         ]);
         $studentId = $createRes->json('data.student.id');
 
@@ -286,6 +290,8 @@ class UserManagementApiTest extends TestCase
         ])->postJson('/api/v1/students', [
             'name' => 'Salma Nasser',
             'email' => 'salma@test.com',
+            'parent_name' => 'ولي أمر مؤقت',
+            'parent_phone' => '+966500000099',
         ]);
         $studentId = $studentRes->json('data.student.id');
 
@@ -350,6 +356,8 @@ class UserManagementApiTest extends TestCase
             'name' => 'Original User',
             'email' => 'unique@test.com',
             'phone' => '+966577777777',
+            'parent_name' => 'ولي أمر 1',
+            'parent_phone' => '+966500000088',
         ])->assertCreated();
 
         // Duplicate email
@@ -359,6 +367,8 @@ class UserManagementApiTest extends TestCase
         ])->postJson('/api/v1/students', [
             'name' => 'Duplicate Email',
             'email' => 'unique@test.com',
+            'parent_name' => 'ولي أمر 2',
+            'parent_phone' => '+966500000089',
         ]);
         $dupEmail->assertStatus(422);
 
@@ -369,6 +379,8 @@ class UserManagementApiTest extends TestCase
         ])->postJson('/api/v1/students', [
             'name' => 'Duplicate Phone',
             'phone' => '+966577777777',
+            'parent_name' => 'ولي أمر 3',
+            'parent_phone' => '+966500000090',
         ]);
         $dupPhone->assertStatus(422);
     }

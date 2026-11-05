@@ -13,18 +13,19 @@ export interface SelectOption {
 
 export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
-  options: SelectOption[];
+  options?: SelectOption[];
+  placeholder?: string;
   error?: string;
   helperText?: string;
 }
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
-  ({ label, options, error, helperText, className = '', id, ...props }, ref) => {
+  ({ label, options, children, placeholder, error, helperText, className = '', id, ...props }, ref) => {
     const autoId = useId();
     const selectId = id || autoId;
     const msgId = `${selectId}-msg`;
     return (
-      <div className="w-full space-y-1.5">
+      <div className="w-full space-y-1.5 text-start">
         {label && (
           <FieldLabel htmlFor={selectId} required={props.required}>
             {label}
@@ -36,18 +37,34 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             ref={ref}
             aria-invalid={error ? true : undefined}
             aria-describedby={error || helperText ? msgId : undefined}
-            className={cn(controlBase, error ? controlError : controlNormal, 'h-10 appearance-none ps-3.5 pe-10', className)}
+            className={cn(
+              controlBase,
+              error ? controlError : controlNormal,
+              'h-10 appearance-none ps-3.5 pe-10 cursor-pointer text-sm font-medium transition-colors',
+              className,
+            )}
             {...props}
           >
-            {options.map((opt) => (
-              <option key={opt.value} value={opt.value} disabled={opt.disabled}>
+            {placeholder && (
+              <option value="" disabled hidden className="text-fg-subtle bg-surface">
+                {placeholder}
+              </option>
+            )}
+            {options?.map((opt) => (
+              <option
+                key={opt.value}
+                value={opt.value}
+                disabled={opt.disabled}
+                className="bg-surface text-fg font-medium py-1.5 px-3 disabled:text-fg-muted disabled:bg-surface-muted"
+              >
                 {opt.label}
               </option>
             ))}
+            {children}
           </select>
           <ChevronDown
             size={16}
-            className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-fg-subtle"
+            className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-fg-subtle transition-transform duration-200"
             aria-hidden
           />
         </div>

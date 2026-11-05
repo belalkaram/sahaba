@@ -647,11 +647,11 @@ export default function StaffSessionWorkspacePage() {
                 id="assessment-select"
                 value={selectedAssessmentId}
                 onChange={(e) => handleSelectAssessment(e.target.value)}
-                className="px-3 py-2 text-xs rounded-md border border-border bg-surface focus:outline-none focus:ring-2 focus:ring-primary font-medium"
+                className="px-3 py-2 text-xs rounded-md border border-border bg-surface text-fg focus:outline-none focus:border-primary focus:shadow-[var(--focus-ring)] transition-colors cursor-pointer font-medium"
               >
-                {assessments.length === 0 && <option value="">لا توجد اختبارات ورقية حتى الآن</option>}
+                {assessments.length === 0 && <option className="bg-surface text-fg py-1.5" value="">لا توجد اختبارات ورقية حتى الآن</option>}
                 {assessments.map((a) => (
-                  <option key={a.id} value={a.id}>
+                  <option className="bg-surface text-fg py-1.5" key={a.id} value={a.id}>
                     {a.title} ({formatNumber(a.max_score)} درجة)
                   </option>
                 ))}

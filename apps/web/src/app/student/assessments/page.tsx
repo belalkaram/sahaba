@@ -123,13 +123,13 @@ export default function StudentAssessmentsPage() {
               <span className="text-xs text-fg-muted font-bold shrink-0">تصفية بالمقرر:</span>
               <select
                 aria-label="تصفية حسب المقرر"
-              value={selectedCourseId}
+                value={selectedCourseId}
                 onChange={(e) => setSelectedCourseId(e.target.value)}
-                className="px-3 py-1.5 rounded-md border border-border bg-surface text-fg text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary"
+                className="px-3 py-1.5 rounded-md border border-border bg-surface text-fg text-xs font-semibold focus:outline-none focus:border-primary focus:shadow-[var(--focus-ring)] transition-colors cursor-pointer"
               >
-                <option value="all">جميع المقررات ({formatNumber(items.length)})</option>
+                <option className="bg-surface text-fg py-1.5" value="all">جميع المقررات ({formatNumber(items.length)})</option>
                 {courses.map((c) => (
-                  <option key={c.id} value={c.id}>
+                  <option className="bg-surface text-fg py-1.5" key={c.id} value={c.id}>
                     {c.title}
                   </option>
                 ))}

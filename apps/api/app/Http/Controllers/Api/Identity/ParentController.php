@@ -135,4 +135,35 @@ class ParentController extends Controller
             'message' => 'Child unlinked successfully.',
         ]);
     }
+
+    /**
+     * Update WhatsApp opt-in status (OD-33).
+     */
+    public function setWhatsAppOptIn(Request $request, string $id): JsonResponse
+    {
+        /** @var TenantUser $user */
+        $user = $request->user();
+
+        $parent = ParentProfile::findOrFail($id);
+        $isSelf = $user->parentProfile && $user->parentProfile->id === $id;
+        $canManage = $user->hasPermissionTo('parents.manage');
+
+        if (! $isSelf && ! $canManage) {
+            throw new AuthorizationException('Forbidden. You do not have permission to change WhatsApp opt-in for this parent.');
+        }
+
+        $validated = $request->validate([
+            'opt_in' => 'required|boolean',
+        ]);
+
+        $parent->update([
+            'whatsapp_opt_in' => $validated['opt_in'],
+            'whatsapp_opted_out_at' => $validated['opt_in'] ? null : now(),
+        ]);
+
+        return ApiResponse::success([
+            'parent' => $parent->fresh(['user']),
+            'message' => $validated['opt_in'] ? 'تم تفعيل استقبال رسائل الواتساب.' : 'تم إيقاف استقبال رسائل الواتساب.',
+        ]);
+    }
 }

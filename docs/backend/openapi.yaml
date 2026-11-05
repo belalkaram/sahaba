@@ -37,7 +37,7 @@ paths:
           description: Standard error envelope { error, meta }
     delete:
       summary: "attendance.destroy"
-      description: "Revert or undo an attendance record (P6.6). Auth: tenant.auth. Permission: attendance.record."
+      description: "Auth: tenant.auth. Permission: attendance.record."
       parameters:
         - { name: id, in: path, required: true, schema: { type: string } }
       responses:
@@ -145,6 +145,27 @@ paths:
     post:
       summary: "classes.create"
       description: "Auth: tenant.auth. Permission: classes.create."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /classes/{classId}/offline-assessments:
+    get:
+      summary: "offline_assessments.index"
+      description: "Auth: tenant.auth. Permission: classes.view."
+      parameters:
+        - { name: classId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    post:
+      summary: "offline_assessments.store"
+      description: "Auth: tenant.auth. Permission: offline_assessments.manage."
+      parameters:
+        - { name: classId, in: path, required: true, schema: { type: string } }
       responses:
         '200':
           description: Standard success envelope { data, meta }
@@ -1456,6 +1477,28 @@ paths:
           description: Standard success envelope { data, meta }
         default:
           description: Standard error envelope { error, meta }
+  /offline-assessments/{id}:
+    get:
+      summary: "offline_assessments.show"
+      description: "Auth: tenant.auth. Permission: classes.view."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /offline-assessments/{id}/scores:
+    post:
+      summary: "offline_assessments.scores"
+      description: "Auth: tenant.auth. Permission: offline_scores.record."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
   /packages:
     get:
       summary: "packages.index"
@@ -1551,6 +1594,17 @@ paths:
       parameters:
         - { name: id, in: path, required: true, schema: { type: string } }
         - { name: studentId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /parents/{id}/whatsapp-opt-in:
+    post:
+      summary: "parents.whatsapp.optin"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
       responses:
         '200':
           description: Standard success envelope { data, meta }
@@ -1654,6 +1708,26 @@ paths:
           description: Standard success envelope { data, meta }
         default:
           description: Standard error envelope { error, meta }
+  /platform/directory/teachers:
+    get:
+      summary: "platform.directory.index"
+      description: "Auth: platform.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /platform/directory/teachers/{id}/toggle-featured:
+    post:
+      summary: "platform.directory.toggle_featured"
+      description: "Auth: platform.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
   /platform/metrics:
     get:
       summary: "platform.metrics"
@@ -1691,28 +1765,6 @@ paths:
           description: Standard success envelope { data, meta }
         default:
           description: Standard error envelope { error, meta }
-  /public/directory/teachers:
-    get:
-      summary: "public.directory.teachers"
-      description: "Unauthenticated platform-wide public directory of teachers. Auth: public."
-      security: []
-      parameters:
-        - { name: featured, in: query, required: false, schema: { type: boolean } }
-      responses:
-        '200':
-          description: Standard success envelope { data, meta }
-        default:
-          description: Standard error envelope { error, meta }
-  /public/academy/logo:
-    get:
-      summary: "public.academy.logo"
-      description: "Serves tenant logo through ProfileImageService. Auth: public."
-      security: []
-      responses:
-        '200':
-          description: Image stream response
-        default:
-          description: Standard error envelope { error, meta }
   /public/academy/courses:
     get:
       summary: "public.academy.courses"
@@ -1747,6 +1799,16 @@ paths:
           description: Standard success envelope { data, meta }
         default:
           description: Standard error envelope { error, meta }
+  /public/academy/logo:
+    get:
+      summary: "public.academy.logo"
+      description: "Auth: public."
+      security: []
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
   /public/academy/teachers:
     get:
       summary: "public.academy.teachers"
@@ -1776,6 +1838,16 @@ paths:
       security: []
       parameters:
         - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /public/directory/teachers:
+    get:
+      summary: "public.directory.teachers"
+      description: "Auth: public."
+      security: []
       responses:
         '200':
           description: Standard success envelope { data, meta }
@@ -1991,49 +2063,6 @@ paths:
       description: "Auth: tenant.auth. Permission: homework_checks.record."
       parameters:
         - { name: sessionId, in: path, required: true, schema: { type: string } }
-      responses:
-        '200':
-          description: Standard success envelope { data, meta }
-        default:
-          description: Standard error envelope { error, meta }
-  /classes/{classId}/offline-assessments:
-    get:
-      summary: "offline_assessments.index"
-      description: "Auth: tenant.auth. Permission: classes.view."
-      parameters:
-        - { name: classId, in: path, required: true, schema: { type: string } }
-      responses:
-        '200':
-          description: Standard success envelope { data, meta }
-        default:
-          description: Standard error envelope { error, meta }
-    post:
-      summary: "offline_assessments.store"
-      description: "Auth: tenant.auth. Permission: offline_assessments.manage."
-      parameters:
-        - { name: classId, in: path, required: true, schema: { type: string } }
-      responses:
-        '201':
-          description: Standard success envelope { data, meta }
-        default:
-          description: Standard error envelope { error, meta }
-  /offline-assessments/{id}:
-    get:
-      summary: "offline_assessments.show"
-      description: "Auth: tenant.auth. Permission: classes.view."
-      parameters:
-        - { name: id, in: path, required: true, schema: { type: string } }
-      responses:
-        '200':
-          description: Standard success envelope { data, meta }
-        default:
-          description: Standard error envelope { error, meta }
-  /offline-assessments/{id}/scores:
-    post:
-      summary: "offline_assessments.scores"
-      description: "Auth: tenant.auth. Permission: offline_scores.record."
-      parameters:
-        - { name: id, in: path, required: true, schema: { type: string } }
       responses:
         '200':
           description: Standard success envelope { data, meta }
@@ -2296,27 +2325,10 @@ paths:
           description: Standard success envelope { data, meta }
         default:
           description: Standard error envelope { error, meta }
-  /tenant/settings:
-    put:
-      summary: "tenant.settings.update"
-      description: "Auth: tenant.auth. Permission: tenant.settings."
-      responses:
-        '200':
-          description: Standard success envelope { data, meta }
-        default:
-          description: Standard error envelope { error, meta }
   /tenant/logo:
     post:
       summary: "tenant.logo.store"
-      description: "Upload tenant branding logo. Auth: tenant.auth. Permission: tenant.settings."
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              required: [image]
-              properties:
-                image: { type: string, format: binary }
+      description: "Auth: tenant.auth. Permission: tenant.settings."
       responses:
         '200':
           description: Standard success envelope { data, meta }
@@ -2324,29 +2336,16 @@ paths:
           description: Standard error envelope { error, meta }
     delete:
       summary: "tenant.logo.destroy"
-      description: "Delete tenant branding logo. Auth: tenant.auth. Permission: tenant.settings."
+      description: "Auth: tenant.auth. Permission: tenant.settings."
       responses:
         '200':
           description: Standard success envelope { data, meta }
         default:
           description: Standard error envelope { error, meta }
-  /platform/directory/teachers:
-    get:
-      summary: "platform.directory.index"
-      description: "List all directory entries. Auth: platform.auth."
-      parameters:
-        - { name: search, in: query, required: false, schema: { type: string } }
-      responses:
-        '200':
-          description: Standard success envelope { data, meta }
-        default:
-          description: Standard error envelope { error, meta }
-  /platform/directory/teachers/{id}/toggle-featured:
-    post:
-      summary: "platform.directory.toggle_featured"
-      description: "Toggle featured status for directory entry. Auth: platform.auth."
-      parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+  /tenant/settings:
+    put:
+      summary: "tenant.settings.update"
+      description: "Auth: tenant.auth. Permission: tenant.settings."
       responses:
         '200':
           description: Standard success envelope { data, meta }
@@ -2383,9 +2382,9 @@ paths:
           description: Standard success envelope { data, meta }
         default:
           description: Standard error envelope { error, meta }
-  /tenants/{id}/modules:
-    put:
-      summary: "platform.tenants.update_modules"
+  /tenants/{id}/convert-to-organization:
+    post:
+      summary: "platform.tenants.convert_to_organization"
       description: "Auth: platform.auth."
       parameters:
         - { name: id, in: path, required: true, schema: { type: string } }
@@ -2394,23 +2393,12 @@ paths:
           description: Standard success envelope { data, meta }
         default:
           description: Standard error envelope { error, meta }
-  /tenants/{id}/convert-to-organization:
-    post:
-      summary: "platform.tenants.convert_to_organization"
-      description: "Upgrade independent teacher to full organization (OD-23, P1). Auth: platform.auth."
+  /tenants/{id}/modules:
+    put:
+      summary: "platform.tenants.update_modules"
+      description: "Auth: platform.auth."
       parameters:
         - { name: id, in: path, required: true, schema: { type: string } }
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [organization_kind]
-              properties:
-                organization_kind:
-                  type: string
-                  enum: [center, academy, school, institute]
       responses:
         '200':
           description: Standard success envelope { data, meta }

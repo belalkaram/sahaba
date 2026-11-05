@@ -266,11 +266,11 @@ export default function TeacherGradingInboxPage() {
               aria-label="تصفية حسب المقرر"
               value={selectedCourseId}
               onChange={(e) => setSelectedCourseId(e.target.value)}
-              className="px-3 py-1.5 rounded-md border border-border bg-background text-xs font-medium w-full sm:w-auto"
+              className="px-3 py-1.5 rounded-md border border-border bg-surface text-fg text-xs font-medium focus:outline-none focus:border-primary focus:shadow-[var(--focus-ring)] transition-colors cursor-pointer w-full sm:w-auto"
             >
-              <option value="all">جميع المقررات</option>
+              <option className="bg-surface text-fg py-1.5" value="all">جميع المقررات</option>
               {courses.map((c) => (
-                <option key={c.id} value={c.id}>
+                <option className="bg-surface text-fg py-1.5" key={c.id} value={c.id}>
                   {c.title}
                 </option>
               ))}

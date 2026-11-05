@@ -146,12 +146,12 @@ export default function StudentImportPage() {
             <span className="text-secondary text-xs">الصف الدراسي</span>
           </div>
           <div className="p-2 bg-background rounded-sm border border-border">
-            <span className="text-fg font-bold block">parent_name</span>
-            <span className="text-secondary text-xs">اسم ولي الأمر</span>
+            <span className="text-fg font-bold block">parent_name *</span>
+            <span className="text-secondary text-xs">اسم ولي الأمر (إلزامي)</span>
           </div>
           <div className="p-2 bg-background rounded-sm border border-border">
-            <span className="text-fg font-bold block">parent_phone</span>
-            <span className="text-secondary text-xs">هاتف ولي الأمر</span>
+            <span className="text-fg font-bold block">parent_phone *</span>
+            <span className="text-secondary text-xs">هاتف ولي الأمر (إلزامي)</span>
           </div>
         </div>
       </Card>

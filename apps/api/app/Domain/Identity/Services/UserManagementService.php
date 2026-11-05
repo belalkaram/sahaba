@@ -26,7 +26,7 @@ class UserManagementService
      */
     public function listUsers(array $filters, TenantUser $requestingUser): LengthAwarePaginator
     {
-        $query = TenantUser::with(['roles', 'student', 'staff.branches', 'parentProfile']);
+        $query = TenantUser::with(['roles', 'student.parents.user', 'staff.branches', 'parentProfile.students.user']);
 
         // Persona filter
         if (! empty($filters['persona'])) {
@@ -95,6 +95,10 @@ class UserManagementService
      */
     public function createStudent(array $data, TenantUser $creator): Student
     {
+        if (empty($data['parent_id']) && empty($data['parent_phone'])) {
+            throw new \InvalidArgumentException('Parent information (name and phone, or parent_id) is mandatory for student creation (OD-33).');
+        }
+
         $this->ensureUniquePhoneAndEmail($data['email'] ?? null, $data['phone'] ?? null);
 
         return DB::connection('tenant')->transaction(function () use ($data, $creator) {
@@ -363,6 +367,7 @@ class UserManagementService
             $parent = ParentProfile::create([
                 'user_id' => $user->id,
                 'status' => $user->status,
+                'whatsapp_opt_in' => $data['whatsapp_opt_in'] ?? true,
             ]);
 
             if (! empty($data['children'])) {
@@ -546,13 +551,29 @@ class UserManagementService
     private function findOrCreateParentByPhone(string $name, string $phone, TenantUser $creator): ParentProfile
     {
         $existingUser = TenantUser::where('phone', $phone)->first();
-        if ($existingUser && $existingUser->parentProfile) {
-            return $existingUser->parentProfile;
+        if ($existingUser) {
+            if ($existingUser->parentProfile) {
+                return $existingUser->parentProfile;
+            }
+
+            $parent = ParentProfile::create([
+                'user_id' => $existingUser->id,
+                'status' => $existingUser->status,
+                'whatsapp_opt_in' => true,
+            ]);
+
+            $parentRole = Role::where('name', 'parent')->first();
+            if ($parentRole && ! $existingUser->roles()->where('roles.id', $parentRole->id)->exists()) {
+                $existingUser->roles()->attach($parentRole->id);
+            }
+
+            return $parent;
         }
 
         return $this->createParent([
             'name' => $name,
             'phone' => $phone,
+            'whatsapp_opt_in' => true,
         ], $creator);
     }
 }

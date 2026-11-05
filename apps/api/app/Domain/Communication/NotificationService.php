@@ -4,8 +4,10 @@ namespace App\Domain\Communication;
 
 use App\Jobs\ComputeStudentAnalytics;
 use App\Jobs\SendNotificationEmail;
+use App\Jobs\SendWhatsAppMessage;
 use App\Models\NotificationPreference;
 use App\Models\Student;
+use App\Models\TenantSetting;
 use App\Models\TenantUser;
 use App\Notifications\TenantEventNotification;
 use App\Tenancy\TenantContext;
@@ -15,8 +17,8 @@ use Throwable;
 
 /**
  * R8-1: maps an event to its recipients and channels (per user preference).
+ * OD-33: Automatic routing to student/parent, WhatsApp adapter channel, and opt-in enforcement.
  * A notification failure never breaks the business action that triggered it.
- * WhatsApp is not implemented (FR-NOTIFY-003, future).
  */
 class NotificationService
 {
@@ -41,10 +43,19 @@ class NotificationService
         $count = 0;
 
         $recipients = collect($users)->filter()->unique('id');
+        if ($recipients->isEmpty()) {
+            return 0;
+        }
+
         $preferences = NotificationPreference::where('event_key', $event)
             ->whereIn('user_id', $recipients->pluck('id'))
             ->get()
             ->keyBy('user_id');
+
+        $whatsAppTemplate = $template['whatsapp_template'] ?? null;
+        $isWhatsAppEnabled = (bool) (TenantSetting::getValue(TenantSetting::WHATSAPP_ENABLED, config('services.whatsapp.enabled', false)));
+        $allowedWhatsAppEvents = TenantSetting::getValue(TenantSetting::WHATSAPP_EVENTS);
+        $isEventWhatsAppAllowed = empty($allowedWhatsAppEvents) || (is_array($allowedWhatsAppEvents) && in_array($event, $allowedWhatsAppEvents, true));
 
         foreach ($recipients as $user) {
             try {
@@ -59,6 +70,7 @@ class NotificationService
                 $preference = $preferences->get($user->id);
                 $inApp = $preference?->in_app ?? true;
                 $mail = $preference?->mail ?? $template['mail'];
+                $whatsAppPref = $preference?->whatsapp ?? true;
 
                 if ($inApp) {
                     $user->notify(new TenantEventNotification($event, $title, $message, $url, $dedupeKey));
@@ -74,6 +86,26 @@ class NotificationService
                         $message,
                         $tenant?->primary_color,
                     );
+                }
+
+                // WhatsApp dispatch (Meta WhatsApp Business Cloud API via adapter)
+                if ($whatsAppTemplate && $isWhatsAppEnabled && $isEventWhatsAppAllowed && $whatsAppPref && ! empty($user->phone)) {
+                    $user->loadMissing('parentProfile');
+                    $optedIn = ! $user->parentProfile || $user->parentProfile->whatsapp_opt_in;
+
+                    if ($optedIn) {
+                        $tenantId = $this->context->getTenantId() ?? (string) $user->tenant_id;
+                        if ($tenantId) {
+                            SendWhatsAppMessage::dispatch(
+                                $tenantId,
+                                (string) $user->phone,
+                                $whatsAppTemplate,
+                                $params,
+                                $user->id,
+                                $event
+                            );
+                        }
+                    }
                 }
 
                 if ($inApp || $mail) {
@@ -92,16 +124,27 @@ class NotificationService
     }
 
     /**
-     * Notify a student (deep link for the student) and, optionally, their parents.
+     * Notify a student (deep link for the student) and/or their parents per OD-33 routing rules.
      *
      * @param  array<string, scalar|null>  $params
      */
-    public function sendToStudent(string $event, Student $student, array $params = [], ?string $url = null, bool $includeParents = true, ?string $dedupeKey = null): void
+    public function sendToStudent(string $event, Student $student, array $params = [], ?string $url = null, ?bool $includeParents = null, ?string $dedupeKey = null): void
     {
         $student->loadMissing('user', 'parents.user');
-        $this->send($event, array_filter([$student->user]), $params, $url, $dedupeKey);
 
-        if ($includeParents) {
+        $routing = NotificationCatalog::recipients($event);
+        $notifyStudent = ($routing === 'student' || $routing === 'both');
+        $notifyParents = ($includeParents !== null) ? $includeParents : ($routing === 'parent' || $routing === 'both');
+
+        if (! isset($params['student']) && $student->user) {
+            $params['student'] = $student->user->name;
+        }
+
+        if ($notifyStudent && $student->user) {
+            $this->send($event, [$student->user], $params, $url, $dedupeKey);
+        }
+
+        if ($notifyParents) {
             $this->send($event, $this->parentUsers($student), $params, '/parent/dashboard', $dedupeKey);
         }
     }
@@ -117,7 +160,11 @@ class NotificationService
 
         Student::with('user', 'parents.user')->whereIn('id', collect($studentIds)->unique())->get()
             ->each(function (Student $student) use ($title, $tenantId) {
-                $this->sendToStudent(NotificationCatalog::GRADE_PUBLISHED, $student, ['title' => $title], '/student/grades');
+                $this->sendToStudent(NotificationCatalog::GRADE_PUBLISHED, $student, [
+                    'title' => $title,
+                    'student' => $student->user?->name ?? 'الطالب',
+                ], '/student/grades');
+
                 if ($tenantId) {
                     ComputeStudentAnalytics::dispatch($tenantId, $student->id);
                 }

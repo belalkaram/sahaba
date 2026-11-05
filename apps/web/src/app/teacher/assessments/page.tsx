@@ -192,10 +192,10 @@ export default function TeacherAssessmentsPage() {
                 <select aria-label="المقرر الدراسي"
                   value={selectedCourseId}
                   onChange={(e) => setSelectedCourseId(e.target.value)}
-                  className="w-full bg-surface border border-border rounded-md px-3 py-2 text-xs text-fg focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full bg-surface border border-border rounded-md px-3 py-2 text-xs text-fg focus:outline-none focus:border-primary focus:shadow-[var(--focus-ring)] transition-colors cursor-pointer font-medium"
                 >
                   {courses.map((c) => (
-                    <option key={c.id} value={c.id}>
+                    <option className="bg-surface text-fg py-1.5" key={c.id} value={c.id}>
                       {c.title} ({c.code})
                     </option>
                   ))}

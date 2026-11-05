@@ -738,11 +738,11 @@ export default function ExamBuilderPage({ params }: PageProps) {
                   <select aria-label="عرض النتائج والإجابات للطلاب"
                     value={showResults}
                     onChange={(e: any) => setShowResults(e.target.value)}
-                    className="w-full px-3 py-2 rounded-md border border-border bg-background text-xs"
+                    className="w-full px-3 py-2 rounded-md border border-border bg-surface text-fg text-xs focus:outline-none focus:border-primary focus:shadow-[var(--focus-ring)] transition-colors cursor-pointer font-medium"
                   >
-                    <option value="after_publish">فقط بعد اعتماد ونشر الدرجات من المعلم</option>
-                    <option value="after_submit">مباشرة فور تسليم الامتحان</option>
-                    <option value="never">حجب التفاصيل (إظهار المجموع فقط)</option>
+                    <option className="bg-surface text-fg py-1.5" value="after_publish">فقط بعد اعتماد ونشر الدرجات من المعلم</option>
+                    <option className="bg-surface text-fg py-1.5" value="after_submit">مباشرة فور تسليم الامتحان</option>
+                    <option className="bg-surface text-fg py-1.5" value="never">حجب التفاصيل (إظهار المجموع فقط)</option>
                   </select>
                 </div>
 
@@ -818,13 +818,13 @@ export default function ExamBuilderPage({ params }: PageProps) {
                   <select aria-label="نوع السؤال"
                     value={qType}
                     onChange={(e: any) => setQType(e.target.value)}
-                    className="w-full px-3 py-2 rounded-md border border-border bg-background"
+                    className="w-full px-3 py-2 rounded-md border border-border bg-surface text-fg text-xs focus:outline-none focus:border-primary focus:shadow-[var(--focus-ring)] transition-colors cursor-pointer font-medium"
                   >
-                    <option value="multiple_choice">اختيار من متعدد (إجابة واحدة)</option>
-                    <option value="multiple_select">اختيار متعدد الإجابات</option>
-                    <option value="true_false">صح أو خطأ</option>
-                    <option value="short_answer">إجابة قصيرة (تصحيح آلي)</option>
-                    <option value="essay">سؤال مقالي (تصحيح يدوي)</option>
+                    <option className="bg-surface text-fg py-1.5" value="multiple_choice">اختيار من متعدد (إجابة واحدة)</option>
+                    <option className="bg-surface text-fg py-1.5" value="multiple_select">اختيار متعدد الإجابات</option>
+                    <option className="bg-surface text-fg py-1.5" value="true_false">صح أو خطأ</option>
+                    <option className="bg-surface text-fg py-1.5" value="short_answer">إجابة قصيرة (تصحيح آلي)</option>
+                    <option className="bg-surface text-fg py-1.5" value="essay">سؤال مقالي (تصحيح يدوي)</option>
                   </select>
                 </div>
                 <div>
@@ -1019,10 +1019,10 @@ export default function ExamBuilderPage({ params }: PageProps) {
                       setSelectedBankId(e.target.value);
                       loadBankQuestions(e.target.value);
                     }}
-                    className="w-full px-3 py-2 rounded-md border border-border bg-background text-xs font-bold"
+                    className="w-full px-3 py-2 rounded-md border border-border bg-surface text-fg text-xs font-bold focus:outline-none focus:border-primary focus:shadow-[var(--focus-ring)] transition-colors cursor-pointer"
                   >
                     {questionBanks.map((b) => (
-                      <option key={b.id} value={b.id}>
+                      <option className="bg-surface text-fg py-1.5" key={b.id} value={b.id}>
                         {b.title} ({b.questions_count ?? 0} سؤال)
                       </option>
                     ))}

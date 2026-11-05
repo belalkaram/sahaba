@@ -93,25 +93,25 @@ export default function TeacherStudentsPage() {
 
           <select
             aria-label="تصفية حسب الصف"
-              value={gradeFilter}
+            value={gradeFilter}
             onChange={(e) => setGradeFilter(e.target.value)}
-            className="w-full rounded-md border border-border bg-surface px-3.5 py-2.5 text-xs text-fg focus:outline-none focus:ring-1 focus:ring-primary"
+            className="w-full rounded-md border border-border bg-surface px-3.5 py-2.5 text-xs text-fg focus:outline-none focus:border-primary focus:shadow-[var(--focus-ring)] transition-colors cursor-pointer font-medium"
           >
-            <option value="ALL">جميع الصفوف الدراسية</option>
-            <option value="الصف الأول الثانوي">الصف الأول الثانوي</option>
-            <option value="الصف الثاني الثانوي">الصف الثاني الثانوي</option>
-            <option value="الصف الثالث الثانوي">الصف الثالث الثانوي</option>
+            <option className="bg-surface text-fg py-1.5" value="ALL">جميع الصفوف الدراسية</option>
+            <option className="bg-surface text-fg py-1.5" value="الصف الأول الثانوي">الصف الأول الثانوي</option>
+            <option className="bg-surface text-fg py-1.5" value="الصف الثاني الثانوي">الصف الثاني الثانوي</option>
+            <option className="bg-surface text-fg py-1.5" value="الصف الثالث الثانوي">الصف الثالث الثانوي</option>
           </select>
 
           <select
             aria-label="تصفية حسب الحالة"
-              value={statusFilter}
+            value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full rounded-md border border-border bg-surface px-3.5 py-2.5 text-xs text-fg focus:outline-none focus:ring-1 focus:ring-primary"
+            className="w-full rounded-md border border-border bg-surface px-3.5 py-2.5 text-xs text-fg focus:outline-none focus:border-primary focus:shadow-[var(--focus-ring)] transition-colors cursor-pointer font-medium"
           >
-            <option value="ALL">جميع الحالات الأكاديمية</option>
-            <option value="active">منتظم (Active)</option>
-            <option value="suspended">معلق / تنبيه (Suspended)</option>
+            <option className="bg-surface text-fg py-1.5" value="ALL">جميع الحالات الأكاديمية</option>
+            <option className="bg-surface text-fg py-1.5" value="active">منتظم (Active)</option>
+            <option className="bg-surface text-fg py-1.5" value="suspended">معلق / تنبيه (Suspended)</option>
           </select>
         </div>
       </Card>

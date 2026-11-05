@@ -141,12 +141,12 @@ export const TenantModulesModal: React.FC<TenantModulesModalProps> = ({
                 aria-label="نوع المؤسسة للترقية"
                 value={upgradeKind}
                 onChange={(e) => setUpgradeKind(e.target.value)}
-                className="bg-background border border-border rounded-md px-3 py-1.5 text-xs text-fg focus:outline-none focus:border-primary"
+                className="bg-surface border border-border rounded-md px-3 py-1.5 text-xs text-fg focus:outline-none focus:border-primary focus:shadow-[var(--focus-ring)] transition-colors cursor-pointer font-medium"
               >
-                <option value="center">مركز تعليمي / سنتر (Center)</option>
-                <option value="academy">أكاديمية تعليمية (Academy)</option>
-                <option value="school">مدرسة (School)</option>
-                <option value="institute">معهد (Institute)</option>
+                <option className="bg-surface text-fg py-1.5" value="center">مركز تعليمي / سنتر (Center)</option>
+                <option className="bg-surface text-fg py-1.5" value="academy">أكاديمية تعليمية (Academy)</option>
+                <option className="bg-surface text-fg py-1.5" value="school">مدرسة (School)</option>
+                <option className="bg-surface text-fg py-1.5" value="institute">معهد (Institute)</option>
               </select>
 
               <Button

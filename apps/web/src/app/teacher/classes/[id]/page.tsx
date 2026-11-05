@@ -503,11 +503,11 @@ export default function TeacherClassDetailPage() {
                   <select aria-label="القاعة التدريبية"
                     value={sessionClassroomId}
                     onChange={(e) => setSessionClassroomId(e.target.value)}
-                    className="w-full bg-background border border-border rounded-lg px-3.5 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full bg-surface border border-border rounded-lg px-3.5 py-2 text-xs text-fg focus:outline-none focus:border-primary focus:shadow-[var(--focus-ring)] transition-colors cursor-pointer font-medium"
                   >
-                    <option value="">بدون تحديد قاعة</option>
+                    <option className="bg-surface text-fg py-1.5" value="">بدون تحديد قاعة</option>
                     {classrooms.map((room) => (
-                      <option key={room.id} value={room.id}>
+                      <option className="bg-surface text-fg py-1.5" key={room.id} value={room.id}>
                         {room.name} (سعة {room.capacity} طالب)
                       </option>
                     ))}
@@ -521,11 +521,11 @@ export default function TeacherClassDetailPage() {
                   <select aria-label="أسلوب الحضور"
                     value={sessionMode}
                     onChange={(e) => setSessionMode(e.target.value as 'both' | 'qr' | 'manual')}
-                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-xs text-fg focus:outline-none focus:border-primary focus:shadow-[var(--focus-ring)] transition-colors cursor-pointer font-medium"
                   >
-                    <option value="both">QR ويدوي معاً</option>
-                    <option value="qr">مسح QR فقط</option>
-                    <option value="manual">تسجيل يدوي فقط</option>
+                    <option className="bg-surface text-fg py-1.5" value="both">QR ويدوي معاً</option>
+                    <option className="bg-surface text-fg py-1.5" value="qr">مسح QR فقط</option>
+                    <option className="bg-surface text-fg py-1.5" value="manual">تسجيل يدوي فقط</option>
                   </select>
                 </div>
 
@@ -534,10 +534,10 @@ export default function TeacherClassDetailPage() {
                   <select aria-label="نافذة التوقيت"
                     value={sessionTimingMode}
                     onChange={(e) => setSessionTimingMode(e.target.value as 'scheduled' | 'open')}
-                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-xs text-fg focus:outline-none focus:border-primary focus:shadow-[var(--focus-ring)] transition-colors cursor-pointer font-medium"
                   >
-                    <option value="scheduled">مجدولة (فترة سماح 30 د)</option>
-                    <option value="open">مفتوحة (أي وقت)</option>
+                    <option className="bg-surface text-fg py-1.5" value="scheduled">مجدولة (فترة سماح 30 د)</option>
+                    <option className="bg-surface text-fg py-1.5" value="open">مفتوحة (أي وقت)</option>
                   </select>
                 </div>
               </div>

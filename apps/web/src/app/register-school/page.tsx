@@ -184,10 +184,10 @@ export default function RegisterSchoolPage() {
                     <select aria-label="نوع الحساب"
                       value={formData.institutionType}
                       onChange={(e) => setFormData({ ...formData, institutionType: e.target.value })}
-                      className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs text-fg focus:outline-none focus:border-primary"
+                      className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-xs text-fg focus:outline-none focus:border-primary focus:shadow-[var(--focus-ring)] transition-colors cursor-pointer font-medium"
                     >
-                      <option value="individual_teacher">معلم مستقل (Individual Teacher)</option>
-                      <option value="organization">مؤسسة تعليمية كاملة (Organization)</option>
+                      <option className="bg-surface text-fg py-1.5" value="individual_teacher">معلم مستقل (Individual Teacher)</option>
+                      <option className="bg-surface text-fg py-1.5" value="organization">مؤسسة تعليمية كاملة (Organization)</option>
                     </select>
                   </div>
 
@@ -199,12 +199,12 @@ export default function RegisterSchoolPage() {
                       <select aria-label="نوع المؤسسة"
                         value={formData.organizationKind}
                         onChange={(e) => setFormData({ ...formData, organizationKind: e.target.value })}
-                        className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs text-fg focus:outline-none focus:border-primary"
+                        className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-xs text-fg focus:outline-none focus:border-primary focus:shadow-[var(--focus-ring)] transition-colors cursor-pointer font-medium"
                       >
-                        <option value="center">مركز تعليمي / سنتر (Center)</option>
-                        <option value="academy">أكاديمية تعليمية (Academy)</option>
-                        <option value="school">مدرسة (School)</option>
-                        <option value="institute">معهد (Institute)</option>
+                        <option className="bg-surface text-fg py-1.5" value="center">مركز تعليمي / سنتر (Center)</option>
+                        <option className="bg-surface text-fg py-1.5" value="academy">أكاديمية تعليمية (Academy)</option>
+                        <option className="bg-surface text-fg py-1.5" value="school">مدرسة (School)</option>
+                        <option className="bg-surface text-fg py-1.5" value="institute">معهد (Institute)</option>
                       </select>
                     </div>
                   )}

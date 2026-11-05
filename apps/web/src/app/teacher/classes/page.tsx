@@ -128,11 +128,11 @@ export default function TeacherClassesPage() {
               aria-label="تصفية حسب الفرع"
               value={selectedBranch}
               onChange={(e) => setSelectedBranch(e.target.value)}
-              className="w-full sm:w-48 bg-background border border-border rounded-lg px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full sm:w-48 bg-surface border border-border rounded-lg px-3 py-2 text-xs text-fg focus:outline-none focus:border-primary focus:shadow-[var(--focus-ring)] transition-colors cursor-pointer font-medium"
             >
-              <option value="all">جميع الفروع والمراكز</option>
+              <option className="bg-surface text-fg py-1.5" value="all">جميع الفروع والمراكز</option>
               {branches.map((b) => (
-                <option key={b.id} value={b.id}>
+                <option className="bg-surface text-fg py-1.5" key={b.id} value={b.id}>
                   {b.name}
                 </option>
               ))}
@@ -295,11 +295,11 @@ export default function TeacherClassesPage() {
                   <select aria-label="الفرع / المركز"
                     value={newBranchId}
                     onChange={(e) => setNewBranchId(e.target.value)}
-                    className="w-full bg-background border border-border rounded-lg px-3.5 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full bg-surface border border-border rounded-lg px-3.5 py-2 text-xs text-fg focus:outline-none focus:border-primary focus:shadow-[var(--focus-ring)] transition-colors cursor-pointer font-medium"
                   >
-                    <option value="">بدون تحديد فرع</option>
+                    <option className="bg-surface text-fg py-1.5" value="">بدون تحديد فرع</option>
                     {branches.map((b) => (
-                      <option key={b.id} value={b.id}>
+                      <option className="bg-surface text-fg py-1.5" key={b.id} value={b.id}>
                         {b.name}
                       </option>
                     ))}

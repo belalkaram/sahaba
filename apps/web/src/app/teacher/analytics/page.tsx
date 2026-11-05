@@ -155,12 +155,12 @@ export default function TeacherAnalyticsPage() {
                 />
                 <select
                   aria-label="اختر الطالب"
-              value={selectedStudentId}
+                  value={selectedStudentId}
                   onChange={(e) => setSelectedStudentId(e.target.value)}
-                  className="w-full max-w-full min-w-0 sm:w-auto px-3 py-1.5 rounded-md border border-border bg-surface text-fg text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full max-w-full min-w-0 sm:w-auto px-3 py-1.5 rounded-md border border-border bg-surface text-fg text-xs font-semibold focus:outline-none focus:border-primary focus:shadow-[var(--focus-ring)] transition-colors cursor-pointer"
                 >
                   {filteredStudents.map((s) => (
-                    <option key={s.id} value={s.id}>
+                    <option className="bg-surface text-fg py-1.5" key={s.id} value={s.id}>
                       {s.user?.name || s.student_code} ({s.student_code || s.grade_level || 'طالب'})
                     </option>
                   ))}

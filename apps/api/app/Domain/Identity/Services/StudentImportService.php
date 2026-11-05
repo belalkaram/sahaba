@@ -111,6 +111,17 @@ class StudentImportService
                 continue;
             }
 
+            if (empty($parentName) || empty($parentPhone)) {
+                $results[] = [
+                    'row' => $rowNumber,
+                    'status' => 'failed',
+                    'error' => 'بيانات ولي الأمر إلزامية (اسم ورقم هاتف ولي الأمر مطلوبان).',
+                ];
+                $failedCount++;
+
+                continue;
+            }
+
             try {
                 $student = $this->userService->createStudent([
                     'name' => $name,

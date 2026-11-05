@@ -265,6 +265,7 @@ Route::middleware(['tenant', 'throttle:api'])->group(function () {
         Route::get('/parents/{id}', [ParentController::class, 'show'])->name('api.parents.show');
         Route::post('/parents/{id}/children', [ParentController::class, 'linkChild'])->name('api.parents.children.link');
         Route::delete('/parents/{id}/children/{studentId}', [ParentController::class, 'unlinkChild'])->name('api.parents.children.unlink');
+        Route::post('/parents/{id}/whatsapp-opt-in', [ParentController::class, 'setWhatsAppOptIn'])->name('api.parents.whatsapp.optin');
 
         // Online Learning Module (courses, lessons, enrollments, meetings, media)
         Route::middleware(['tenant.module:online'])->group(function () {

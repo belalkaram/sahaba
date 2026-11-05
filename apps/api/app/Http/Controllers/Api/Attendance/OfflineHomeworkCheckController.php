@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers\Api\Attendance;
 
+use App\Domain\Communication\NotificationCatalog;
+use App\Domain\Communication\NotificationService;
 use App\Http\Controllers\Controller;
 use App\Models\ClassSession;
 use App\Models\OfflineHomeworkCheck;
+use App\Models\Student;
 use App\Models\TenantUser;
 use App\Support\ApiResponse;
 use App\Support\Audit\AuditLogger;
@@ -106,6 +109,21 @@ class OfflineHomeworkCheckController extends Controller
             ]
         );
 
+        if ($validated['status'] === 'not_done') {
+            $student = Student::with('user', 'parents.user')->find($validated['student_id']);
+            if ($student) {
+                app(NotificationService::class)->sendToStudent(
+                    NotificationCatalog::HOMEWORK_MISSING,
+                    $student,
+                    [
+                        'student' => $student->user?->name ?? 'الطالب',
+                        'title' => $session->title ?: ($session->schoolClass?->name ?? 'الحصة'),
+                    ],
+                    '/student/dashboard'
+                );
+            }
+        }
+
         return ApiResponse::success([
             'check' => $check->load(['student.user', 'checkedByStaff.user']),
         ], Response::HTTP_OK);
@@ -161,6 +179,21 @@ class OfflineHomeworkCheckController extends Controller
             );
 
             $recordedChecks[] = $check;
+
+            if ($item['status'] === 'not_done') {
+                $student = Student::with('user', 'parents.user')->find($item['student_id']);
+                if ($student) {
+                    app(NotificationService::class)->sendToStudent(
+                        NotificationCatalog::HOMEWORK_MISSING,
+                        $student,
+                        [
+                            'student' => $student->user?->name ?? 'الطالب',
+                            'title' => $session->title ?: ($session->schoolClass?->name ?? 'الحصة'),
+                        ],
+                        '/student/dashboard'
+                    );
+                }
+            }
         }
 
         AuditLogger::log(

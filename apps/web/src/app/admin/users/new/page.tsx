@@ -5,11 +5,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Card } from '../../../../components/ui/card';
 import { UsersIcon, CheckCircleIcon } from '../../../../components/icons';
-import { adminApi, type Branch, type RoleItem } from '../../../../lib/admin-api';
+import { adminApi, type Branch, type RoleItem, type ParentProfileItem } from '../../../../lib/admin-api';
 
-import { Check, GraduationCap, Presentation, Users } from 'lucide-react';
+import { Check, GraduationCap, Presentation, Users, UserPlus } from 'lucide-react';
 import { IconBack } from '../../../../components/icons/directional';
 import { partial } from '../../../../lib/partial-failure';
+
 export default function NewUserPage() {
   const router = useRouter();
   const [persona, setPersona] = useState<'student' | 'staff' | 'parent'>('student');
@@ -20,10 +21,12 @@ export default function NewUserPage() {
   // External data
   const [branches, setBranches] = useState<Branch[]>([]);
   const [roles, setRoles] = useState<RoleItem[]>([]);
+  const [parentsList, setParentsList] = useState<ParentProfileItem[]>([]);
 
   useEffect(() => {
     adminApi.getBranches().then(setBranches).catch(partial([]));
     adminApi.getRoles().then(setRoles).catch(partial([]));
+    adminApi.getParents().then((res) => setParentsList(res.parents)).catch(partial([]));
   }, []);
 
   // Shared form fields
@@ -36,8 +39,11 @@ export default function NewUserPage() {
   const [studentCode, setStudentCode] = useState('');
   const [gradeLevel, setGradeLevel] = useState('الصف الأول الثانوي');
   const [studentBranchId, setStudentBranchId] = useState('');
+  const [parentMode, setParentMode] = useState<'existing' | 'new'>('new');
+  const [selectedParentId, setSelectedParentId] = useState('');
   const [parentName, setParentName] = useState('');
   const [parentPhone, setParentPhone] = useState('');
+  const [relationType, setRelationType] = useState('father');
 
   // Staff specific
   const [staffType, setStaffType] = useState('teacher');
@@ -69,24 +75,45 @@ export default function NewUserPage() {
 
     try {
       if (persona === 'student') {
-        await adminApi.createStudent({
-          name,
-          phone: phone.trim() || null,
-          email: email.trim() || null,
-          password: password.trim() || undefined,
-          student_code: studentCode.trim() || null,
-          grade_level: gradeLevel || null,
-          branch_id: studentBranchId || null,
-          parent_name: parentName.trim() || null,
-          parent_phone: parentPhone.trim() || null,
-        });
-        setSuccessMessage('تم إنشاء حساب الطالب بنجاح!');
+        if (parentMode === 'existing') {
+          if (!selectedParentId) {
+            throw new Error('يرجى اختيار ولي الأمر من القائمة.');
+          }
+          await adminApi.createStudent({
+            name: name.trim(),
+            phone: phone.trim() || null,
+            email: email.trim() || null,
+            password: password.trim() || undefined,
+            student_code: studentCode.trim() || null,
+            grade_level: gradeLevel || null,
+            branch_id: studentBranchId || null,
+            parent_id: selectedParentId,
+            relation_type: relationType,
+          });
+        } else {
+          if (!parentName.trim() || !parentPhone.trim()) {
+            throw new Error('بيانات ولي الأمر (الاسم ورقم الهاتف) إلزامية لربط الطالب (OD-33).');
+          }
+          await adminApi.createStudent({
+            name: name.trim(),
+            phone: phone.trim() || null,
+            email: email.trim() || null,
+            password: password.trim() || undefined,
+            student_code: studentCode.trim() || null,
+            grade_level: gradeLevel || null,
+            branch_id: studentBranchId || null,
+            parent_name: parentName.trim(),
+            parent_phone: parentPhone.trim(),
+            relation_type: relationType,
+          });
+        }
+        setSuccessMessage('تم إنشاء حساب الطالب وربط ولي الأمر بنجاح!');
       } else if (persona === 'staff') {
         if (!email.trim()) {
           throw new Error('البريد الإلكتروني إلزامي للكادر التعليمي والإداري.');
         }
         await adminApi.createStaff({
-          name,
+          name: name.trim(),
           email: email.trim(),
           phone: phone.trim() || null,
           password: password.trim() || undefined,
@@ -101,7 +128,7 @@ export default function NewUserPage() {
           throw new Error('رقم الهاتف إلزامي لحساب ولي الأمر.');
         }
         await adminApi.createParent({
-          name,
+          name: name.trim(),
           phone: phone.trim(),
           email: email.trim() || null,
           password: password.trim() || undefined,
@@ -127,9 +154,8 @@ export default function NewUserPage() {
       <div>
         <div className="flex items-center gap-2 mb-1">
           <Link href="/admin/users" className="text-xs text-secondary hover:text-fg">
-            
- <IconBack size={16} /> العودة لقائمة المستخدمين
- </Link>
+            <IconBack size={16} /> العودة لقائمة المستخدمين
+          </Link>
         </div>
         <h1 className="text-2xl font-bold text-fg tracking-tight flex items-center gap-2">
           <UsersIcon size={24} className="text-primary" />
@@ -150,31 +176,29 @@ export default function NewUserPage() {
 
       {/* Error banner */}
       {error && (
-        <div className="p-4 rounded-lg bg-danger/10 border border-danger/20 text-danger text-xs">
+        <div className="p-4 rounded-lg bg-danger/10 border border-danger/20 text-danger text-xs animate-in fade-in">
           {error}
         </div>
       )}
 
-      {/* Persona Type Picker */}
-      <Card className="p-5">
-        <label className="block text-xs font-semibold text-secondary mb-3">
-          1. نوع الحساب المطلوب إنشاؤه (Persona) *
-        </label>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      {/* Persona Selection */}
+      <Card className="p-6">
+        <h2 className="text-base font-bold text-fg mb-4">1. اختر نوع الحساب (Persona)</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <button
             type="button"
             onClick={() => setPersona('student')}
             className={`p-4 rounded-xl border text-right transition-all flex flex-col justify-between ${
               persona === 'student'
                 ? 'border-primary bg-primary/10 text-fg shadow-md'
-                : 'border-border bg-card/60 text-secondary hover:text-fg hover:border-border-strong'
+                : 'border-border bg-card/60 text-secondary hover:text-fg hover:border-border'
             }`}
           >
             <div className="text-2xl mb-2"><GraduationCap size={24} strokeWidth={1.75} aria-hidden /></div>
             <div>
               <div className="font-bold text-sm text-fg">طالب (Student)</div>
               <div className="text-xs text-secondary mt-0.5">
-                حساب للدراسة وحضور الحصص وأداء الواجبات والاختبارات
+                حساب تعليمي للدخول للمنصة ومتابعة الحصص والاختبارات
               </div>
             </div>
           </button>
@@ -185,14 +209,14 @@ export default function NewUserPage() {
             className={`p-4 rounded-xl border text-right transition-all flex flex-col justify-between ${
               persona === 'staff'
                 ? 'border-primary bg-primary/10 text-fg shadow-md'
-                : 'border-border bg-card/60 text-secondary hover:text-fg hover:border-border-strong'
+                : 'border-border bg-card/60 text-secondary hover:text-fg hover:border-border'
             }`}
           >
             <div className="text-2xl mb-2"><Presentation size={24} strokeWidth={1.75} aria-hidden /></div>
             <div>
               <div className="font-bold text-sm text-fg">كادر تعليمي / إداري (Staff)</div>
               <div className="text-xs text-secondary mt-0.5">
-                معلم، مساعد تدريس، مشرف، مسؤول مالي، أو مدير نظام
+                معلم، مساعد، مشرف، محاسب، أو مدير فرع
               </div>
             </div>
           </button>
@@ -203,14 +227,14 @@ export default function NewUserPage() {
             className={`p-4 rounded-xl border text-right transition-all flex flex-col justify-between ${
               persona === 'parent'
                 ? 'border-primary bg-primary/10 text-fg shadow-md'
-                : 'border-border bg-card/60 text-secondary hover:text-fg hover:border-border-strong'
+                : 'border-border bg-card/60 text-secondary hover:text-fg hover:border-border'
             }`}
           >
             <div className="text-2xl mb-2"><Users size={24} strokeWidth={1.75} aria-hidden /></div>
             <div>
               <div className="font-bold text-sm text-fg">ولي أمر (Parent)</div>
               <div className="text-xs text-secondary mt-0.5">
-                متابعة الدرجات، الحضور والغياب، وإيصالات الدفع للأبناء
+                متابعة الدرجات، الحضور والغياب، وإشعارات الواتساب للأبناء
               </div>
             </div>
           </button>
@@ -229,7 +253,8 @@ export default function NewUserPage() {
               <label className="block text-xs font-semibold text-secondary mb-1.5">
                 الاسم الكامل *
               </label>
-              <input aria-label="الاسم الكامل"
+              <input
+                aria-label="الاسم الكامل"
                 type="text"
                 required
                 placeholder="مثال: أحمد محمد علي"
@@ -244,9 +269,10 @@ export default function NewUserPage() {
                 رقم الهاتف {persona === 'parent' ? '*' : '(اختياري)'}
               </label>
               <input
+                aria-label="رقم الهاتف"
                 type="tel"
                 required={persona === 'parent'}
-                placeholder="01012345678"
+                placeholder="0501234567"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs text-fg placeholder-fg-subtle focus:outline-none focus:border-primary font-mono"
@@ -259,6 +285,7 @@ export default function NewUserPage() {
                 البريد الإلكتروني {persona === 'staff' ? '*' : '(اختياري)'}
               </label>
               <input
+                aria-label="البريد الإلكتروني"
                 type="email"
                 required={persona === 'staff'}
                 placeholder="user@example.com"
@@ -271,11 +298,12 @@ export default function NewUserPage() {
 
             <div>
               <label className="block text-xs font-semibold text-secondary mb-1.5">
-                كلمة المرور الأولية (اختياري - افتراضي: password123)
+                كلمة المرور الأولية (اختياري - يتم توليد كلمة مرور مؤقتة في حال تركها فارغة)
               </label>
-              <input aria-label="كلمة المرور الأولية (اختياري - افتراضي: password123)"
+              <input
+                aria-label="كلمة المرور الأولية"
                 type="password"
-                placeholder="password123"
+                placeholder="اتركها فارغة للتوليد التلقائي"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs text-fg placeholder-fg-subtle focus:outline-none focus:border-primary font-mono"
@@ -292,7 +320,8 @@ export default function NewUserPage() {
                   <label className="block text-xs font-semibold text-secondary mb-1.5">
                     كود الطالب (اختياري - يولد تلقائياً)
                   </label>
-                  <input aria-label="كود الطالب (اختياري - يولد تلقائياً)"
+                  <input
+                    aria-label="كود الطالب"
                     type="text"
                     placeholder="STD-2026-001"
                     value={studentCode}
@@ -305,18 +334,19 @@ export default function NewUserPage() {
                   <label className="block text-xs font-semibold text-secondary mb-1.5">
                     الصف / المرحلة الدراسية
                   </label>
-                  <select aria-label="الصف / المرحلة الدراسية"
+                  <select
+                    aria-label="الصف / المرحلة الدراسية"
                     value={gradeLevel}
                     onChange={(e) => setGradeLevel(e.target.value)}
-                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs text-fg focus:outline-none focus:border-primary"
+                    className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-xs text-fg focus:outline-none focus:border-primary focus:shadow-[var(--focus-ring)] transition-colors cursor-pointer"
                   >
-                    <option value="الصف الأول الثانوي">الصف الأول الثانوي</option>
-                    <option value="الصف الثاني الثانوي">الصف الثاني الثانوي</option>
-                    <option value="الصف الثالث الثانوي">الصف الثالث الثانوي</option>
-                    <option value="الصف الأول الإعدادي">الصف الأول الإعدادي</option>
-                    <option value="الصف الثاني الإعدادي">الصف الثاني الإعدادي</option>
-                    <option value="الصف الثالث الإعدادي">الصف الثالث الإعدادي</option>
-                    <option value="أخرى">أخرى</option>
+                    <option className="bg-surface text-fg py-1.5" value="الصف الأول الثانوي">الصف الأول الثانوي</option>
+                    <option className="bg-surface text-fg py-1.5" value="الصف الثاني الثانوي">الصف الثاني الثانوي</option>
+                    <option className="bg-surface text-fg py-1.5" value="الصف الثالث الثانوي">الصف الثالث الثانوي</option>
+                    <option className="bg-surface text-fg py-1.5" value="الصف الأول الإعدادي">الصف الأول الإعدادي</option>
+                    <option className="bg-surface text-fg py-1.5" value="الصف الثاني الإعدادي">الصف الثاني الإعدادي</option>
+                    <option className="bg-surface text-fg py-1.5" value="الصف الثالث الإعدادي">الصف الثالث الإعدادي</option>
+                    <option className="bg-surface text-fg py-1.5" value="أخرى">أخرى</option>
                   </select>
                 </div>
 
@@ -324,14 +354,15 @@ export default function NewUserPage() {
                   <label className="block text-xs font-semibold text-secondary mb-1.5">
                     الفرع المنتسب إليه
                   </label>
-                  <select aria-label="الفرع المنتسب إليه"
+                  <select
+                    aria-label="الفرع المنتسب إليه"
                     value={studentBranchId}
                     onChange={(e) => setStudentBranchId(e.target.value)}
-                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs text-fg focus:outline-none focus:border-primary"
+                    className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-xs text-fg focus:outline-none focus:border-primary focus:shadow-[var(--focus-ring)] transition-colors cursor-pointer"
                   >
-                    <option value="">بدون فرع محدد (الفرع الرئيسي)</option>
+                    <option className="bg-surface text-fg py-1.5" value="">بدون فرع محدد (الفرع الرئيسي)</option>
                     {branches.map((b) => (
-                      <option key={b.id} value={b.id}>
+                      <option className="bg-surface text-fg py-1.5" key={b.id} value={b.id}>
                         {b.name} ({b.code})
                       </option>
                     ))}
@@ -339,34 +370,130 @@ export default function NewUserPage() {
                 </div>
               </div>
 
-              {/* Optional Parent Link */}
-              <div className="p-4 rounded-lg bg-background/60 border border-border space-y-3">
-                <span className="text-xs font-bold text-primary block uppercase">
-                  ربط ولي أمر الطالب (اختياري)
-                </span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Mandatory Parent Link (OD-33) */}
+              <div className="p-4 rounded-lg bg-surface border border-border space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-2">
                   <div>
-                    <label className="block text-xs text-secondary mb-1">اسم ولي الأمر</label>
-                    <input aria-label="اسم ولي الأمر"
-                      type="text"
-                      placeholder="اسم ولي الأمر"
-                      value={parentName}
-                      onChange={(e) => setParentName(e.target.value)}
-                      className="w-full bg-card border border-border rounded-sm px-3 py-1.5 text-xs text-fg placeholder-fg-subtle focus:outline-none focus:border-primary"
-                    />
+                    <span className="text-xs font-bold text-primary block flex items-center gap-1.5">
+                      <UserPlus size={16} strokeWidth={1.75} aria-hidden />
+                      ربط ولي أمر الطالب (إلزامي - OD-33) *
+                    </span>
+                    <span className="text-xs text-secondary mt-0.5 block">
+                      يجب ربط كل طالب بولي أمر لإرسال إشعارات الحضور والواجبات والدرجات ورسائل الواتساب
+                    </span>
                   </div>
-                  <div>
-                    <label className="block text-xs text-secondary mb-1">هاتف ولي الأمر</label>
-                    <input aria-label="هاتف ولي الأمر"
-                      type="tel"
-                      placeholder="01098765432"
-                      value={parentPhone}
-                      onChange={(e) => setParentPhone(e.target.value)}
-                      className="w-full bg-card border border-border rounded-sm px-3 py-1.5 text-xs text-fg placeholder-fg-subtle focus:outline-none focus:border-primary font-mono"
-                      dir="ltr"
-                    />
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setParentMode('new')}
+                      className={`px-2.5 py-1 rounded-sm text-xs font-medium transition-colors ${
+                        parentMode === 'new'
+                          ? 'bg-primary text-primary-fg'
+                          : 'bg-card border border-border text-secondary hover:text-fg'
+                      }`}
+                    >
+                      تسجيل ولي أمر جديد
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setParentMode('existing')}
+                      className={`px-2.5 py-1 rounded-sm text-xs font-medium transition-colors ${
+                        parentMode === 'existing'
+                          ? 'bg-primary text-primary-fg'
+                          : 'bg-card border border-border text-secondary hover:text-fg'
+                      }`}
+                    >
+                      اختيار ولي أمر مسجل
+                    </button>
                   </div>
                 </div>
+
+                {parentMode === 'existing' ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-secondary mb-1">
+                        اختيار ولي الأمر *
+                      </label>
+                      <select
+                        aria-label="اختيار ولي الأمر"
+                        value={selectedParentId}
+                        onChange={(e) => setSelectedParentId(e.target.value)}
+                        required={parentMode === 'existing'}
+                        className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-xs text-fg focus:outline-none focus:border-primary"
+                      >
+                        <option value="">-- اختر ولي الأمر من القائمة --</option>
+                        {parentsList.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.user.name} ({p.user.phone || 'بدون هاتف'})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-secondary mb-1">
+                        صلة القرابة
+                      </label>
+                      <select
+                        aria-label="صلة القرابة"
+                        value={relationType}
+                        onChange={(e) => setRelationType(e.target.value)}
+                        className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-xs text-fg focus:outline-none focus:border-primary"
+                      >
+                        <option value="father">أب (Father)</option>
+                        <option value="mother">أم (Mother)</option>
+                        <option value="guardian">ولي أمر / وصي (Guardian)</option>
+                      </select>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-secondary mb-1">
+                        اسم ولي الأمر *
+                      </label>
+                      <input
+                        aria-label="اسم ولي الأمر"
+                        type="text"
+                        required={parentMode === 'new'}
+                        placeholder="مثال: يوسف خليل"
+                        value={parentName}
+                        onChange={(e) => setParentName(e.target.value)}
+                        className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs text-fg placeholder-fg-subtle focus:outline-none focus:border-primary"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-secondary mb-1">
+                        هاتف ولي الأمر (واتساب) *
+                      </label>
+                      <input
+                        aria-label="هاتف ولي الأمر"
+                        type="tel"
+                        required={parentMode === 'new'}
+                        placeholder="0501234567"
+                        value={parentPhone}
+                        onChange={(e) => setParentPhone(e.target.value)}
+                        className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs text-fg placeholder-fg-subtle focus:outline-none focus:border-primary font-mono"
+                        dir="ltr"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-secondary mb-1">
+                        صلة القرابة
+                      </label>
+                      <select
+                        aria-label="صلة القرابة"
+                        value={relationType}
+                        onChange={(e) => setRelationType(e.target.value)}
+                        className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-xs text-fg focus:outline-none focus:border-primary"
+                      >
+                        <option value="father">أب (Father)</option>
+                        <option value="mother">أم (Mother)</option>
+                        <option value="guardian">ولي أمر / وصي (Guardian)</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -380,16 +507,17 @@ export default function NewUserPage() {
                   <label className="block text-xs font-semibold text-secondary mb-1.5">
                     نوع الكادر الوظيفي *
                   </label>
-                  <select aria-label="نوع الكادر الوظيفي"
+                  <select
+                    aria-label="نوع الكادر الوظيفي"
                     value={staffType}
                     onChange={(e) => setStaffType(e.target.value)}
-                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-xs text-fg focus:outline-none focus:border-primary"
+                    className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-xs text-fg focus:outline-none focus:border-primary focus:shadow-[var(--focus-ring)] transition-colors cursor-pointer"
                   >
-                    <option value="teacher">معلم (Teacher)</option>
-                    <option value="teaching_assistant">مساعد تدريس (Teaching Assistant)</option>
-                    <option value="supervisor">مشرف تربوي (Supervisor)</option>
-                    <option value="finance">مسؤول مالي (Finance)</option>
-                    <option value="admin">مدير إداري (Admin)</option>
+                    <option className="bg-surface text-fg py-1.5" value="teacher">معلم (Teacher)</option>
+                    <option className="bg-surface text-fg py-1.5" value="teaching_assistant">مساعد تدريس (Teaching Assistant)</option>
+                    <option className="bg-surface text-fg py-1.5" value="supervisor">مشرف تربوي (Supervisor)</option>
+                    <option className="bg-surface text-fg py-1.5" value="finance">مسؤول مالي (Finance)</option>
+                    <option className="bg-surface text-fg py-1.5" value="admin">مدير إداري (Admin)</option>
                   </select>
                 </div>
 
@@ -397,7 +525,8 @@ export default function NewUserPage() {
                   <label className="block text-xs font-semibold text-secondary mb-1.5">
                     نبذة تعريفية (Bio)
                   </label>
-                  <input aria-label="نبذة تعريفية (Bio)"
+                  <input
+                    aria-label="نبذة تعريفية (Bio)"
                     type="text"
                     placeholder="مدرس أول لغة عربية وخبير المناهج..."
                     value={bio}
@@ -474,7 +603,8 @@ export default function NewUserPage() {
                   <label className="block text-xs font-semibold text-secondary mb-1.5">
                     الرقم القومي / رقم الهوية
                   </label>
-                  <input aria-label="الرقم القومي / رقم الهوية"
+                  <input
+                    aria-label="الرقم القومي / رقم الهوية"
                     type="text"
                     placeholder="29801011234567"
                     value={nationalId}
@@ -488,7 +618,8 @@ export default function NewUserPage() {
                   <label className="block text-xs font-semibold text-secondary mb-1.5">
                     العنوان / السكن
                   </label>
-                  <input aria-label="العنوان / السكن"
+                  <input
+                    aria-label="العنوان / السكن"
                     type="text"
                     placeholder="القاهرة، مدينة نصر"
                     value={address}
@@ -521,4 +652,3 @@ export default function NewUserPage() {
     </div>
   );
 }
-

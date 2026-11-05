@@ -14,7 +14,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { ChevronsLeft, LogOut, Menu, MoreHorizontal, Search, UserRound, X } from 'lucide-react';
+import { ChevronsLeft, Clock, LogOut, Menu, MoreHorizontal, Search, UserRound, X } from 'lucide-react';
 import { useAuth } from '../../context/auth-context';
 import { filterNavItems, NAV_GROUP_LABELS, type NavGroup, type NavItem } from '../../config/navigation-registry';
 import { navIcon } from '../../config/nav-icons';
@@ -55,6 +55,83 @@ export interface AppShellProps {
   area?: 'tenant' | 'platform';
   /** Platform staff are not tenant users: their identity comes from the platform session. */
   identity?: { name: string; onLogout: () => void };
+}
+
+/* -------------------------------------------------------------------------
+ * Saudi Live Clock Component (توقيت مكة المكرمة / السعودية)
+ * ----------------------------------------------------------------------- */
+function SaudiLiveClock({ compact }: { compact?: boolean }) {
+  const [mounted, setMounted] = useState(false);
+  const [timeStr, setTimeStr] = useState<string>('');
+  const [dateStr, setDateStr] = useState<string>('');
+
+  useEffect(() => {
+    setMounted(true);
+    const update = () => {
+      const now = new Date();
+      try {
+        const timeFmt = new Intl.DateTimeFormat('ar-EG', {
+          timeZone: 'Asia/Riyadh',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true,
+        });
+        const dateFmt = new Intl.DateTimeFormat('ar-EG', {
+          timeZone: 'Asia/Riyadh',
+          weekday: 'short',
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+        });
+        setTimeStr(timeFmt.format(now));
+        setDateStr(dateFmt.format(now));
+      } catch {
+        setTimeStr(now.toLocaleTimeString());
+        setDateStr(now.toLocaleDateString());
+      }
+    };
+
+    update();
+    const timer = setInterval(update, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  if (!mounted || !timeStr) {
+    return (
+      <div className={cn('flex items-center gap-2', compact ? 'justify-center py-2' : 'px-2 py-1')}>
+        <Clock size={15} className="text-fg-subtle shrink-0 animate-pulse" aria-hidden />
+        {!compact && <span className="h-3 w-20 bg-surface-muted animate-pulse rounded-xs" />}
+      </div>
+    );
+  }
+
+  if (compact) {
+    return (
+      <div
+        className="flex flex-col items-center justify-center py-1 text-center"
+        title={`توقيت السعودية:\n${dateStr}\n${timeStr}`}
+      >
+        <Clock size={16} className="text-primary mb-1 shrink-0" strokeWidth={1.75} aria-hidden />
+        <span className="text-[10px] font-bold text-fg leading-tight font-mono tabular-nums">{timeStr}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-md border border-border-subtle bg-surface-raised/70 p-2 text-start shadow-xs">
+      <div className="flex items-center justify-between gap-1 mb-1 text-[11px] font-semibold text-fg-subtle">
+        <span className="flex items-center gap-1.5">
+          <Clock size={13} className="text-primary shrink-0" strokeWidth={2} aria-hidden />
+          <span>توقيت السعودية</span>
+        </span>
+        <span className="text-[10px] font-bold text-primary-hover px-1.5 py-0.5 rounded-xs bg-primary-subtle/50">مكة</span>
+      </div>
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-xs font-bold text-fg tracking-tight">{dateStr}</span>
+        <span className="text-xs font-extrabold text-primary font-mono tabular-nums">{timeStr}</span>
+      </div>
+    </div>
+  );
 }
 
 export const AppShell: React.FC<AppShellProps> = ({ children, experienceOverride, area = 'tenant', identity }) => {
@@ -207,19 +284,45 @@ export const AppShell: React.FC<AppShellProps> = ({ children, experienceOverride
         >
           <div className="sadu w-full shrink-0" aria-hidden />
 
-          {/* Brand */}
-          <div className={cn('flex h-[68px] shrink-0 items-center border-b border-border', collapsed ? 'justify-center px-2' : 'px-5')}>
-            <Link href="/" className="flex min-w-0 items-center gap-3" aria-label={BRAND.nameAr}>
-              <BrandMark size={collapsed ? 40 : 50} decorative />
-              {!collapsed && (
-                <span className="leading-none">
-                  <span className="block font-display text-[1.375rem] text-fg">{BRAND.nameAr}</span>
-                  <span className="ltr-isolate mt-1.5 block text-[0.625rem] font-semibold uppercase tracking-[0.22em] text-fg-subtle">
-                    {BRAND.nameEn}
+          {/* Brand & Top-Right Collapse Toggle */}
+          <div className="shrink-0 border-b border-border">
+            {/* Top row: Collapse Toggle on the Right (فوق على اليمين) */}
+            <div className={cn('flex items-center px-3 pt-2.5 pb-1', collapsed ? 'justify-center' : 'justify-start')}>
+              <button
+                type="button"
+                onClick={toggleCollapsed}
+                className={cn(
+                  'flex items-center gap-1.5 rounded-md text-xs font-semibold text-fg-muted transition-colors hover:bg-surface-muted hover:text-fg',
+                  collapsed ? 'p-1.5' : 'px-2.5 py-1 bg-surface-raised/70 hover:bg-surface-raised border border-border-subtle shadow-2xs'
+                )}
+                aria-label={collapsed ? 'توسيع القائمة' : 'طي القائمة'}
+                aria-expanded={!collapsed}
+                title={collapsed ? 'توسيع القائمة' : 'طي القائمة'}
+              >
+                <ChevronsLeft
+                  size={15}
+                  strokeWidth={2}
+                  className={cn('icon-dir shrink-0 transition-transform duration-300', !collapsed && 'rotate-180')}
+                  aria-hidden
+                />
+                {!collapsed && <span>طي القائمة</span>}
+              </button>
+            </div>
+
+            {/* Brand row */}
+            <div className={cn('flex h-[56px] shrink-0 items-center', collapsed ? 'justify-center px-2 pb-2' : 'px-4 pb-2')}>
+              <Link href="/" className="flex min-w-0 items-center gap-2.5" aria-label={BRAND.nameAr}>
+                <BrandMark size={collapsed ? 36 : 42} decorative />
+                {!collapsed && (
+                  <span className="leading-none">
+                    <span className="block font-display text-[1.25rem] text-fg">{BRAND.nameAr}</span>
+                    <span className="ltr-isolate mt-1 block text-[0.625rem] font-semibold uppercase tracking-[0.22em] text-fg-subtle">
+                      {BRAND.nameEn}
+                    </span>
                   </span>
-                </span>
-              )}
-            </Link>
+                )}
+              </Link>
+            </div>
           </div>
 
           {/* Tenant context */}
@@ -263,27 +366,9 @@ export const AppShell: React.FC<AppShellProps> = ({ children, experienceOverride
             ))}
           </nav>
 
-          {/* Collapse toggle */}
+          {/* Saudi Date & Time Footer (بدلاً من زر طي القائمة تحت) */}
           <div className="shrink-0 border-t border-border p-3">
-            <button
-              type="button"
-              onClick={toggleCollapsed}
-              className={cn(
-                'flex h-10 w-full items-center gap-3 rounded-md text-sm text-fg-muted transition-colors hover:bg-surface-muted hover:text-fg',
-                collapsed ? 'justify-center' : 'px-3',
-              )}
-              aria-label={collapsed ? 'توسيع القائمة' : 'طي القائمة'}
-              aria-expanded={!collapsed}
-            >
-              {/* In RTL the sidebar sits on the right: "collapse" points toward it. */}
-              <ChevronsLeft
-                size={18}
-                strokeWidth={1.75}
-                className={cn('icon-dir shrink-0 transition-transform duration-300', !collapsed && 'rotate-180')}
-                aria-hidden
-              />
-              {!collapsed && <span>طي القائمة</span>}
-            </button>
+            <SaudiLiveClock compact={collapsed} />
           </div>
         </aside>
 

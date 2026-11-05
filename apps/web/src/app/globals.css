@@ -199,6 +199,51 @@
     font: inherit;
   }
 
+  /* Native Select & Dropdown Options Design Tokens */
+  select {
+    color-scheme: light dark;
+  }
+
+  :where([data-theme="dark"], [data-theme="dark"] *) select,
+  :where(html.dark, html.dark *) select {
+    color-scheme: dark;
+  }
+
+  :where([data-theme="light"], [data-theme="light"] *) select,
+  :where(html.light, html.light *) select {
+    color-scheme: light;
+  }
+
+  select option {
+    background-color: var(--surface);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    padding: 0.5rem 0.75rem;
+  }
+
+  select option:hover,
+  select option:focus,
+  select option:checked {
+    background-color: var(--primary-subtle);
+    color: var(--primary-subtle-fg);
+  }
+
+  select option:disabled {
+    color: var(--fg-muted);
+    opacity: 0.6;
+    background-color: var(--surface-muted);
+  }
+
+  select optgroup {
+    background-color: var(--surface-sunken);
+    color: var(--fg-muted);
+    font-weight: 700;
+    padding: 0.375rem 0.625rem;
+    font-size: var(--text-xs);
+  }
+
   ::placeholder {
     color: var(--fg-subtle);
     opacity: 1;
