@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('audit_logs', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('tenant_id')->nullable()->index();
-            $table->uuid('actor_id')->nullable()->index();
+            $table->string('actor_id', 64)->nullable()->index(); // tenant user UUID or platform user id
             $table->string('actor_type', 50)->default('user'); // user, system, platform_admin, support
             $table->string('actor_email')->nullable();
             $table->string('action', 100)->index(); // auth.login, auth.logout, tenant.created, payment.reviewed, etc.

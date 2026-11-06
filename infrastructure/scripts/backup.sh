@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # =============================================================================
 # backup.sh — Multi-Tenant LMS Backup Script
-# Backs up: Control DB, all Tenant DBs, Redis snapshot, uploaded media
+# Backs up: the Postgres database (control plane + every tenant schema), Redis snapshot
 # Encrypts with AES-256 before writing to backup storage
 # Schedule: cron daily at 02:00
 # =============================================================================
@@ -10,65 +10,27 @@ set -euo pipefail
 # ── Configuration ─────────────────────────────────────────────────────────────
 BACKUP_DIR="${BACKUP_STORAGE_PATH:-/var/backups/lms}"
 ENCRYPTION_KEY="${BACKUP_ENCRYPTION_KEY:?BACKUP_ENCRYPTION_KEY is required}"
-MYSQL_HOST="${DB_HOST:-mysql}"
-MYSQL_PORT="${DB_PORT:-3306}"
-MYSQL_USER="${DB_USERNAME:-lms}"
-MYSQL_PASSWORD="${DB_PASSWORD:?DB_PASSWORD is required}"
-MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}"
+# Provider-agnostic: one connection string (Neon, RDS, self-hosted ...). Use the DIRECT endpoint.
+DB_URL="${DB_URL:?DB_URL is required (postgresql://user:pass@host/db?sslmode=require)}"
 RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-30}"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 BACKUP_PATH="$BACKUP_DIR/$TIMESTAMP"
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 
-# ── Directory setup ───────────────────────────────────────────────────────────
 mkdir -p "$BACKUP_PATH"
 log "Backup started — target: $BACKUP_PATH"
 
-# ── 1. Control Plane DB ───────────────────────────────────────────────────────
-log "Backing up control database: ${DB_DATABASE:-lms_control}"
-mysqldump \
-    -h "$MYSQL_HOST" \
-    -P "$MYSQL_PORT" \
-    -u root \
-    --password="$MYSQL_ROOT_PASSWORD" \
-    --single-transaction \
-    --routines \
-    --triggers \
-    --add-drop-database \
-    --databases "${DB_DATABASE:-lms_control}" \
+# ── 1. Whole database (control plane in `public` + one schema per tenant) ─────
+# A single pg_dump is one consistent snapshot across all tenants.
+log "Dumping database with pg_dump"
+pg_dump --format=custom --no-owner --no-privileges "$DB_URL" \
     | openssl enc -aes-256-cbc -salt -pbkdf2 \
         -k "$ENCRYPTION_KEY" \
-        -out "$BACKUP_PATH/control_db.sql.enc"
+        -out "$BACKUP_PATH/database.dump.enc"
+log "Database backup complete"
 
-log "Control DB backup complete"
-
-# ── 2. All Tenant DBs ─────────────────────────────────────────────────────────
-log "Discovering tenant databases..."
-TENANT_DBS=$(mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u root \
-    --password="$MYSQL_ROOT_PASSWORD" \
-    --batch --skip-column-names \
-    -e "SELECT schema_name FROM information_schema.schemata WHERE schema_name LIKE 'tenant_%';")
-
-TENANT_COUNT=0
-for DB_NAME in $TENANT_DBS; do
-    log "Backing up tenant DB: $DB_NAME"
-    mysqldump \
-        -h "$MYSQL_HOST" \
-        -P "$MYSQL_PORT" \
-        -u root \
-        --password="$MYSQL_ROOT_PASSWORD" \
-        --single-transaction \
-        --routines \
-        --triggers \
-        "$DB_NAME" \
-        | openssl enc -aes-256-cbc -salt -pbkdf2 \
-            -k "$ENCRYPTION_KEY" \
-            -out "$BACKUP_PATH/${DB_NAME}.sql.enc"
-    TENANT_COUNT=$((TENANT_COUNT + 1))
-done
-
-log "Tenant DB backup complete — $TENANT_COUNT tenants"
+TENANT_COUNT=$(psql "$DB_URL" -At -c "SELECT count(*) FROM information_schema.schemata WHERE schema_name LIKE 'tenant\_%'")
 
 # ── 3. Redis snapshot ────────────────────────────────────────────────────────
 log "Triggering Redis BGSAVE..."
@@ -85,11 +47,11 @@ fi
 cat > "$BACKUP_PATH/manifest.json" <<EOF
 {
   "timestamp": "$TIMESTAMP",
-  "control_db": "${DB_DATABASE:-lms_control}",
+  "engine": "postgresql",
   "tenant_count": $TENANT_COUNT,
   "retention_days": $RETENTION_DAYS,
   "encryption": "AES-256-CBC-PBKDF2",
-  "version": "1.0"
+  "version": "2.0"
 }
 EOF
 

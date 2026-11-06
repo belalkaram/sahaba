@@ -29,7 +29,7 @@ fi
 
 # Validate critical secrets are set
 source "$ENV_FILE"
-REQUIRED_VARS=(APP_KEY DB_PASSWORD MYSQL_ROOT_PASSWORD REDIS_PASSWORD BACKUP_ENCRYPTION_KEY)
+REQUIRED_VARS=(APP_KEY DB_URL REDIS_PASSWORD BACKUP_ENCRYPTION_KEY)
 for VAR in "${REQUIRED_VARS[@]}"; do
     if [ -z "${!VAR:-}" ]; then
         error "Required secret not set: $VAR"
@@ -50,6 +50,10 @@ log "Images built"
 step "Running database migrations"
 docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" \
     run --rm api php artisan migrate --force --no-interaction
+docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" \
+    run --rm api php artisan lms:migrate-tenants
+docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" \
+    run --rm api php artisan lms:db:check
 log "Migrations complete"
 
 # ── 3. Warm application cache ─────────────────────────────────────────────────

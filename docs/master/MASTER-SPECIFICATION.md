@@ -1967,7 +1967,7 @@ Restore testing is required.
 
 The architecture should support individual tenant restoration where technically feasible.
 
-This preserves one of the main benefits of the database-per-tenant model.
+This preserves one of the main benefits of the isolated-store-per-tenant model (a SQLite file, a PostgreSQL schema or a database depending on the driver — see ADR-002).
 
 ---
 

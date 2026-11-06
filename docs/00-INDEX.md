@@ -7,10 +7,13 @@
 - Decisions: `../prompts/recovery/01-DECISIONS.md` and `decisions/` (ADRs).
 - Removed copies and archives can be recovered from git history: see `audit/2026-11-05-documentation-hygiene.md`.
 
-## Audit & Recovery
+## Audit & Recovery (current source of truth for status)
 - `audit/2026-10-30-system-gap-analysis/README.md`: the main audit
 - `audit/2026-11-05-documentation-hygiene.md`: documentation cleanup (what was removed and why)
 - `audit/2026-11-05-frontend-backend-persistence-audit.md`: actions that do not reach the backend, or are not reflected where expected
+- `audit/2026-11-05-database-audit/README.md`: database inventory, Postgres enablement
+- `infrastructure/DATABASE-PORTABILITY.md`: Neon/Postgres setup and provider switching
+- `decisions/ADR-002-postgres-schema-per-tenant-and-provider-portability.md`
 
 ## Plans
 - `plans/2026-11-05-platform-console-tenancy-venues-qr-plan.md`: super-admin console, tenant types, venues and scheduling, camera QR attendance, persistence fixes (PLAN, not implemented)

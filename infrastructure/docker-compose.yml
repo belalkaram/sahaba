@@ -1,6 +1,8 @@
 # =============================================================================
 # Multi-Tenant LMS — Docker Compose
-# Production stack: Nginx + PHP-FPM API + Next.js Web + MySQL + Redis
+# Production stack: Nginx + PHP-FPM API + Next.js Web + Redis. Database = any Postgres via DB_URL
+# (Neon today; swap provider by changing DB_URL only). A local Postgres is available with
+# `--profile local-db` for self-hosting / offline use.
 # =============================================================================
 
 services:
@@ -42,11 +44,9 @@ services:
       APP_ENV:              ${APP_ENV:-production}
       APP_KEY:              ${APP_KEY}
       APP_DEBUG:            "false"
-      DB_HOST:              mysql
-      DB_PORT:              3306
-      DB_DATABASE:          ${DB_DATABASE:-lms_control}
-      DB_USERNAME:          ${DB_USERNAME:-lms}
-      DB_PASSWORD:          ${DB_PASSWORD}
+      DB_CONNECTION:        pgsql
+      DB_URL:               ${DB_URL}
+      DB_SSLMODE:           ${DB_SSLMODE:-require}
       REDIS_HOST:           redis
       REDIS_PORT:           6379
       CACHE_DRIVER:         redis
@@ -55,8 +55,6 @@ services:
       LOG_CHANNEL:          stderr
       LOG_LEVEL:            ${LOG_LEVEL:-warning}
     depends_on:
-      mysql:
-        condition: service_healthy
       redis:
         condition: service_healthy
     networks:
@@ -84,11 +82,9 @@ services:
     environment:
       APP_ENV:          ${APP_ENV:-production}
       APP_KEY:          ${APP_KEY}
-      DB_HOST:          mysql
-      DB_PORT:          3306
-      DB_DATABASE:      ${DB_DATABASE:-lms_control}
-      DB_USERNAME:      ${DB_USERNAME:-lms}
-      DB_PASSWORD:      ${DB_PASSWORD}
+      DB_CONNECTION:        pgsql
+      DB_URL:               ${DB_URL}
+      DB_SSLMODE:           ${DB_SSLMODE:-require}
       REDIS_HOST:       redis
       QUEUE_CONNECTION: redis
       LOG_CHANNEL:      stderr
@@ -115,11 +111,9 @@ services:
     environment:
       APP_ENV:          ${APP_ENV:-production}
       APP_KEY:          ${APP_KEY}
-      DB_HOST:          mysql
-      DB_PORT:          3306
-      DB_DATABASE:      ${DB_DATABASE:-lms_control}
-      DB_USERNAME:      ${DB_USERNAME:-lms}
-      DB_PASSWORD:      ${DB_PASSWORD}
+      DB_CONNECTION:        pgsql
+      DB_URL:               ${DB_URL}
+      DB_SSLMODE:           ${DB_SSLMODE:-require}
       REDIS_HOST:       redis
       QUEUE_CONNECTION: redis
       LOG_CHANNEL:      stderr
@@ -159,32 +153,27 @@ services:
         max-size: "20m"
         max-file: "5"
 
-  # ── MySQL Database ────────────────────────────────────────────────────────
-  mysql:
-    image: mysql:8.4
-    container_name: lms_mysql
+  # ── Optional local Postgres (profile: local-db) ───────────────────────────
+  # Not started by default: production uses the managed Postgres in DB_URL.
+  # Use with DB_URL=postgresql://lms:<password>@postgres:5432/lms?sslmode=disable
+  postgres:
+    image: postgres:16-alpine
+    profiles: ["local-db"]
+    container_name: lms_postgres
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE:      ${DB_DATABASE:-lms_control}
-      MYSQL_USER:          ${DB_USERNAME:-lms}
-      MYSQL_PASSWORD:      ${DB_PASSWORD}
+      POSTGRES_DB:       lms
+      POSTGRES_USER:     lms
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
     volumes:
-      - mysql_data:/var/lib/mysql
-      - ./infrastructure/docker/mysql/my.cnf:/etc/mysql/conf.d/lms.cnf:ro
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - lms_network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "--password=${MYSQL_ROOT_PASSWORD}"]
+      test: ["CMD-SHELL", "pg_isready -U lms -d lms"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 30s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-        max-file: "5"
 
   # ── Redis (Cache / Queue / Session) ──────────────────────────────────────
   redis:
@@ -209,7 +198,7 @@ networks:
 
 # ── Volumes ──────────────────────────────────────────────────────────────────
 volumes:
-  mysql_data:
+  postgres_data:
     driver: local
   redis_data:
     driver: local
