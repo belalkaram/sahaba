@@ -43,3 +43,11 @@
 | OD-31 | Services | Two separate services, **online** and **offline** (existing `online` / `offline` modules). A tenant takes one or both at sign-up; the super admin can change them. Navigation, pages and API are gated server-side. | P1 | — |
 | OD-32 | Student mode | Each enrollment has `mode` ∈ `online`, `offline`, `both`. An offline student's account is **follow-up only**: attendance, homework checks, scores, payments, announcements. No videos or online exams (enforced in the backend). The teacher's assistant is the main offline actor: QR attendance, homework checks, paper-quiz scores. | P8 | — |
 | OD-33 | Parent link & notifications | **Every student must be linked to a parent** (at least name + mobile) on create/import. Notifications route to the student and/or the parent per event. A WhatsApp channel sits behind an adapter (Meta WhatsApp Business Cloud API, approved templates, opt-in) and is enabled once credentials exist. | P9 | — |
+
+### Owner decisions — 2026-11-12 (from `docs/audit/2026-11-12-user-journey-ux-audit/README.md` §11)
+
+| ID | Question | Decision (approved by owner 2026-11-12) | Needed by | Alternatives |
+|---|---|---|---|---|
+| OD-34 | Academy packages vs the platform student fee | **Both stay.** An academy keeps its own packages (`/admin/packages`) **alongside** the platform 10 SAR/month student fee (OD-27). Open: who reviews package payments; until the owner decides, OD-27 applies (platform super admin only). The student UI must say which of the two a payment is for. | J-07 | Remove academy packages (rejected) |
+| OD-35 | Minimum attendance rate for exams | **The academy chooses.** A per-tenant setting: no minimum, or a percentage. Not set = no rule, and no threshold text anywhere in the UI. When set, it is a condition for sitting exams and must be enforced in the backend, not only shown. | J-03 | Fixed 75% for everyone (rejected) |
+| OD-36 | Independent teacher landing | **Same as an organization:** the independent teacher (tenant owner) uses the institution dashboard (`/admin`, experience `admin`), limited to their own permissions; OD-24 simplifications (no roles management, no branch manager) still apply. Current behaviour is correct. | J-08 | Teacher dashboard (rejected) |
