@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Fix] - 2026-11-12 — Self-registered students can sign in and follow their request (UX-FIX-1)
+### Fixed
+- `/login`: the identifier field was `type="email"`, so the browser refused a mobile number and students created by self-registration (REG-1) could not sign in. It is now "البريد الإلكتروني أو رقم الجوال" (`type="text"`, `autocomplete="username"`); Arabic-Indic digits are converted before sending (the API already normalises `+966…`).
+- Registration done screen: each accepted request now shows the academy code and the reference, with "متابعة حالة الطلب" and a sign-in link that pre-fills the academy code. With one academy, the main button opens that academy's sign-in page.
+### Added
+- `/register/status` (`features/registration/status-check.tsx`): public check of a request with academy code + reference + student mobile, using the existing `GET /public/registration/status`; shows pending / approved (with sign-in link) / rejected. Linked from `/login` and `/register`.
+### Verification
+- Browser, local sqlite: register -> done screen -> status pending -> approve -> status approved -> sign in with mobile in Arabic-Indic digits -> student dashboard. 375 px checked on the status page. `tsc`, ESLint (0 errors), `lint:design` pass. No automated E2E test (R9-1).
+
 ## [Docs] - 2026-11-12 — User-journey and UI/UX audit (all roles)
 ### Added
 - `docs/audit/2026-11-12-user-journey-ux-audit/README.md`: static review of the student, teacher, assistant, academy admin, platform super admin and parent journeys against Master Spec §70-74 and ADR-004. 15 findings; P0: self-registered students cannot sign in with their mobile (login field is `type="email"`) and are never shown their academy code or a status page. No code changed.

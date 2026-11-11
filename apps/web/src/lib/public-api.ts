@@ -186,4 +186,24 @@ export const registrationApi = {
     const res = await apiClient.post<{ results: RegistrationResult[] }>('/public/registration', payload, { skipUnauthorizedHandler: true });
     return res.data.results;
   },
+  /** Applicant checks one request: academy code + reference + the student's mobile. 404 = no match (never says which part). */
+  async status(params: { tenant: string; reference: string; phone: string }): Promise<RegistrationRequestStatus> {
+    const res = await apiClient.get<{ status: RegistrationRequestStatus }>('/public/registration/status', {
+      params,
+      skipUnauthorizedHandler: true,
+    });
+    return res.data.status;
+  },
 };
+
+export type RegistrationRequestStatus = 'pending' | 'approved' | 'rejected';
+
+/** Where a student signs in to one academy (the academy code is prefilled). */
+export function academyLoginHref(slug: string): string {
+  return `/login?tenant=${encodeURIComponent(slug)}`;
+}
+
+/** Status page for one request, prefilled with the academy code and the reference. */
+export function registrationStatusHref(slug: string, reference: string): string {
+  return `/register/status?tenant=${encodeURIComponent(slug)}&ref=${encodeURIComponent(reference)}`;
+}

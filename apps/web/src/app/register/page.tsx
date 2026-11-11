@@ -22,6 +22,10 @@ export default function RegisterStudentPage() {
           <Link href="/login" className="font-semibold text-primary hover:underline">
             سجّل الدخول
           </Link>
+          {' · '}
+          <Link href="/register/status" className="font-semibold text-primary hover:underline">
+            تابع حالة طلب سابق
+          </Link>
         </p>
       </div>
     </PublicPage>

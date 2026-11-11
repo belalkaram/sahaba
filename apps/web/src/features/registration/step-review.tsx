@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { CheckCircle2, CircleAlert } from 'lucide-react';
-import type { RegistrationOptions, RegistrationResult } from '../../lib/public-api';
+import { academyLoginHref, registrationStatusHref, type RegistrationOptions, type RegistrationResult } from '../../lib/public-api';
 import { normalizeMobile } from '../../lib/saudi';
 import { buttonClasses } from '../../components/ui/button-styles';
 import { formatNumber } from '../../lib/format';
@@ -78,7 +78,10 @@ const STATUS_COPY: Record<RegistrationResult['status'], string> = {
 };
 
 export function RegistrationDone({ results }: { results: RegistrationResult[] }) {
-  const ok = results.filter((r) => r.status === 'submitted').length;
+  const submitted = results.filter((r) => r.status === 'submitted');
+  const ok = submitted.length;
+  // One academy: send the student straight to its sign-in page with the academy code filled in.
+  const loginHref = ok === 1 ? academyLoginHref(submitted[0].slug) : '/login';
   return (
     <div className="space-y-6">
       <div className="space-y-2 text-center">
@@ -88,27 +91,53 @@ export function RegistrationDone({ results }: { results: RegistrationResult[] })
         <h2 className="font-display text-2xl text-fg">{ok ? 'وصل طلبك' : 'لم يُرسَل الطلب'}</h2>
         <p className="mx-auto max-w-lg text-fg-muted">
           {ok
-            ? 'تراجع كل جهة طلبك على حدة. عند القبول تسجّل الدخول من صفحة الجهة بـ «رقم جوال الطالب» وكلمة المرور التي اخترتها.'
+            ? 'تراجع كل جهة طلبك على حدة. عند القبول سجّل الدخول بـ «رمز الأكاديمية» ورقم جوال الطالب وكلمة المرور التي اخترتها.'
             : 'لا توجد جهة استقبلت طلبك. جرّب مرة أخرى أو اختر جهات أخرى.'}
         </p>
       </div>
+      {ok > 0 && (
+        <p className="rounded-md border border-warning/30 bg-warning-subtle p-3 text-sm font-medium text-warning-subtle-fg">
+          احتفظ برمز الأكاديمية ورقم الطلب (صوّر هذه الصفحة)، تحتاجهما لمتابعة الطلب ولتسجيل الدخول.
+        </p>
+      )}
       <ul className="space-y-3">
         {results.map((r) => (
-          <li key={r.slug} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface-sunken p-4">
+          <li key={r.slug} className="space-y-3 rounded-lg border border-border bg-surface-sunken p-4">
             <div className="min-w-0">
               <p className="break-words font-bold text-fg">{r.name ?? r.slug}</p>
               <p className={r.status === 'submitted' ? 'text-sm text-success' : 'text-sm text-danger'}>{STATUS_COPY[r.status]}</p>
             </div>
-            {r.reference_code && (
-              <span className="ltr-isolate rounded-md bg-surface-muted px-3 py-1.5 font-mono text-sm font-bold text-fg" title="رقم الطلب">
-                {r.reference_code}
-              </span>
+            {r.status === 'submitted' && (
+              <>
+                <dl className="grid gap-3 sm:grid-cols-2">
+                  <div className="min-w-0">
+                    <dt className="text-xs text-fg-muted">رمز الأكاديمية</dt>
+                    <dd className="ltr-isolate break-all font-mono text-sm font-bold text-fg">{r.slug}</dd>
+                  </div>
+                  {r.reference_code && (
+                    <div className="min-w-0">
+                      <dt className="text-xs text-fg-muted">رقم الطلب</dt>
+                      <dd className="ltr-isolate break-all font-mono text-sm font-bold text-fg">{r.reference_code}</dd>
+                    </div>
+                  )}
+                </dl>
+                <div className="flex flex-wrap gap-2">
+                  {r.reference_code && (
+                    <Link href={registrationStatusHref(r.slug, r.reference_code)} className={buttonClasses('secondary', 'sm')}>
+                      متابعة حالة الطلب
+                    </Link>
+                  )}
+                  <Link href={academyLoginHref(r.slug)} className={buttonClasses('ghost', 'sm')}>
+                    صفحة الدخول لهذه الجهة
+                  </Link>
+                </div>
+              </>
             )}
           </li>
         ))}
       </ul>
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-        <Link href="/login" className={buttonClasses('primary', 'lg')}>
+        <Link href={loginHref} className={buttonClasses('primary', 'lg')}>
           الذهاب إلى تسجيل الدخول
         </Link>
         <Link href="/" className={buttonClasses('secondary', 'lg')}>

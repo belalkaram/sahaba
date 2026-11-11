@@ -3,7 +3,7 @@
 import React, { Suspense, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { AlertCircle, Building2, ChevronDown, Eye, EyeOff, KeyRound, Mail, Ticket } from 'lucide-react';
+import { AlertCircle, Building2, ChevronDown, Eye, EyeOff, KeyRound, Ticket, UserRound } from 'lucide-react';
 import { useAuth } from '../../context/auth-context';
 import { tokenStore } from '../../lib/token-store';
 import { DEMO_LOGIN_MODE } from '../../config/features';
@@ -86,7 +86,9 @@ function LoginForm() {
       await couponLogin(normalizeDigits(couponCode.trim()), normalizeDigits(couponSecret.trim()), slug);
       return;
     }
-    await login(email.trim(), password, slug);
+    // Students who registered themselves sign in with their mobile; Arabic-Indic digits become 0-9 (the API normalises the rest).
+    const identifier = email.trim();
+    await login(identifier.includes('@') ? identifier : normalizeDigits(identifier), password, slug);
   };
 
   const loginAsDemo = async (demo: DemoAccount) => {
@@ -197,16 +199,18 @@ function LoginForm() {
               <>
             <div data-enter>
               <Input
-                label="البريد الإلكتروني"
-                type="email"
+                label="البريد الإلكتروني أو رقم الجوال"
+                type="text"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@example.com"
-                autoComplete="email"
+                placeholder="05XXXXXXXX أو name@example.com"
+                autoComplete="username"
+                autoCapitalize="none"
+                spellCheck={false}
                 dir="ltr"
                 required
                 inputSize="lg"
-                iconPrefix={<Mail size={18} strokeWidth={1.75} aria-hidden />}
+                iconPrefix={<UserRound size={18} strokeWidth={1.75} aria-hidden />}
               />
             </div>
 
@@ -292,6 +296,12 @@ function LoginForm() {
             <Link href="/register" className="mt-2 inline-block text-base font-bold text-primary hover:underline">
               سجّل كطالب جديد
             </Link>
+            <p className="mt-2 text-xs text-fg-muted">
+              سجّلت من قبل؟{' '}
+              <Link href="/register/status" className="font-semibold text-primary hover:underline">
+                تابع حالة طلبك
+              </Link>
+            </p>
           </div>
 
           <p className="mt-6 text-center text-sm text-fg-muted" data-enter>

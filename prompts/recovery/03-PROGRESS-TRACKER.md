@@ -116,7 +116,7 @@
 | PS | PS-5 | Analytics UI, credential activation, live landing numbers | F-13, F-15, F-18 | TODO | |
 | PS | PS-6 | CI guard: unused API methods and routes | â€” | TODO | |
 | AUD | UX-AUDIT-1 | User-journey & UI/UX audit for all six roles (static) | owner request | DONE | `docs/audit/2026-11-12-user-journey-ux-audit/README.md` (15 findings J-01..J-15, 2 x P0; fixes not started) |
-| AUD | UX-FIX-1 | P0 journey fixes: mobile login field, academy code + login link after registration, request-status page | J-01, J-02 | TODO | |
+| AUD | UX-FIX-1 | P0 journey fixes: mobile login field, academy code + login link after registration, request-status page | J-01, J-02 | DONE | Browser E2E on local sqlite 2026-11-12: `/register` 6 steps -> done screen shows academy code + reference -> `/register/status` pending -> staff approve (API) -> approved + login link -> `/login?tenant=` with mobile in Arabic-Indic digits -> `/student/dashboard`; status page checked at 375 px; tsc, eslint (0 errors), lint:design pass; no automated E2E test |
 | AUD | ATT-1 | Per-academy minimum attendance rate (setting, backend exam gate, parent/student UI) | OD-35, J-03 | TODO | |
 | AUD | PAY-UX-1 | Student UI labels each payment as academy package or platform fee; nav/KPI wording per ADR-004 | OD-34, J-06, J-07 | TODO | |
 

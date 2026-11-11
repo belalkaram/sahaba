@@ -26,6 +26,7 @@ Requested by the product owner outside the numbered phases. Governing decisions:
 - `StudentRegistrationTest`: 10 tests / 83 assertions (rules, opt-in directory, per-tenant requests and isolation, encryption at rest, validation, honeypot, reviewer permission, approval → login with 3 mobile spellings + guardian link, double decision 409, rejection, applicant status needs reference + matching mobile).
 - `tsc`, ESLint (no errors), `lint:design` pass. Browser: `/register` renders, client validation, steps 1→2, Arabic-Indic ID and +966 accepted.
 - **Not verified:** a full end-to-end submit → approve through the browser (see incident below: the local API is currently pointed at a remote database, so no data was written); steps 3–6 visually; reviewer inbox UI in the browser; real SMS/WhatsApp (none exists — the applicant is not notified of the decision, they can check status with reference + mobile via the API; there is no UI for that yet).
+- **Update 2026-11-12 (UX-FIX-1):** full browser run on local sqlite: steps 1–6 → submit → done screen (now shows academy code + reference + status/sign-in links) → `/register/status` pending → approval (staff API, not the inbox UI) → approved → sign-in with the mobile (the login field was `type="email"` and blocked this; fixed) → student dashboard. Still not verified: reviewer inbox UI, notifications to the applicant (none exist).
 
 ## Incident: tests reached a remote Postgres
 
