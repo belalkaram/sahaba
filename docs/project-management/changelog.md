@@ -2,6 +2,72 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Docs] - 2026-11-12 — User-journey and UI/UX audit (all roles)
+### Added
+- `docs/audit/2026-11-12-user-journey-ux-audit/README.md`: static review of the student, teacher, assistant, academy admin, platform super admin and parent journeys against Master Spec §70-74 and ADR-004. 15 findings; P0: self-registered students cannot sign in with their mobile (login field is `type="email"`) and are never shown their academy code or a status page. No code changed.
+
+## [Security] - 2026-11-06 — Grading inbox and grade publishing respect course scope
+### Fixed
+- `POST /grading/publish-bulk` accepted any exam or assignment in the tenant, so a teacher could publish another teacher's grades. It now checks every item against the caller's `exams.grade` / `assignments.grade` course scope before writing; one item outside it returns 403 and publishes nothing.
+- `GET /grading/pending` limited results only for `staff_type = teacher`, so assistants saw every course. It now uses the same role scope (`GradingScopeTest`).
+- Test suite: `NotificationRoutingTest`, `ParentLinkRequiredTest` and `WhatsAppChannelTest` deleted every file in the real `database/tenants` folder, wiping local development data on each full run. The cleanup is removed; `TestCase::tearDown` already cleans the throwaway test folder.
+
+## [Feature] - 2026-11-06 — Separate exams and assignments pages with counters, filters and grading links
+### Added
+- `GET /assessments/exams-overview` and `/assessments/assignments-overview` (`AssessmentOverviewController`, `ExamOverviewService`, `AssignmentOverviewService`): each row reports enrolled, started or submitted, not started or missing, in progress, timed out, late, pending grading, graded and best-attempt scores. Filters: search, course, status, what needs attention, date range, sort. Query count does not grow with the number of rows. Staff scopes only.
+- Tenant migration `2026_11_07_000002`: indexes on `(course_id, status)` for enrollments, exams and assignments.
+- Web: `/teacher/exams` and `/teacher/assignments` with KPI shortcuts to filters, per-row grade publishing, and a submissions dialog; shared tabs with `/teacher/grading`.
+- `/teacher/grading?exam=` and `?assignment=` open the inbox on one item; its publish button then affects only that item.
+### Changed
+- Sidebar shows "الاختبارات" and "الواجبات" instead of one entry; `/teacher/assessments` redirects to `/teacher/exams`.
+- `ExamAttempt::pendingGrading` and `AssignmentSubmission::pendingGrading` scopes now define "pending" for both the inbox and the overviews.
+
+## [Fix] - 2026-11-06 — Teachers can create exams from the UI (PS-3, partial)
+### Added
+- `features/assessment/create-exam-form.tsx`: "إنشاء اختبار جديد" on `/teacher/assessments` creates a draft exam, then opens its builder. Until now `createExam` had no caller and nothing linked to the builder page.
+### Fixed
+- `/teacher/assessments`: exam cards always said "منشور للطلبة" and showed 100 points for an exam with none; they now show the real status and total, and link to the builder.
+- Submitting the assignment form with no course did nothing and said nothing; both forms now ask for a course first. Failed creates show the server's reason instead of a generic message.
+- Create buttons follow `exams.create` / `assignments.create`.
+
+## [Feature] - 2026-11-07 — Assessment v2 (question images, assignment questions, split-session exams, model answers)
+### Added
+- Tenant migration `2026_11_07_000001`: `image_path`/`model_answer`/`model_answer_image_path` on questions and bank questions; `exams.allow_split_sessions`, `auto_release_model_answers` (exams, assignments); `exam_attempts.time_used_seconds`/`last_seen_at`; tables `assignment_questions`, `assignment_answers`, `model_answer_releases`. Applied to the template and both Supabase tenants via `lms:migrate-tenants`.
+- Split-session exams: `ExamTimeBudget` (heartbeat accounting) + `POST .../attempts/{id}/heartbeat`; `active-attempt` is now a free peek for split exams.
+- Assignments with questions (`AssignmentQuestionController`, `AssignmentAnswerService`), auto-grading shared with exams (`QuestionAutoGrader`).
+- Question / model-answer images (`QuestionMediaController`) and teacher-controlled model-answer release (`ModelAnswerController`, `ModelAnswerAccess`).
+- Web: image upload + model answer in the exam builder, split-session switch, `AssignmentSolver`, student model-answer page, teacher release panel, assignment question manager, heartbeat + "save and continue later" in the secure exam runner, paste/drop/cut blocked on typed answers.
+### Changed
+- Exam shuffle is now seeded by the attempt id at `start` too, so the order seen at start equals the order after a resume.
+- Question JSON hides `image_path`, `model_answer`, `model_answer_image_path` from students (exposes `has_image`).
+### Verification
+- 13 new PHPUnit tests (`AssessmentV2Test`) + existing assessment tests pass on sqlite; `tsc --noEmit` clean. See `docs/recovery-reports/ASSESSMENT-V2.md` for decisions and known limitations.
+
+## [Perf] - 2026-11-06 — School registration: ~8 min -> ~17 s on Supabase
+### Changed
+- `TenantDatabaseManager`: on pgsql, a new (empty) tenant schema is cloned from a pre-migrated template schema `_tenant_template` in ONE server-side statement instead of replaying 26 migrations (~thousands of round trips at ~0.3 s each). Existing tenants still upgrade through the normal incremental `migrate`. Disable with `DB_TENANT_TEMPLATE=false`.
+- New command `php artisan tenants:refresh-template` builds/updates the template. **Run it after adding a tenant migration / on deploy** (otherwise the first registration builds it lazily and is slow).
+- `RoleSynchronizer::sync` rewritten set-based (bulk selects/inserts): 541 -> 43 queries per provisioning. Behaviour unchanged (idempotent; updates changed labels/scopes, removes stale links, keeps custom roles).
+- `SchoolRegistrationController`: `set_time_limit(300)` + `ignore_user_abort(true)` so a slow network or a closed tab cannot leave a half-provisioned tenant.
+### Automatic template refresh
+- `AppServiceProvider` listens to `CommandFinished`: after a plain `php artisan migrate` (not `--database=...`) the template is refreshed; `lms:migrate-tenants` refreshes it first; scheduler runs `tenants:refresh-template` hourly. Failures are logged, never fail a deploy. Documented in `infrastructure/RUNBOOK.md`.
+### Verification
+- 35 related PHPUnit tests pass (sqlite). Real registrations against Supabase: 17 s (HTTP), 19.5 s / 43 queries (CLI). Remaining time is network latency (~0.3 s per query; 15 `tenant_features` inserts could still be batched).
+
+## [Fix] - 2026-11-06 — School registration timeout on remote DB
+### Fixed
+- `SchoolRegistrationController::register`: `set_time_limit(300)` before tenant provisioning. Tenant schema migration on Neon exceeded PHP's 30s limit; the fatal timeout bypassed the cleanup `catch`, left a half-provisioned tenant (`octo`, no schema/owner), returned a response without CORS headers (browser showed a CORS error), and retries then failed with 422 (slug taken). The orphan tenant was removed.
+### Known limitation
+- Not re-tested end-to-end against Neon after the fix (a real registration writes to the shared DB).
+
+## [UI] - 2026-11-06 — Remove blue from the palette (info -> lime-green)
+### Changed
+- `apps/web/src/styles/tokens.css`: `--info*` family moved from sky blue to lime-green (light `#4D7C0F` / subtle `#F7FEE7` / fg `#365314`; dark `#A3E635` / subtle 16% alpha / fg `#D9F99D`), distinct from the emerald primary (hue ~171) and success green (hue ~142). Text pairs keep WCAG AA.
+- `StatCard` variant `indigo` renamed to `lime` (maps to `info`); call sites updated.
+- Settings page fallbacks `#04c3c9`/`#0284c7` replaced by `#0C7F6D`/`#4D7C0F`; API `AuthPayloadBuilder` fallback `#2563eb` replaced by `#0C7F6D`.
+- Stored tenant colors are untouched (data). Migration `2026_11_05_000002` already nulls the old blue DB defaults.
+- Details: `docs/recovery-reports/UI-NOBLUE.md`.
+
 ## [P4] - 2026-11-05 — Student 10 SAR/Month Manual Payment Reviewed by Super Admin (OD-27, ADR-004, F-17)
 ### Added
 - **Centralized Platform Payment Architecture (OD-27, ADR-004):**
@@ -178,6 +244,17 @@ All notable changes to this project will be documented in this file.
 - Added `docs/audit/2026-11-05-frontend-backend-persistence-audit.md` (F-1..F-19; F-5 is a security issue).
 - Added plan `docs/plans/2026-11-05-platform-console-tenancy-venues-qr-plan.md` (v2). Owner approved OD-23..OD-33: tenant types, simple teacher UI, online/offline services, offline student mode, mandatory parent link + WhatsApp, 10 SAR/student/month reviewed by the super admin (supersedes OD-7), super-admin PII access with audit.
 - No application code changed.
+
+## [REG-1] - 2026-11-06 -- STUDENT SELF-REGISTRATION (SAUDI MARKET)
+### Added
+- Public `/register`: 6-step form with progress bar (student, address, guardian, password, centers/teachers, review). Saudi rules: national ID/iqama checksum, `05XXXXXXXX` mobiles, 13 regions, stage/grade.
+- Requests go to each chosen center/teacher (per-tenant `student_registration_requests`); review inbox `/teacher/registrations`; approval creates the student and links the guardian by mobile. Tenant opt-in switch in `/admin/settings`.
+- `GET /public/registration/options|academies|status`, `POST /public/registration`, `GET /registration-requests`, `/pending-count`, `POST /registration-requests/{id}/approve|reject`.
+### Changed
+- Login also matches a mobile typed as +966 / 966 / 5… / Arabic digits.
+- `phpunit.xml` forces a sqlite tenant store: a run had reached the remote Postgres configured in `.env` (see `docs/recovery-reports/REG-1.md`).
+### Security
+- National ID encrypted at rest and never serialised; password hash wiped on rejection; honeypot and throttling on the public endpoints.
 
 ## [UX-R7G] - 2026-11-05 -- DARK THEME, LOGO, CHROME, SECURE EXAM, IMAGES, PUBLIC ACADEMY PAGES
 ### Added

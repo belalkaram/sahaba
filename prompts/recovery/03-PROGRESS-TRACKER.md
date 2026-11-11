@@ -78,6 +78,7 @@
 | R7E | R7E | Tenant admin experience | F8 | PARTIAL | `/admin`, `/admin/audit` checked in browser; `/admin/integrations` shows "not available" (no status endpoint); `docs/recovery-reports/R7E-R7F.md` |
 | R7F | R7F | Platform, support & public (landing, coupon login) | T-UX-02, Master Â§74 | PARTIAL | Landing, login + access code, contact, platform login/audit/settings; `PlatformSettingsAndContactTest`; `docs/recovery-reports/R7E-R7F.md` |
 | R7G | UX-R7G | Dark theme, logo, chrome, secure exam, images, public academy pages | owner request (outside audit IDs) | PARTIAL | `PublicAcademyAndImagesTest` (8 tests); tsc/build/lint:design pass; real fullscreen + tab-switch not verified; `docs/recovery-reports/UX-R7G.md` |
+| REG | REG-1 | Student self-registration (Saudi) | owner request | PARTIAL | `StudentRegistrationTest` (10 tests); UI checked to step 2 only, no end-to-end browser run (local API pointed at remote DB); `docs/recovery-reports/REG-1.md` |
 | R8 | R8-1 | Domain events & notification service | T-FEAT-28 | DONE | `NotificationEventsTest` |
 | R8 | R8-2 | Notification center UI | T-FEAT-28 | PARTIAL | Bell, `/notifications`, preferences; no E2E; `docs/recovery-reports/R8.md` |
 | R8 | R8-3 | Queue | T-FEAT-32 | PARTIAL | Jobs + real worker run; CSV import still synchronous; scheduler not run in Docker |
@@ -109,10 +110,12 @@
 | P2 | P2 | Leads inbox; organization sign-up reviewed first | OD-26 | TODO | |
 | P3 | P3 | Full platform console incl. student PII with audit (ADR-005), +PS-4 | OD-28, F-11, F-12 | TODO | |
 | P5 | P5 | Places, external centers, halls, recurring schedule, conflicts | OD-30 | TODO | |
-| PS | PS-3 | Exam creation UI and question-bank management | F-7..F-9 | TODO | |
+| PS | PS-3 | Exam creation UI and question-bank management | F-7..F-9 | PARTIAL | Exam creation UI added 2026-11-06 (`features/assessment/create-exam-form.tsx`), checked in the browser as teacher: create, add question, publish; no E2E test; question-bank management not reviewed |
 | P7 | P7 | Global staff identity and workspace switcher (ADR-003) | OD-25 | TODO | |
+| AS | AS-1 | Separate exams and assignments pages with counters, filters, grading links | owner request (outside audit IDs) | PARTIAL | `AssessmentOverviewTest`; checked in the browser as teacher on seeded data (filter, submissions dialog, grading, grading deep link, phone width); not checked with large data, as admin, or on Postgres; no E2E test |
 | PS | PS-5 | Analytics UI, credential activation, live landing numbers | F-13, F-15, F-18 | TODO | |
 | PS | PS-6 | CI guard: unused API methods and routes | â€” | TODO | |
+| AUD | UX-AUDIT-1 | User-journey & UI/UX audit for all six roles (static) | owner request | DONE | `docs/audit/2026-11-12-user-journey-ux-audit/README.md` (15 findings J-01..J-15, 2 x P0; fixes not started) |
 
 ## External prerequisites (owner action)
 
