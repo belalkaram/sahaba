@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api\Assessment;
 
+use App\Domain\Assessment\Services\ExamTimeBudget;
+use App\Domain\Assessment\Services\QuestionAutoGrader;
 use App\Domain\Communication\NotificationCatalog;
 use App\Domain\Communication\NotificationService;
 use App\Http\Controllers\Controller;
@@ -108,6 +110,8 @@ class ExamController extends Controller
             'show_results' => 'nullable|string|in:after_submit,after_publish,never',
             'total_points' => 'nullable|numeric|min:0',
             'passing_score' => 'nullable|numeric|min:0',
+            'allow_split_sessions' => 'nullable|boolean',
+            'auto_release_model_answers' => 'nullable|boolean',
             'status' => 'nullable|string|in:draft,published,closed,archived',
         ]);
 
@@ -132,6 +136,8 @@ class ExamController extends Controller
             'show_results' => $validated['show_results'] ?? 'after_publish',
             'total_points' => $validated['total_points'] ?? 0.00,
             'passing_score' => $validated['passing_score'] ?? null,
+            'allow_split_sessions' => $validated['allow_split_sessions'] ?? false,
+            'auto_release_model_answers' => $validated['auto_release_model_answers'] ?? false,
             'is_published' => $isPublished,
             'is_grades_published' => false,
             'status' => $status,
@@ -159,6 +165,8 @@ class ExamController extends Controller
             'show_results' => 'nullable|string|in:after_submit,after_publish,never',
             'total_points' => 'nullable|numeric|min:0',
             'passing_score' => 'nullable|numeric|min:0',
+            'allow_split_sessions' => 'nullable|boolean',
+            'auto_release_model_answers' => 'nullable|boolean',
             'status' => 'nullable|string|in:draft,published,closed,archived',
         ]);
 
@@ -276,7 +284,7 @@ class ExamController extends Controller
 
         if ($isStaff && $withAnswers) {
             $questions->each(function ($q) {
-                $q->makeVisible(['correct_answer', 'acceptable_answers']);
+                $q->makeVisible(['correct_answer', 'acceptable_answers', 'model_answer']);
             });
         }
 
@@ -298,6 +306,7 @@ class ExamController extends Controller
             'correct_answer' => 'nullable|string',
             'acceptable_answers' => 'nullable|array',
             'explanation' => 'nullable|string',
+            'model_answer' => 'nullable|string',
             'sort_order' => 'nullable|integer',
         ]);
 
@@ -311,6 +320,7 @@ class ExamController extends Controller
             'correct_answer' => $validated['correct_answer'] ?? null,
             'acceptable_answers' => $validated['acceptable_answers'] ?? null,
             'explanation' => $validated['explanation'] ?? null,
+            'model_answer' => $validated['model_answer'] ?? null,
             'sort_order' => $sortOrder,
         ]);
 
@@ -319,7 +329,7 @@ class ExamController extends Controller
             $exam->update(['total_points' => $exam->questions()->sum('points')]);
         }
 
-        $question->makeVisible(['correct_answer', 'acceptable_answers']);
+        $question->makeVisible(['correct_answer', 'acceptable_answers', 'model_answer']);
 
         return ApiResponse::success(['question' => $question], Response::HTTP_CREATED);
     }
@@ -340,6 +350,7 @@ class ExamController extends Controller
             'correct_answer' => 'nullable|string',
             'acceptable_answers' => 'nullable|array',
             'explanation' => 'nullable|string',
+            'model_answer' => 'nullable|string',
             'sort_order' => 'nullable|integer',
         ]);
 
@@ -348,7 +359,7 @@ class ExamController extends Controller
         // Recalculate total points
         $exam->update(['total_points' => $exam->questions()->sum('points')]);
 
-        $question->makeVisible(['correct_answer', 'acceptable_answers']);
+        $question->makeVisible(['correct_answer', 'acceptable_answers', 'model_answer']);
 
         return ApiResponse::success(['question' => $question]);
     }
@@ -468,10 +479,12 @@ class ExamController extends Controller
             'attempt_number' => $attemptsCount + 1,
             'started_at' => $now,
             'expires_at' => $expiresAt,
+            'last_seen_at' => $exam->allow_split_sessions ? $now : null,
             'status' => 'in_progress',
         ]);
 
-        $questions = $this->prepareQuestionsForAttempt($exam);
+        // Seeded by the attempt id so the order seen now is the order seen on every resume.
+        $questions = $this->prepareQuestionsForAttempt($exam, $attempt->id);
 
         return ApiResponse::success([
             'attempt' => $attempt,
@@ -514,12 +527,63 @@ class ExamController extends Controller
 
         $now = now();
 
+        if ($exam->allow_split_sessions) {
+            // Read-only peek (the briefing page calls this): opening the page must not cost exam time.
+            // The sitting actually starts with the first heartbeat sent with resume=true.
+            $remaining = ExamTimeBudget::remainingSeconds($attempt, $exam, $now);
+        } else {
+            $remaining = max(0, $now->diffInSeconds($attempt->expires_at, false));
+        }
+
         return ApiResponse::success([
             'attempt' => $attempt,
             'server_now' => $now->toIso8601String(),
-            'remaining_seconds' => max(0, $now->diffInSeconds($attempt->expires_at, false)),
+            'remaining_seconds' => $remaining,
+            'split_sessions' => (bool) $exam->allow_split_sessions,
+            'window_closes_at' => $exam->closes_at?->toIso8601String(),
             'max_violations' => self::MAX_VIOLATIONS,
             'questions' => $this->prepareQuestionsForAttempt($exam, $attempt->id),
+        ]);
+    }
+
+    /**
+     * Heartbeat from the open exam page (every ~15 s). Charges the active time of a split-session exam and
+     * returns the authoritative remaining time; when the budget or the window is used up the attempt is
+     * submitted here and the client is told to show the result screen.
+     */
+    public function heartbeat(Request $request, string $courseId, string $id, string $attemptId): JsonResponse
+    {
+        $exam = Exam::where('course_id', $courseId)->findOrFail($id);
+        $attempt = ExamAttempt::where('exam_id', $exam->id)->findOrFail($attemptId);
+
+        /** @var TenantUser $user */
+        $user = $request->user();
+        if ($attempt->student_id !== $user->student?->id) {
+            return ApiResponse::error('UNAUTHORIZED_ATTEMPT', 'You do not own this attempt.', Response::HTTP_FORBIDDEN);
+        }
+
+        $now = now();
+
+        if ($attempt->status === 'in_progress') {
+            // resume=true marks the first beat of a new sitting: the time away is charged only a short grace.
+            $remaining = $exam->allow_split_sessions
+                ? ExamTimeBudget::tick($attempt, $exam, $now, $request->boolean('resume') ? ExamTimeBudget::RESUME_CHARGE_SECONDS : ExamTimeBudget::HEARTBEAT_GRACE_SECONDS)
+                : max(0, $now->diffInSeconds($attempt->expires_at, false));
+
+            if ($attempt->isExpired()) {
+                $this->autoSubmitExpiredAttempt($attempt);
+                $attempt->refresh();
+                $remaining = 0;
+            }
+        } else {
+            $remaining = 0;
+        }
+
+        return ApiResponse::success([
+            'status' => $attempt->status,
+            'expired' => $attempt->status !== 'in_progress',
+            'remaining_seconds' => $remaining,
+            'server_now' => $now->toIso8601String(),
         ]);
     }
 
@@ -595,7 +659,9 @@ class ExamController extends Controller
         }
 
         $now = now();
-        $remainingSeconds = $attempt->expires_at ? max(0, $now->diffInSeconds($attempt->expires_at, false)) : 0;
+        $remainingSeconds = $exam->allow_split_sessions
+            ? ExamTimeBudget::remainingSeconds($attempt, $exam, $now)
+            : ($attempt->expires_at ? max(0, $now->diffInSeconds($attempt->expires_at, false)) : 0);
 
         return ApiResponse::success([
             'attempt' => $attempt,
@@ -626,6 +692,10 @@ class ExamController extends Controller
             return ApiResponse::error('ATTEMPT_NOT_ACTIVE', 'Exam attempt is already submitted or closed.', Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
+        if ($exam->allow_split_sessions) {
+            ExamTimeBudget::tick($attempt, $exam);
+        }
+
         // Enforce server-authoritative expiration
         if ($attempt->isExpired()) {
             $this->autoSubmitExpiredAttempt($attempt);
@@ -644,52 +714,9 @@ class ExamController extends Controller
         $answerText = $validated['answer_text'] ?? '';
         $selectedOptions = $validated['selected_options'] ?? null;
 
-        $isCorrect = null;
-        $awardedPoints = null;
-
-        // Auto-grading evaluation
-        switch ($question->question_type) {
-            case 'multiple_choice':
-            case 'true_false':
-                if ($question->getRawOriginal('correct_answer') !== null) {
-                    $isCorrect = trim(strtolower($answerText)) === trim(strtolower($question->getRawOriginal('correct_answer')));
-                    $awardedPoints = $isCorrect ? $question->points : 0.00;
-                }
-                break;
-
-            case 'short_answer':
-                if ($question->getRawOriginal('correct_answer') !== null || ! empty($question->acceptable_answers)) {
-                    $normalizedGiven = trim(strtolower($answerText));
-                    $expectedAnswers = array_map(
-                        fn ($a) => trim(strtolower((string) $a)),
-                        array_filter(array_merge([$question->getRawOriginal('correct_answer')], $question->acceptable_answers ?? []))
-                    );
-                    $isCorrect = in_array($normalizedGiven, $expectedAnswers, true);
-                    $awardedPoints = $isCorrect ? $question->points : 0.00;
-                }
-                break;
-
-            case 'multiple_select':
-                if (! empty($question->acceptable_answers) || $question->getRawOriginal('correct_answer') !== null) {
-                    $expected = $question->acceptable_answers ?? (is_array($question->getRawOriginal('correct_answer')) ? $question->getRawOriginal('correct_answer') : json_decode($question->getRawOriginal('correct_answer') ?? '[]', true));
-                    if (! is_array($expected)) {
-                        $expected = [$question->getRawOriginal('correct_answer')];
-                    }
-                    $given = is_array($selectedOptions) ? $selectedOptions : (is_array(json_decode($answerText, true)) ? json_decode($answerText, true) : [$answerText]);
-                    sort($expected);
-                    sort($given);
-                    $isCorrect = $expected == $given;
-                    $awardedPoints = $isCorrect ? $question->points : 0.00;
-                }
-                break;
-
-            case 'essay':
-            default:
-                // Essay requires manual evaluation by teacher
-                $isCorrect = null;
-                $awardedPoints = null;
-                break;
-        }
+        $graded = app(QuestionAutoGrader::class)->grade($question, $answerText, $selectedOptions);
+        $isCorrect = $graded['is_correct'];
+        $awardedPoints = $graded['awarded_points'];
 
         $answer = ExamAnswer::updateOrCreate(
             [
@@ -923,7 +950,9 @@ class ExamController extends Controller
         $autoScore = $attempt->answers()->whereNotNull('awarded_points')->sum('awarded_points');
 
         $attempt->update([
-            'submitted_at' => $attempt->expires_at ?? now(),
+            'submitted_at' => $attempt->exam?->allow_split_sessions
+                ? ($attempt->last_seen_at ?? now())
+                : ($attempt->expires_at ?? now()),
             'score' => $autoScore,
             'status' => 'submitted',
         ]);

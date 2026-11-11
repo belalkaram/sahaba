@@ -27,6 +27,10 @@
         <env name="DB_CONNECTION" value="sqlite"/>
         <env name="DB_DATABASE" value=":memory:"/>
         <env name="DB_URL" value=""/>
+        <!-- Never let tests reach a remote tenant store: .env may point DB_TENANT_URL at a real Postgres. -->
+        <env name="DB_TENANT_DRIVER" value="sqlite"/>
+        <env name="DB_PERSISTENT" value="false"/>
+        <env name="DB_TENANT_URL" value=""/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>

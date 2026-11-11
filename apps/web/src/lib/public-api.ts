@@ -125,3 +125,65 @@ export const publicAcademyApi = {
     return path ? apiClient.url(path) : null;
   },
 };
+
+export interface RegistrationOptions {
+  regions: { value: string; label: string }[];
+  stages: { value: string; label: string; grades: number }[];
+  max_tenants: number;
+}
+
+export interface RegistrationAcademy {
+  slug: string;
+  name: string;
+  type: 'individual_teacher' | 'organization' | string;
+  organization_kind: string | null;
+  city: string | null;
+  tagline: string | null;
+  logo_url: string | null;
+}
+
+export interface RegistrationPayload {
+  full_name: string;
+  national_id: string;
+  region: string;
+  governorate: string;
+  address: string;
+  education_stage: string;
+  grade: number;
+  student_phone: string;
+  guardian_name: string;
+  guardian_phone: string;
+  guardian_occupation?: string;
+  email?: string;
+  password: string;
+  password_confirmation: string;
+  tenants: string[];
+  /** Honeypot: must stay empty. */
+  website?: string;
+}
+
+export interface RegistrationResult {
+  slug: string;
+  name: string | null;
+  status: 'submitted' | 'unavailable' | 'failed';
+  reference_code: string | null;
+}
+
+/** Student self-registration (public, unauthenticated). */
+export const registrationApi = {
+  async options(): Promise<RegistrationOptions> {
+    const res = await apiClient.get<RegistrationOptions>('/public/registration/options', { skipUnauthorizedHandler: true });
+    return res.data;
+  },
+  async academies(q?: string): Promise<RegistrationAcademy[]> {
+    const res = await apiClient.get<{ academies: RegistrationAcademy[] }>('/public/registration/academies', {
+      params: { q },
+      skipUnauthorizedHandler: true,
+    });
+    return res.data.academies;
+  },
+  async submit(payload: RegistrationPayload): Promise<RegistrationResult[]> {
+    const res = await apiClient.post<{ results: RegistrationResult[] }>('/public/registration', payload, { skipUnauthorizedHandler: true });
+    return res.data.results;
+  },
+};

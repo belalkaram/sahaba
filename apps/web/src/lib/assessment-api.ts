@@ -4,12 +4,15 @@
 import { apiClient, ApiError } from './api-client';
 import type {
   Assignment,
+  AssignmentQuestion,
   AssignmentSubmission,
   BankQuestion,
   Exam,
   ExamAttempt,
   ExamQuestion,
   Grade,
+  ModelAnswerItem,
+  ModelAnswerStudentRow,
   PendingGradingResponse,
   QuestionBank,
 } from '../types';
@@ -25,6 +28,7 @@ export interface CreateAssignmentPayload {
   allow_resubmission?: boolean;
   max_file_size_mb?: number;
   allowed_file_types?: string;
+  auto_release_model_answers?: boolean;
   status?: 'draft' | 'published' | 'archived';
 }
 
@@ -40,6 +44,8 @@ export interface CreateExamPayload {
   show_results?: 'after_submit' | 'after_publish' | 'never';
   total_points?: number;
   passing_score?: number;
+  allow_split_sessions?: boolean;
+  auto_release_model_answers?: boolean;
   status?: 'draft' | 'published' | 'closed' | 'archived';
 }
 
@@ -51,7 +57,20 @@ export interface CreateQuestionPayload {
   correct_answer?: string;
   acceptable_answers?: string[];
   explanation?: string;
+  model_answer?: string;
   sort_order?: number;
+}
+
+export type AssessmentKind = 'exams' | 'assignments';
+export type ReleaseTarget =
+  | { scope: 'all' }
+  | { scope: 'class'; class_id: string }
+  | { scope: 'student'; student_ids: string[] };
+
+export interface AnswerPayload {
+  question_id: string;
+  answer_text?: string;
+  selected_options?: string[];
 }
 
 export const assessmentApi = {
@@ -88,13 +107,14 @@ export const assessmentApi = {
   async submitAssignment(
     courseId: string,
     assignmentId: string,
-    data: { content?: string; file?: File } | string
+    data: { content?: string; file?: File; answers?: AnswerPayload[] } | string
   ): Promise<AssignmentSubmission> {
     const payload = typeof data === 'string' ? { content: data } : data;
 
     if (payload.file) {
       const formData = new FormData();
       if (payload.content) formData.append('content', payload.content);
+      if (payload.answers?.length) formData.append('answers', JSON.stringify(payload.answers));
       formData.append('file', payload.file);
 
       const res = await apiClient.post<{ submission: AssignmentSubmission }>(
@@ -225,6 +245,77 @@ export const assessmentApi = {
   // ==========================================
   // EXAM RUNNER & ATTEMPTS
   // ==========================================
+
+  // ---- Assessment v2: heartbeat, assignment questions, images, model answers ----------------------
+
+  /** Split-session exams: charges active time and returns the authoritative remaining time. `resume` = first beat of a new sitting. */
+  async heartbeat(courseId: string, examId: string, attemptId: string, resume = false): Promise<{ status: string; expired: boolean; remaining_seconds: number }> {
+    const res = await apiClient.post<{ status: string; expired: boolean; remaining_seconds: number }>(
+      `/courses/${courseId}/exams/${examId}/attempts/${attemptId}/heartbeat`,
+      resume ? { resume: true } : {},
+    );
+    return res.data;
+  },
+
+  async getAssignmentQuestions(courseId: string, assignmentId: string, withAnswers = false): Promise<AssignmentQuestion[]> {
+    const res = await apiClient.get<{ questions: AssignmentQuestion[] }>(
+      `/courses/${courseId}/assignments/${assignmentId}/questions${withAnswers ? '?with_answers=1' : ''}`,
+    );
+    return res.data.questions ?? [];
+  },
+
+  async addAssignmentQuestion(courseId: string, assignmentId: string, payload: CreateQuestionPayload): Promise<AssignmentQuestion> {
+    const res = await apiClient.post<{ question: AssignmentQuestion }>(`/courses/${courseId}/assignments/${assignmentId}/questions`, payload);
+    return res.data.question;
+  },
+
+  async updateAssignmentQuestion(courseId: string, assignmentId: string, questionId: string, payload: Partial<CreateQuestionPayload>): Promise<AssignmentQuestion> {
+    const res = await apiClient.put<{ question: AssignmentQuestion }>(`/courses/${courseId}/assignments/${assignmentId}/questions/${questionId}`, payload);
+    return res.data.question;
+  },
+
+  async deleteAssignmentQuestion(courseId: string, assignmentId: string, questionId: string): Promise<void> {
+    await apiClient.delete(`/courses/${courseId}/assignments/${assignmentId}/questions/${questionId}`);
+  },
+
+  /** Upload (or replace) the image of a question, or of its model answer. */
+  async uploadQuestionImage(courseId: string, kind: AssessmentKind, itemId: string, questionId: string, file: File, variant: 'question' | 'model_answer' = 'question'): Promise<void> {
+    const form = new FormData();
+    form.append('image', file);
+    form.append('variant', variant);
+    await apiClient.post(`/courses/${courseId}/${kind}/${itemId}/questions/${questionId}/image`, form);
+  },
+
+  async deleteQuestionImage(courseId: string, kind: AssessmentKind, itemId: string, questionId: string, variant: 'question' | 'model_answer' = 'question'): Promise<void> {
+    await apiClient.delete(`/courses/${courseId}/${kind}/${itemId}/questions/${questionId}/image?variant=${variant}`);
+  },
+
+  /** Authenticated image fetch (an <img> cannot send the bearer token). */
+  questionImageBlob(courseId: string, kind: AssessmentKind, itemId: string, questionId: string, variant: 'question' | 'model_answer' = 'question'): Promise<Blob> {
+    return apiClient.blob(`/courses/${courseId}/${kind}/${itemId}/questions/${questionId}/image?variant=${variant}`);
+  },
+
+  async getModelAnswers(courseId: string, kind: AssessmentKind, itemId: string): Promise<{ title: string; questions: ModelAnswerItem[] }> {
+    const res = await apiClient.get<{ title: string; questions: ModelAnswerItem[] }>(`/courses/${courseId}/${kind}/${itemId}/model-answers`);
+    return res.data;
+  },
+
+  async getModelAnswerStatus(courseId: string, kind: AssessmentKind, itemId: string): Promise<{ auto_release: boolean; students: ModelAnswerStudentRow[] }> {
+    const res = await apiClient.get<{ auto_release: boolean; students: ModelAnswerStudentRow[] }>(`/courses/${courseId}/${kind}/${itemId}/model-answers/status`);
+    return res.data;
+  },
+
+  async releaseModelAnswers(courseId: string, kind: AssessmentKind, itemId: string, target: ReleaseTarget): Promise<void> {
+    await apiClient.post(`/courses/${courseId}/${kind}/${itemId}/model-answers/release`, target);
+  },
+
+  async revokeModelAnswers(courseId: string, kind: AssessmentKind, itemId: string, target: ReleaseTarget): Promise<void> {
+    await apiClient.post(`/courses/${courseId}/${kind}/${itemId}/model-answers/revoke`, target);
+  },
+
+  async setModelAnswerAutoRelease(courseId: string, kind: AssessmentKind, itemId: string, enabled: boolean): Promise<void> {
+    await apiClient.post(`/courses/${courseId}/${kind}/${itemId}/model-answers/auto-release`, { enabled });
+  },
 
   async startExam(courseId: string, examId: string): Promise<ActiveExamAttempt> {
     const res = await apiClient.post<ActiveExamAttempt>(`/courses/${courseId}/exams/${examId}/start`);
@@ -452,5 +543,8 @@ export interface ActiveExamAttempt {
   server_now: string;
   remaining_seconds: number;
   max_violations: number;
+  /** Split-session exam: several sittings inside the window, only active time counts. */
+  split_sessions?: boolean;
+  window_closes_at?: string | null;
   questions: ExamQuestion[];
 }

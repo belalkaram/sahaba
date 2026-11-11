@@ -232,6 +232,32 @@ export const educationApi = {
     return res.data.students ?? [];
   },
 
+  /**
+   * One page of students (server-side search/filters). `analytics` rides along in the same request, so the list never
+   * needs one dashboard call per student.
+   */
+  async getStudentsPage(params: {
+    page: number;
+    perPage?: number;
+    search?: string;
+    gradeLevel?: string;
+    status?: string;
+    withAnalytics?: boolean;
+  }): Promise<{ items: Student[]; total: number; lastPage: number }> {
+    const res = await apiClient.get<{ students: Student[] }>('/students', {
+      params: {
+        page: params.page,
+        per_page: params.perPage ?? 20,
+        search: params.search || undefined,
+        grade_level: params.gradeLevel || undefined,
+        status: params.status || undefined,
+        include: params.withAnalytics ? 'analytics' : undefined,
+      },
+    });
+    const p = res.meta.pagination;
+    return { items: res.data.students ?? [], total: p?.total ?? 0, lastPage: p?.last_page ?? 1 };
+  },
+
   async getStudent(id: string): Promise<Student> {
     const res = await apiClient.get<{ student: Student }>(`/students/${id}`);
     return res.data.student;

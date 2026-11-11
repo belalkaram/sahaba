@@ -8,6 +8,9 @@ return [
     // Relative to the app root. Empty = database/tenants.
     'tenants_path' => env('TENANTS_PATH', ''),
 
+    // One-round-trip tenant/token loaders on Postgres (App\Support\Database\PostgresFastPath). Set false to fall back.
+    'fast_path' => env('DB_FAST_PATH', true),
+
     /*
     |--------------------------------------------------------------------------
     | Default Database Connection Name
@@ -32,6 +35,10 @@ return [
     | is supported by Laravel. You're free to add / remove connections.
     |
     */
+
+    // pgsql only: provision new tenants by cloning a pre-migrated template schema (see
+    // TenantDatabaseManager::cloneFromTemplate). Set DB_TENANT_TEMPLATE=false to replay migrations instead.
+    'tenant_template' => env('DB_TENANT_TEMPLATE', true),
 
     'connections' => [
 
@@ -95,11 +102,18 @@ return [
             'database' => env('DB_DATABASE', 'laravel'),
             'username' => env('DB_USERNAME', 'root'),
             'password' => env('DB_PASSWORD', ''),
-            'charset' => env('DB_CHARSET', 'utf8'),
+            // Empty DB_CHARSET skips `SET NAMES` (one network round trip per connection); Postgres already
+            // defaults the client encoding to the database's (UTF8).
+            'charset' => env('DB_CHARSET', 'utf8') ?: null,
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+            // Reuse the physical connection across requests (php-fpm worker / `artisan serve`). The pool key is
+            // the DSN, so the control and tenant connections get distinct application_name values: they must
+            // never share a session (the tenant one carries a per-tenant search_path).
+            'application_name' => env('DB_APP_NAME', 'lms').'-control',
+            'options' => env('DB_PERSISTENT', false) ? [PDO::ATTR_PERSISTENT => true] : [],
         ],
 
         // Per-tenant data store. sqlite: file per tenant. pgsql: one schema per tenant inside the same
@@ -114,11 +128,17 @@ return [
             'database' => env('DB_DATABASE'),
             'username' => env('DB_USERNAME', 'root'),
             'password' => env('DB_PASSWORD', ''),
-            'charset' => 'utf8',
+            'charset' => env('DB_CHARSET', 'utf8') ?: null,
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+            'application_name' => env('DB_APP_NAME', 'lms').'-tenant',
+            // Persistent connections are a Postgres-only optimisation (a persistent sqlite handle would keep a
+            // deleted/recreated tenant file open across tests and requests).
+            'options' => (env('DB_PERSISTENT', false) && env('DB_TENANT_DRIVER', env('DB_CONNECTION', 'sqlite')) === 'pgsql')
+                ? [PDO::ATTR_PERSISTENT => true]
+                : [],
             'foreign_key_constraints' => true,
         ],
 

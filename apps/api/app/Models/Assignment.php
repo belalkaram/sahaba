@@ -22,6 +22,7 @@ class Assignment extends TenantModel
         'max_file_size_mb',
         'allowed_file_types',
         'status',
+        'auto_release_model_answers',
     ];
 
     protected $casts = [
@@ -31,6 +32,7 @@ class Assignment extends TenantModel
         'late_penalty_percent' => 'integer',
         'allow_resubmission' => 'boolean',
         'max_file_size_mb' => 'integer',
+        'auto_release_model_answers' => 'boolean',
     ];
 
     public function course(): BelongsTo
@@ -41,6 +43,11 @@ class Assignment extends TenantModel
     public function lesson(): BelongsTo
     {
         return $this->belongsTo(Lesson::class, 'lesson_id');
+    }
+
+    public function questions(): HasMany
+    {
+        return $this->hasMany(AssignmentQuestion::class, 'assignment_id')->orderBy('sort_order', 'asc');
     }
 
     public function submissions(): HasMany

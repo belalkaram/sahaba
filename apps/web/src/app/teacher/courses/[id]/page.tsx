@@ -539,7 +539,7 @@ export default function TeacherCourseBuilderPage({ params }: PageProps) {
               title="إجمالي الدروس"
               value={totalLessons}
               icon={<BookOpenIcon size={20} />}
-              variant="indigo"
+              variant="lime"
             />
             <StatCard
               title="متوسط الإنجاز العام"

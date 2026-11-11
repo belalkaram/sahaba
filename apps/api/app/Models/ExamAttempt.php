@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Domain\Assessment\Services\ExamTimeBudget;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -23,6 +25,8 @@ class ExamAttempt extends TenantModel
         'status',
         'violation_count',
         'integrity_events',
+        'time_used_seconds',
+        'last_seen_at',
     ];
 
     protected $casts = [
@@ -34,6 +38,8 @@ class ExamAttempt extends TenantModel
         'graded_at' => 'datetime',
         'integrity_events' => 'array',
         'violation_count' => 'integer',
+        'time_used_seconds' => 'integer',
+        'last_seen_at' => 'datetime',
     ];
 
     public function exam(): BelongsTo
@@ -57,10 +63,31 @@ class ExamAttempt extends TenantModel
     }
 
     /**
+     * Submitted, but with no score yet or an essay answer still ungraded. The grading inbox and the exams
+     * overview share this rule so their numbers always match.
+     */
+    public function scopePendingGrading(Builder $query): Builder
+    {
+        return $query->where('status', 'submitted')->where(function (Builder $q) {
+            $q->whereNull('score')
+                ->orWhereHas('answers', function (Builder $aq) {
+                    $aq->whereNull('awarded_points')
+                        ->whereHas('question', fn (Builder $qq) => $qq->where('question_type', 'essay'));
+                });
+        });
+    }
+
+    /**
      * Check if attempt has exceeded server authoritative time limit.
      */
     public function isExpired(): bool
     {
+        // Split-session exams: the attempt ends when the TOTAL active time is used up or the window closes,
+        // not when one session's wall-clock deadline passes (the student may legitimately return tomorrow).
+        if ($this->exam?->allow_split_sessions) {
+            return ExamTimeBudget::isExhausted($this, $this->exam);
+        }
+
         return $this->expires_at !== null && now()->greaterThan($this->expires_at);
     }
 }

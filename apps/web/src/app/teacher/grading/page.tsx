@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { AssessmentTabs } from '../../../features/assessment/overview/overview-parts';
 import { assessmentApi } from '../../../lib/assessment-api';
 import { educationApi } from '../../../lib/education-api';
 import type { AssignmentSubmission, Course, ExamAttempt, PendingGradingResponse } from '../../../types';
@@ -13,10 +15,22 @@ import { X } from 'lucide-react';
 import { formatDateTime, formatNumber, formatPercent } from '../../../lib/format';
 import { partial } from '../../../lib/partial-failure';
 export default function TeacherGradingInboxPage() {
+  return (
+    <Suspense fallback={null}>
+      <GradingInbox />
+    </Suspense>
+  );
+}
+
+function GradingInbox() {
+  // Set by the "تصحيح" button on a row of the exams or assignments page.
+  const searchParams = useSearchParams();
+  const examFilter = searchParams.get('exam');
+  const assignmentFilter = searchParams.get('assignment');
   const [data, setData] = useState<PendingGradingResponse>({ count: 0, submissions: [], attempts: [] });
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedType, setSelectedType] = useState<'all' | 'assignment' | 'exam'>('all');
+  const [selectedType, setSelectedType] = useState<'all' | 'assignment' | 'exam'>(examFilter ? 'exam' : assignmentFilter ? 'assignment' : 'all');
   const [selectedCourseId, setSelectedCourseId] = useState<string>('all');
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -58,18 +72,23 @@ export default function TeacherGradingInboxPage() {
   }, []);
 
   const filteredSubmissions = data.submissions.filter((sub) => {
-    if (selectedType === 'exam') return false;
+    if (selectedType === 'exam' || examFilter) return false;
+    if (assignmentFilter && sub.assignment_id !== assignmentFilter) return false;
     if (selectedCourseId !== 'all' && sub.assignment?.course_id !== selectedCourseId) return false;
     return true;
   });
 
   const filteredAttempts = data.attempts.filter((att) => {
-    if (selectedType === 'assignment') return false;
+    if (selectedType === 'assignment' || assignmentFilter) return false;
+    if (examFilter && att.exam_id !== examFilter) return false;
     if (selectedCourseId !== 'all' && att.exam?.course_id !== selectedCourseId) return false;
     return true;
   });
 
   const totalVisibleCount = filteredSubmissions.length + filteredAttempts.length;
+  const itemFilterTitle = examFilter
+    ? data.attempts.find((a) => a.exam_id === examFilter)?.exam?.title
+    : data.submissions.find((s) => s.assignment_id === assignmentFilter)?.assignment?.title;
 
   // Handle open assignment grading
   const handleOpenAssignGrade = (sub: AssignmentSubmission) => {
@@ -157,8 +176,10 @@ export default function TeacherGradingInboxPage() {
 
   // Bulk Publish
   const handleBulkPublish = async () => {
-    const examIds = Array.from(new Set(data.attempts.map((a) => a.exam_id)));
-    const assignIds = Array.from(new Set(data.submissions.map((s) => s.assignment_id)));
+    // Opened for one exam or assignment: the button must not publish the others.
+    const isItemView = Boolean(examFilter || assignmentFilter);
+    const examIds = Array.from(new Set((isItemView ? filteredAttempts : data.attempts).map((a) => a.exam_id)));
+    const assignIds = Array.from(new Set((isItemView ? filteredSubmissions : data.submissions).map((s) => s.assignment_id)));
 
     if (examIds.length === 0 && assignIds.length === 0) return;
     if (!confirm('هل أنت متأكد من نشر جميع درجات التقييمات للطلاب دفعة واحدة؟')) return;
@@ -188,6 +209,8 @@ export default function TeacherGradingInboxPage() {
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-16">
+      <AssessmentTabs />
+
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-4">
         <div>
@@ -227,6 +250,15 @@ export default function TeacherGradingInboxPage() {
         >
           {feedback.type === 'success' ? <CheckCircleIcon className="w-4 h-4 text-primary" /> : <AlertCircleIcon className="w-4 h-4 text-danger" />}
           <span>{feedback.text}</span>
+        </div>
+      )}
+
+      {(examFilter || assignmentFilter) && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary-subtle p-3 text-xs font-semibold text-fg">
+          <span>تعرض تصحيح {examFilter ? 'اختبار' : 'واجب'}: {itemFilterTitle ?? 'لا يوجد ما ينتظر التصحيح'}</span>
+          <Link href="/teacher/grading" className="text-primary hover:underline">
+            عرض كل ما ينتظر التصحيح
+          </Link>
         </div>
       )}
 

@@ -18,6 +18,9 @@ class Question extends TenantModel
         'correct_answer',
         'acceptable_answers',
         'explanation',
+        'image_path',
+        'model_answer',
+        'model_answer_image_path',
         'sort_order',
     ];
 
@@ -30,7 +33,13 @@ class Question extends TenantModel
     protected $hidden = [
         'correct_answer',
         'acceptable_answers',
+        // Model answers are released separately (ModelAnswerAccess); storage paths are never exposed.
+        'model_answer',
+        'model_answer_image_path',
+        'image_path',
     ];
+
+    protected $appends = ['has_image', 'has_model_answer_image'];
 
     protected $casts = [
         'points' => 'decimal:2',
@@ -38,6 +47,16 @@ class Question extends TenantModel
         'acceptable_answers' => 'array',
         'sort_order' => 'integer',
     ];
+
+    public function getHasModelAnswerImageAttribute(): bool
+    {
+        return ! empty($this->attributes['model_answer_image_path'] ?? null);
+    }
+
+    public function getHasImageAttribute(): bool
+    {
+        return ! empty($this->attributes['image_path'] ?? null);
+    }
 
     public function exam(): BelongsTo
     {

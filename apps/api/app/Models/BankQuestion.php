@@ -17,12 +17,13 @@ class BankQuestion extends TenantModel
         'correct_answer',
         'acceptable_answers',
         'explanation',
+        'model_answer',
     ];
 
     /**
      * Always hide correct answers from student responses.
      */
-    protected $hidden = ['correct_answer', 'acceptable_answers'];
+    protected $hidden = ['correct_answer', 'acceptable_answers', 'model_answer', 'model_answer_image_path', 'image_path'];
 
     protected $casts = [
         'points' => 'decimal:2',

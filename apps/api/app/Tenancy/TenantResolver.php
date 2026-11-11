@@ -3,6 +3,7 @@
 namespace App\Tenancy;
 
 use App\Models\Tenant;
+use App\Support\Database\PostgresFastPath;
 use App\Models\TenantDomain;
 use App\Tenancy\Exceptions\TenantInactiveException;
 use App\Tenancy\Exceptions\TenantNotFoundException;
@@ -43,14 +44,16 @@ class TenantResolver
             $slug = $request->query('tenant');
         }
         if (is_string($slug) && trim($slug) !== '') {
-            return Tenant::with(['domains', 'databaseConfig', 'features'])
-                ->where('slug', trim($slug))
-                ->first();
+            $slug = trim($slug);
+
+            return PostgresFastPath::enabled(config('database.default'))
+                ? PostgresFastPath::tenantBySlug($slug)
+                : Tenant::with(['databaseConfig'])->where('slug', $slug)->first();
         }
 
         $id = $request->header('X-Tenant-ID');
         if (is_string($id) && Str::isUuid(trim($id))) {
-            return Tenant::with(['domains', 'databaseConfig', 'features'])
+            return Tenant::with(['databaseConfig'])
                 ->where('id', trim($id))
                 ->first();
         }
@@ -72,7 +75,7 @@ class TenantResolver
             ->first();
 
         if ($domainMapping?->tenant) {
-            $domainMapping->tenant->loadMissing(['domains', 'databaseConfig', 'features']);
+            $domainMapping->tenant->loadMissing(['databaseConfig']);
 
             return $domainMapping->tenant;
         }
@@ -81,7 +84,7 @@ class TenantResolver
         $parts = explode('.', $host);
         if (count($parts) >= 2) {
             $subdomain = $parts[0];
-            $tenant = Tenant::with(['domains', 'databaseConfig', 'features'])
+            $tenant = Tenant::with(['databaseConfig'])
                 ->where('slug', $subdomain)
                 ->first();
 

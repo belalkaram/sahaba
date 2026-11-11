@@ -19,6 +19,7 @@ class Tenant extends Model
         'organization_kind',
         'auth_mode',
         'status',
+        'accepts_registrations',
         'name',
         'slug',
         'logo_url',
@@ -32,6 +33,7 @@ class Tenant extends Model
     ];
 
     protected $casts = [
+        'accepts_registrations' => 'boolean',
         'brand_settings' => 'array',
     ];
 

@@ -20,6 +20,8 @@ import {
 } from '../../../../../../components/icons'
 
 import { formatNumber, formatPercent } from '../../../../../../lib/format';
+import { BookmarkIcon, BookmarkCheckIcon } from '../../../../../../components/icons';
+import { useSavedVideos } from '../../../../../../features/student-dashboard';
 export default function StudentLessonPlayerPage() {
   const params = useParams();
   const router = useRouter();
@@ -27,6 +29,7 @@ export default function StudentLessonPlayerPage() {
   const lessonId = params?.lessonId as string;
 
   const { user } = useAuth();
+  const { isSaved, toggleVideo } = useSavedVideos(user?.id);
 
   // State
   const [course, setCourse] = useState<Course | null>(null);
@@ -335,6 +338,39 @@ export default function StudentLessonPlayerPage() {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() =>
+              toggleVideo({
+                id: lesson.id,
+                lessonId: lesson.id,
+                lessonTitle: lesson.title,
+                courseId: courseId,
+                courseTitle: course?.title || 'مقرر دراسي',
+                courseCode: course?.code,
+                durationMinutes: lesson.duration_minutes || (lesson.duration_seconds ? Math.round(lesson.duration_seconds / 60) : 45),
+                savedAt: new Date().toISOString(),
+              })
+            }
+            title={isSaved(lesson.id) ? 'إزالة من قائمة الفيديوهات المحفوظة' : 'حفظ الفيديو للمشاهدة لاحقاً'}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-semibold transition-colors ${
+              isSaved(lesson.id)
+                ? 'bg-warning-subtle text-warning border-warning/30'
+                : 'border-border bg-surface text-fg-muted hover:text-fg hover:bg-surface-raised'
+            }`}
+          >
+            {isSaved(lesson.id) ? (
+              <>
+                <BookmarkCheckIcon size={14} />
+                <span>محفوظ</span>
+              </>
+            ) : (
+              <>
+                <BookmarkIcon size={14} />
+                <span>حفظ الفيديو</span>
+              </>
+            )}
+          </button>
           {isCompleted ? (
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-success bg-success-subtle px-3 py-1.5 rounded-full border border-success/20">
               <CheckCircleIcon size={14} />

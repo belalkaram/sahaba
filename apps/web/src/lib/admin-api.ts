@@ -116,6 +116,7 @@ export interface TenantCurrentInfo {
   primary_color: string;
   secondary_color: string;
   brand_tagline: string | null;
+  accepts_registrations?: boolean;
   brand_settings: Record<string, unknown>;
   domains: string[];
   features: string[];
@@ -424,6 +425,7 @@ export const adminApi = {
     brand_tagline?: string | null;
     brand_settings?: Record<string, unknown>;
     auth_mode?: string;
+    accepts_registrations?: boolean;
   }): Promise<{ tenant: TenantCurrentInfo; message: string }> {
     const res = await apiClient.put<{ tenant: TenantCurrentInfo; message: string }>(
       '/tenant/settings',
@@ -471,3 +473,43 @@ export const adminApi = {
   },
 };
 
+
+export interface RegistrationRequestItem {
+  id: string;
+  reference_code: string;
+  full_name: string;
+  national_id_masked: string;
+  region: string;
+  governorate: string;
+  address: string;
+  grade_label: string;
+  student_phone: string;
+  guardian_name: string;
+  guardian_phone: string;
+  guardian_occupation: string | null;
+  email: string | null;
+  status: 'pending' | 'approved' | 'rejected';
+  decision_note: string | null;
+  decided_at: string | null;
+  created_at: string | null;
+  /** Other requests carrying the same national ID (possible duplicate application). */
+  duplicate_count: number;
+}
+
+/** Student self-registration inbox (tenant admin / independent teacher). */
+export const registrationRequestsApi = {
+  async list(status: 'pending' | 'approved' | 'rejected' | 'all', page = 1): Promise<{ items: RegistrationRequestItem[]; lastPage: number }> {
+    const res = await apiClient.get<RegistrationRequestItem[]>('/registration-requests', { params: { status, page } });
+    return { items: res.data, lastPage: res.meta.pagination?.last_page ?? 1 };
+  },
+  async pendingCount(): Promise<number> {
+    const res = await apiClient.get<{ pending: number }>('/registration-requests/pending-count');
+    return res.data.pending;
+  },
+  async approve(id: string, note?: string): Promise<void> {
+    await apiClient.post(`/registration-requests/${id}/approve`, { note });
+  },
+  async reject(id: string, note?: string): Promise<void> {
+    await apiClient.post(`/registration-requests/${id}/reject`, { note });
+  },
+};

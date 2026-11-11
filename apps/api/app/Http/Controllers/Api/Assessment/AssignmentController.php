@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Assessment;
 
+use App\Domain\Assessment\Services\AssignmentAnswerService;
 use App\Domain\Communication\NotificationService;
 use App\Http\Controllers\Controller;
 use App\Models\Assignment;
@@ -48,6 +49,7 @@ class AssignmentController extends Controller
             'allow_resubmission' => 'nullable|boolean',
             'max_file_size_mb' => 'nullable|integer|min:1|max:100',
             'allowed_file_types' => 'nullable|string',
+            'auto_release_model_answers' => 'nullable|boolean',
             'status' => 'nullable|string|in:draft,published,archived',
         ]);
 
@@ -62,6 +64,7 @@ class AssignmentController extends Controller
             'allow_resubmission' => $validated['allow_resubmission'] ?? false,
             'max_file_size_mb' => $validated['max_file_size_mb'] ?? 20,
             'allowed_file_types' => $validated['allowed_file_types'] ?? 'pdf,doc,docx,zip,png,jpg',
+            'auto_release_model_answers' => $validated['auto_release_model_answers'] ?? false,
             'status' => $validated['status'] ?? 'published',
         ]);
 
@@ -109,6 +112,7 @@ class AssignmentController extends Controller
             'allow_resubmission' => 'nullable|boolean',
             'max_file_size_mb' => 'nullable|integer|min:1|max:100',
             'allowed_file_types' => 'nullable|string',
+            'auto_release_model_answers' => 'nullable|boolean',
             'status' => 'nullable|string|in:draft,published,archived',
         ]);
 
@@ -193,12 +197,21 @@ class AssignmentController extends Controller
 
         $maxSizeKb = ($assignment->max_file_size_mb ?: 20) * 1024;
 
+        // Multipart requests (with a file) carry the answers as a JSON string.
+        if (is_string($request->input('answers'))) {
+            $request->merge(['answers' => json_decode($request->input('answers'), true) ?: []]);
+        }
+
         $validated = $request->validate([
             'content' => 'nullable|string',
             'file' => 'nullable|file|max:'.$maxSizeKb,
+            'answers' => 'nullable|array',
+            'answers.*.question_id' => 'required|uuid|exists:tenant.assignment_questions,id',
+            'answers.*.answer_text' => 'nullable|string',
+            'answers.*.selected_options' => 'nullable|array',
         ]);
 
-        if (empty($validated['content']) && ! $request->hasFile('file')) {
+        if (empty($validated['content']) && ! $request->hasFile('file') && empty($validated['answers'])) {
             return ApiResponse::error(
                 'EMPTY_SUBMISSION',
                 'Please provide either written content or an attached file.',
@@ -249,8 +262,12 @@ class AssignmentController extends Controller
             'status' => 'submitted',
         ]);
 
+        if (! empty($validated['answers'])) {
+            app(AssignmentAnswerService::class)->record($submission, $assignment, $validated['answers']);
+        }
+
         return ApiResponse::success([
-            'submission' => $submission->load(['student.user', 'assignment']),
+            'submission' => $submission->fresh()->load(['student.user', 'assignment']),
             'message' => 'Assignment submitted successfully.',
         ], Response::HTTP_CREATED);
     }

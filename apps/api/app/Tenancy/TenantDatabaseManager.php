@@ -114,11 +114,153 @@ class TenantDatabaseManager
     {
         $this->ensureStorage($tenant);
 
+        if ($this->canCloneFromTemplate($tenant, $path)) {
+            $this->cloneFromTemplate($this->schemaName($this->identifierFor($tenant)));
+
+            return 0;
+        }
+
+        return $this->runMigrations($path);
+    }
+
+    private function runMigrations(string $path): int
+    {
         return Artisan::call('migrate', [
             '--database' => 'tenant',
             '--path' => $path,
             '--force' => true,
         ]);
+    }
+
+    /**
+     * Schema that holds the pre-migrated tenant structure. It starts with "_" so it can never collide
+     * with a tenant schema (those are always "tenant_<slug>" or a hashed variant).
+     */
+    public const TEMPLATE_SCHEMA = '_tenant_template';
+
+    /**
+     * Bring the template schema up to date with database/migrations/tenant. This is the slow, one-time
+     * path (every migration statement is a network round trip on a remote database); run it ahead of
+     * time with `php artisan tenants:refresh-template`. Returns the number of migrations applied.
+     */
+    public function refreshTemplate(): int
+    {
+        if ($this->driver() !== 'pgsql') {
+            return 0;
+        }
+
+        $conn = DB::connection('tenant');
+        // One builder at a time: concurrent first registrations must not both migrate the template.
+        // Held on the control connection because the tenant connection is re-opened while building.
+        $lock = DB::connection();
+        $lock->statement('select pg_advisory_lock(727001)');
+
+        try {
+            $conn->statement('CREATE SCHEMA IF NOT EXISTS "'.self::TEMPLATE_SCHEMA.'"');
+            $before = $this->templateMigrationCount();
+            config(['database.connections.tenant.search_path' => self::TEMPLATE_SCHEMA]);
+            DB::purge('tenant');
+            DB::reconnect('tenant');
+            $this->runMigrations('database/migrations/tenant');
+
+            return $this->templateMigrationCount() - $before;
+        } finally {
+            DB::purge('tenant');
+            DB::reconnect('tenant');
+            $lock->statement('select pg_advisory_unlock(727001)');
+        }
+    }
+
+    private function templateMigrationCount(): int
+    {
+        $conn = DB::connection('tenant');
+        $exists = $conn->selectOne(
+            'select 1 as x from pg_tables where schemaname = ? and tablename = ?',
+            [self::TEMPLATE_SCHEMA, 'migrations']
+        );
+
+        return $exists ? (int) $conn->selectOne('select count(*) c from "'.self::TEMPLATE_SCHEMA.'".migrations')->c : 0;
+    }
+
+    /**
+     * Cloning is used only for a brand-new, empty tenant schema on pgsql with the default migration path,
+     * so upgrading existing tenants (MigrateTenants) still goes through the normal incremental migrate.
+     */
+    private function canCloneFromTemplate(Tenant $tenant, string $path): bool
+    {
+        if ($this->driver() !== 'pgsql' || $path !== 'database/migrations/tenant' || ! config('database.tenant_template', true)) {
+            return false;
+        }
+
+        $conn = DB::connection('tenant');
+        $schema = $this->schemaName($this->identifierFor($tenant));
+        $tables = (int) $conn->selectOne('select count(*) c from pg_tables where schemaname = ?', [$schema])->c;
+        if ($tables > 0) {
+            return false;
+        }
+
+        $files = count(glob(base_path('database/migrations/tenant').'/*.php') ?: []);
+        if ($this->templateMigrationCount() < $files) {
+            $this->refreshTemplate();
+            // refreshTemplate re-pointed the connection; restore this tenant's search_path.
+            $this->configureConnection($tenant);
+        }
+
+        return $this->templateMigrationCount() >= $files;
+    }
+
+    /**
+     * Copy the template's tables, indexes, defaults, sequences, foreign keys and migration history into a
+     * new schema in ONE statement (server side, atomic), instead of replaying every migration.
+     */
+    private function cloneFromTemplate(string $dst): void
+    {
+        $conn = DB::connection('tenant');
+        $pdo = $conn->getPdo();
+        $src = $pdo->quote(self::TEMPLATE_SCHEMA);
+        $dstLit = $pdo->quote($dst);
+
+        $conn->unprepared(<<<SQL
+DO \$clone\$
+DECLARE
+  r record;
+  src text := {$src};
+  dst text := {$dstLit};
+  seq text;
+BEGIN
+  -- Qualify every object reference (pg_get_constraintdef) regardless of the session search_path.
+  PERFORM set_config('search_path', 'pg_catalog', true);
+
+  FOR r IN SELECT tablename FROM pg_tables WHERE schemaname = src LOOP
+    EXECUTE format('CREATE TABLE %I.%I (LIKE %I.%I INCLUDING ALL)', dst, r.tablename, src, r.tablename);
+  END LOOP;
+
+  -- Serial columns: LIKE copied a default that points at the template's sequence; give each tenant its own.
+  FOR r IN
+    SELECT table_name AS t, column_name AS c FROM information_schema.columns
+    WHERE table_schema = dst AND column_default LIKE 'nextval(%'
+  LOOP
+    seq := r.t || '_' || r.c || '_seq';
+    EXECUTE format('CREATE SEQUENCE %I.%I OWNED BY %I.%I.%I', dst, seq, dst, r.t, r.c);
+    EXECUTE format('ALTER TABLE %I.%I ALTER COLUMN %I SET DEFAULT nextval(%L)', dst, r.t, r.c, quote_ident(dst) || '.' || quote_ident(seq));
+  END LOOP;
+
+  -- Foreign keys are not copied by LIKE: recreate them against the new schema.
+  FOR r IN
+    SELECT cl.relname AS t, con.conname AS n, pg_get_constraintdef(con.oid) AS def
+    FROM pg_constraint con
+    JOIN pg_class cl ON cl.oid = con.conrelid
+    JOIN pg_namespace ns ON ns.oid = cl.relnamespace
+    WHERE ns.nspname = src AND con.contype = 'f'
+  LOOP
+    EXECUTE format('ALTER TABLE %I.%I ADD CONSTRAINT %I %s', dst, r.t, r.n,
+      replace(r.def, 'REFERENCES ' || quote_ident(src) || '.', 'REFERENCES ' || quote_ident(dst) || '.'));
+  END LOOP;
+
+  EXECUTE format('INSERT INTO %I.migrations (migration, batch) SELECT migration, batch FROM %I.migrations ORDER BY id', dst, src);
+END
+\$clone\$
+SQL);
     }
 
     /**

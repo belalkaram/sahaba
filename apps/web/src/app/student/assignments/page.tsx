@@ -1,9 +1,12 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { educationApi } from '../../../lib/education-api';
 import { assessmentApi } from '../../../lib/assessment-api';
-import type { Course, Assignment } from '../../../types';
+import type { Course, Assignment, AssignmentQuestion } from '../../../types';
+import { AssignmentSolver } from '../../../features/assessment/assignment-solver';
+import { buttonClasses } from '../../../components/ui/button-styles';
 import { Card } from '../../../components/ui/card';
 import { Badge } from '../../../components/ui/badge';
 import { EmptyState } from '../../../components/ui/empty-state';
@@ -14,6 +17,7 @@ import { NotebookPen } from 'lucide-react';
 import { IconNext } from '../../../components/icons/directional';
 import { formatDate, formatNumber } from '../../../lib/format';
 import { partial } from '../../../lib/partial-failure';
+import { mapWithConcurrency } from '../../../lib/concurrency';
 export default function StudentAssignmentsPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [assignments, setAssignments] = useState<{ course: Course; item: Assignment }[]>([]);
@@ -21,6 +25,9 @@ export default function StudentAssignmentsPage() {
   const [submittingId, setSubmittingId] = useState<string | null>(null);
   const [submissionContent, setSubmissionContent] = useState('');
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  // Assignments that carry questions are answered question by question; the rest keep the free-text box.
+  const [questions, setQuestions] = useState<AssignmentQuestion[]>([]);
+  const [openingId, setOpeningId] = useState<string | null>(null);
 
   const loadAssignments = async () => {
     try {
@@ -29,8 +36,11 @@ export default function StudentAssignmentsPage() {
       setCourses(cList);
 
       const allAssignments: { course: Course; item: Assignment }[] = [];
-      for (const course of cList) {
-        const aList = await assessmentApi.getAssignments(course.id).catch(partial([]));
+      const lists = await mapWithConcurrency(cList, 4, async (course) => ({
+        course,
+        aList: await assessmentApi.getAssignments(course.id).catch(partial([])),
+      }));
+      for (const { course, aList } of lists) {
         for (const a of aList) {
           allAssignments.push({ course, item: a });
         }
@@ -44,6 +54,17 @@ export default function StudentAssignmentsPage() {
   useEffect(() => {
     loadAssignments();
   }, []);
+
+  const openSubmission = async (courseId: string, assignmentId: string) => {
+    setOpeningId(assignmentId);
+    try {
+      setQuestions(await assessmentApi.getAssignmentQuestions(courseId, assignmentId).catch(() => []));
+    } finally {
+      setSubmittingId(assignmentId);
+      setSubmissionContent('');
+      setOpeningId(null);
+    }
+  };
 
   const handleSubmit = async (courseId: string, assignmentId: string) => {
     if (!submissionContent.trim()) return;
@@ -128,7 +149,19 @@ export default function StudentAssignmentsPage() {
 
               {/* Submission Box */}
               <div className="mt-4 pt-4 border-t border-border">
-                {submittingId === item.id ? (
+                {submittingId === item.id && questions.length > 0 ? (
+                  <AssignmentSolver
+                    courseId={course.id}
+                    assignment={item}
+                    questions={questions}
+                    onCancel={() => setSubmittingId(null)}
+                    onSubmitted={() => {
+                      setSuccessMsg('تم تسليم الواجب بنجاح! صُحّحت الأسئلة الموضوعية فورًا وستظهر الدرجة النهائية بعد مراجعة المعلم.');
+                      setSubmittingId(null);
+                      loadAssignments();
+                    }}
+                  />
+                ) : submittingId === item.id ? (
                   <div className="space-y-3">
                     <textarea
                       rows={3}
@@ -153,16 +186,19 @@ export default function StudentAssignmentsPage() {
                     </div>
                   </div>
                 ) : (
+                  <div className="flex flex-wrap items-center justify-between gap-3">
                   <button
-                    onClick={() => {
-                      setSubmittingId(item.id);
-                      setSubmissionContent('');
-                    }}
+                    onClick={() => void openSubmission(course.id, item.id)}
+                    disabled={openingId === item.id}
                     className="inline-flex items-center gap-2 text-xs font-semibold text-primary hover:text-primary-hover transition-colors"
                   >
                     
- تسليم الواجب الآن <IconNext size={16} />
+ {openingId === item.id ? 'جارٍ التحميل…' : 'تسليم الواجب الآن'} <IconNext size={16} />
  </button>
+                  <Link href={`/student/model-answers/assignments/${course.id}/${item.id}`} className={buttonClasses('ghost', 'sm')}>
+                    الحل النموذجي
+                  </Link>
+                  </div>
                 )}
               </div>
             </Card>

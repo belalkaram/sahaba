@@ -14,6 +14,7 @@ import { ClockIcon, AlertCircleIcon, IconBack } from '../../../components/icons'
 import { GraduationCap } from 'lucide-react';
 import { formatDateShort, formatNumber } from '../../../lib/format';
 import { partial } from '../../../lib/partial-failure';
+import { mapWithConcurrency } from '../../../lib/concurrency';
 interface AssessmentItem {
   id: string;
   type: 'exam' | 'assignment';
@@ -46,9 +47,16 @@ export default function StudentAssessmentsPage() {
 
         const allItems: AssessmentItem[] = [];
 
-        for (const course of cList) {
-          // Fetch course assignments
-          const aList = await assessmentApi.getAssignments(course.id).catch(partial([]));
+        // Up to 4 courses at a time (and each course's two lists together), results kept in course order.
+        const perCourse = await mapWithConcurrency(cList, 4, async (course) => {
+          const [aList, eList] = await Promise.all([
+            assessmentApi.getAssignments(course.id).catch(partial([])),
+            assessmentApi.getExams(course.id).catch(partial([])),
+          ]);
+          return { course, aList, eList };
+        });
+
+        for (const { course, aList, eList } of perCourse) {
           for (const a of aList) {
             allItems.push({
               id: a.id,
@@ -66,8 +74,6 @@ export default function StudentAssessmentsPage() {
             });
           }
 
-          // Fetch course exams
-          const eList = await assessmentApi.getExams(course.id).catch(partial([]));
           for (const e of eList) {
             allItems.push({
               id: e.id,

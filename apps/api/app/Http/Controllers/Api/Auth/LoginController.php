@@ -117,10 +117,16 @@ class LoginController extends Controller
 
         $identifier = trim($validated['identifier']);
 
+        // A mobile typed as +966…, 966…, 5… or with Arabic digits matches the stored 05… form.
+        $mobile = \App\Support\Saudi\SaudiRules::normalizeMobile($identifier);
+
         $user = TenantUser::with(['roles.permissions', 'student', 'staff', 'parentProfile'])
-            ->where(function ($query) use ($identifier) {
+            ->where(function ($query) use ($identifier, $mobile) {
                 $query->where('email', $identifier)
                     ->orWhere('phone', $identifier);
+                if ($mobile !== null && $mobile !== $identifier) {
+                    $query->orWhere('phone', $mobile);
+                }
             })
             ->first();
 

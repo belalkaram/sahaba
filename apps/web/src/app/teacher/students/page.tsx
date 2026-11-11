@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { educationApi } from '../../../lib/education-api';
-import { analyticsApi } from '../../../lib/analytics-api';
 import type { Student, StudentAnalyticsSnapshot } from '../../../types';
 import { Card } from '../../../components/ui/card';
 import { Badge } from '../../../components/ui/badge';
@@ -15,57 +14,46 @@ import { IconNext } from '../../../components/icons';
 
 import { Users } from 'lucide-react';
 import { formatNumber, formatPercent } from '../../../lib/format';
-import { partial } from '../../../lib/partial-failure';
+import { usePagedList } from '../../../hooks/use-paged-list';
+import { ErrorState } from '../../../components/ui/error-state';
+import { Forbidden } from '../../../components/ui/forbidden';
 interface StudentProfile extends Student {
   analytics?: StudentAnalyticsSnapshot;
 }
 
 export default function TeacherStudentsPage() {
-  const [students, setStudents] = useState<StudentProfile[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [gradeFilter, setGradeFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
-  const [loading, setLoading] = useState(true);
 
+  // Search runs on the server: wait for the typing to settle before asking.
   useEffect(() => {
-    const loadStudents = async () => {
-      try {
-        setLoading(true);
-        const stList = await educationApi.getStudents().catch(partial([]));
+    const t = window.setTimeout(() => setDebouncedSearch(searchQuery.trim()), 350);
+    return () => window.clearTimeout(t);
+  }, [searchQuery]);
 
-        // Fetch analytics for students concurrently
-        const profiles: StudentProfile[] = await Promise.all(
-          stList.map(async (st) => {
-            const snap = await analyticsApi.getStudentDashboard(st.id).catch(partial(null));
-            return { ...st, analytics: snap || undefined };
-          })
-        );
+  // 20 rows per request; analytics come back in the same response (no request per student).
+  const list = usePagedList<StudentProfile>(
+    (page) =>
+      educationApi
+        .getStudentsPage({
+          page,
+          perPage: 20,
+          search: debouncedSearch,
+          gradeLevel: gradeFilter === 'ALL' ? undefined : gradeFilter,
+          status: statusFilter === 'ALL' ? undefined : statusFilter,
+          withAnalytics: true,
+        })
+        .then((r) => ({ items: r.items as StudentProfile[], total: r.total, lastPage: r.lastPage })),
+    `${debouncedSearch}|${gradeFilter}|${statusFilter}`,
+  );
+  const students = list.items;
+  const filteredStudents = students; // already filtered by the server
+  const loading = list.loading;
 
-        setStudents(profiles);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadStudents();
-  }, []);
-
-  const filteredStudents = students.filter((s) => {
-    const name = s.user?.name || '';
-    const email = s.user?.email || '';
-    const phone = s.user?.phone || '';
-
-    const matchesSearch =
-      name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.student_code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      phone.includes(searchQuery);
-
-    const matchesGrade = gradeFilter === 'ALL' || s.grade_level === gradeFilter;
-    const matchesStatus = statusFilter === 'ALL' || s.status === statusFilter;
-
-    return matchesSearch && matchesGrade && matchesStatus;
-  });
+  if (list.error === 'forbidden') return <Forbidden title="غير مصرح" description="ليس لديك صلاحية عرض الطلاب." />;
 
   return (
     <div className="space-y-6 text-start">
@@ -75,8 +63,8 @@ export default function TeacherStudentsPage() {
         subtitle="دليل الطلاب الأكاديمي، سجل الحضور، بيانات التواصل الموثقة، ومتابعة الأجهزة المصرح بها."
         actions={
           <div className="flex items-center gap-2">
-            <Badge variant="success">إجمالي المقيدين: {formatNumber(students.length)} طالب</Badge>
-            <Badge variant="info">نشط: {students.filter((s) => s.status === 'active').length}</Badge>
+            <Badge variant="success">إجمالي المقيدين: {formatNumber(list.total)} طالب</Badge>
+            <Badge variant="info">المعروض الآن: {formatNumber(students.length)}</Badge>
           </div>
         }
       />
@@ -123,7 +111,9 @@ export default function TeacherStudentsPage() {
           <span className="text-xs text-fg-muted">انقر على أي طالب لعرض ملفه الأكاديمي المفصل</span>
         </div>
 
-        {loading ? (
+        {list.error === 'failed' ? (
+          <ErrorState title="تعذّر تحميل الطلاب" description="تحقق من الاتصال ثم أعد المحاولة." onRetry={list.retry} />
+        ) : loading ? (
           <div className="text-center text-xs text-fg-muted py-12">
             <div className="inline-block animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mb-3" />
             <p>جارٍ تحميل بيانات الطلاب...</p>
@@ -209,6 +199,21 @@ export default function TeacherStudentsPage() {
                 ))}
               </tbody>
             </table>
+            <div className="flex flex-col items-center gap-2 border-t border-border pt-4">
+              <p className="text-xs text-fg-muted">
+                عرض {formatNumber(students.length)} من {formatNumber(list.total)}
+              </p>
+              {list.hasMore && (
+                <button
+                  type="button"
+                  onClick={list.loadMore}
+                  disabled={list.loadingMore}
+                  className="rounded-md border border-border bg-surface px-5 py-2 text-sm font-semibold text-fg transition-colors hover:bg-surface-muted disabled:opacity-60"
+                >
+                  {list.loadingMore ? 'جارٍ التحميل…' : 'تحميل المزيد'}
+                </button>
+              )}
+            </div>
           </div>
         )}
       </Card>

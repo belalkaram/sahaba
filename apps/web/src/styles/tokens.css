@@ -118,11 +118,11 @@
   --danger-subtle: #FEF2F2;
   --danger-subtle-fg: #7F1D1D;
 
-  --info: #0369A1;
-  --info-hover: #075985;
+  --info: #4D7C0F;
+  --info-hover: #3F6212;
   --info-fg: #FFFFFF;
-  --info-subtle: #F0F9FF;
-  --info-subtle-fg: #0C4A6E;
+  --info-subtle: #F7FEE7;
+  --info-subtle-fg: #365314;
 
   /* Brand gradient — allowed only on hero / continue-learning / featured progress */
   --gradient-brand: linear-gradient(135deg, var(--emerald-800) 0%, var(--emerald-600) 55%, var(--emerald-500) 100%);
@@ -219,11 +219,11 @@
   --danger-subtle: rgba(252, 154, 154, 0.16);
   --danger-subtle-fg: #FECACA;
 
-  --info: #4CC6FA;
-  --info-hover: #7DD3FC;
-  --info-fg: #082F49;
-  --info-subtle: rgba(76, 198, 250, 0.16);
-  --info-subtle-fg: #BAE6FD;
+  --info: #A3E635;
+  --info-hover: #BEF264;
+  --info-fg: #1A2E05;
+  --info-subtle: rgba(163, 230, 53, 0.16);
+  --info-subtle-fg: #D9F99D;
 
   --gradient-brand: linear-gradient(135deg, #0A5247 0%, #0C7262 55%, #0F8F7A 100%);
   --gradient-sand: linear-gradient(135deg, rgba(232, 200, 143, 0.16) 0%, rgba(232, 200, 143, 0.06) 100%);

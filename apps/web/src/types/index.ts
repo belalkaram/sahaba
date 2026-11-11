@@ -70,6 +70,8 @@ export interface Student {
   user?: TenantUser;
   enrollments?: StudentEnrollment[];
   parents?: StudentParent[];
+  /** Present when the list was requested with include=analytics (null = no snapshot / not allowed). */
+  analytics?: StudentAnalyticsSnapshot | null;
 }
 
 export interface Staff {
@@ -366,6 +368,7 @@ export interface Assignment {
   max_file_size_mb?: number;
   allowed_file_types?: string;
   status: 'draft' | 'published' | 'archived';
+  auto_release_model_answers?: boolean;
   my_submission?: AssignmentSubmission;
   course?: { id: string; title: string };
 }
@@ -409,7 +412,41 @@ export interface ExamQuestion {
   correct_answer?: string;
   acceptable_answers?: string[];
   explanation?: string;
+  /** Teacher-only; never sent to students. */
+  model_answer?: string;
+  /** Server flag: the question has an image (fetched through the authenticated image endpoint). */
+  has_image?: boolean;
+  has_model_answer_image?: boolean;
   sort_order: number;
+}
+
+/** A question inside an assignment: same shape as an exam question. */
+export type AssignmentQuestion = Omit<ExamQuestion, 'exam_id'> & { assignment_id: string };
+
+export interface ModelAnswerItem {
+  question_id: string;
+  question_text: string;
+  question_type: ExamQuestion['question_type'];
+  options?: string[] | null;
+  points: number;
+  has_image: boolean;
+  has_model_answer_image: boolean;
+  correct_answer?: string | null;
+  model_answer?: string | null;
+  explanation?: string | null;
+  student_answer?: string | null;
+  selected_options?: string[] | null;
+  is_correct?: boolean | null;
+  awarded_points?: number | null;
+  feedback?: string | null;
+}
+
+export interface ModelAnswerStudentRow {
+  student_id: string;
+  name?: string;
+  finished: boolean;
+  graded: boolean;
+  can_view: boolean;
 }
 
 export interface ExamAnswer {
@@ -463,6 +500,9 @@ export interface Exam {
   show_results?: 'after_submit' | 'after_publish' | 'never';
   is_published?: boolean;
   is_grades_published?: boolean;
+  /** Take the exam in several sittings inside opens_at..closes_at; only active time counts. */
+  allow_split_sessions?: boolean;
+  auto_release_model_answers?: boolean;
   status: 'draft' | 'published' | 'closed' | 'archived' | 'completed';
   questions_count?: number;
   questions?: ExamQuestion[];

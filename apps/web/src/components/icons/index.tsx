@@ -15,6 +15,8 @@ import {
   BarChart3,
   Bell,
   BookOpen,
+  Bookmark,
+  BookmarkCheck,
   Building2,
   Calendar,
   Check,
@@ -113,6 +115,8 @@ export const MoonIcon = withDefaults(Moon, 'MoonIcon');
 export const MonitorIcon = withDefaults(Monitor, 'MonitorIcon');
 export const MenuIcon = withDefaults(Menu, 'MenuIcon');
 export const MoreHorizontalIcon = withDefaults(MoreHorizontal, 'MoreHorizontalIcon');
+export const BookmarkIcon = withDefaults(Bookmark, 'BookmarkIcon');
+export const BookmarkCheckIcon = withDefaults(BookmarkCheck, 'BookmarkCheckIcon');
 
 /**
  * @deprecated Physical arrow — ambiguous in RTL. Use IconNext / IconBack from './directional'.

@@ -25,6 +25,8 @@ class Exam extends TenantModel
         'is_published',
         'is_grades_published',
         'status',
+        'allow_split_sessions',
+        'auto_release_model_answers',
     ];
 
     protected $casts = [
@@ -38,6 +40,8 @@ class Exam extends TenantModel
         'passing_score' => 'decimal:2',
         'is_published' => 'boolean',
         'is_grades_published' => 'boolean',
+        'allow_split_sessions' => 'boolean',
+        'auto_release_model_answers' => 'boolean',
     ];
 
     public function course(): BelongsTo

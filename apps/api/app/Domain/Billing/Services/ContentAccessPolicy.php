@@ -16,6 +16,58 @@ use App\Models\TenantUser;
 class ContentAccessPolicy
 {
     /**
+     * Per-instance (= per-request) lookups. Listing N courses used to cost 4 queries per course; the lookups below are
+     * loaded once by preloadForCourses() and the decisions are memoised, so a list costs a constant number of queries.
+     * Everything falls back to the original per-course queries when nothing was preloaded.
+     */
+    /** @var array<string, ContentAccessDecision> */
+    private array $decisions = [];
+
+    /** @var array<string, Enrollment|null> studentId|courseId => active enrollment */
+    private array $enrollments = [];
+
+    /** @var array<string, \Illuminate\Support\Collection<int, Entitlement>> studentId => entitlements (relevant keys) */
+    private array $entitlements = [];
+
+    /** @var \Illuminate\Support\Collection<int, PackageEntitlement>|null */
+    private ?\Illuminate\Support\Collection $packageEntitlements = null;
+
+    /** @var string[]|null */
+    private ?array $activePackageIds = null;
+
+    /**
+     * Load everything canAccessCourse() needs for these courses in a constant number of queries.
+     *
+     * @param  iterable<Course>  $courses
+     */
+    public function preloadForCourses(?TenantUser $user, iterable $courses): void
+    {
+        $courses = collect($courses);
+        if ($courses->isEmpty() || ! $user?->student) {
+            return;
+        }
+
+        $studentId = $user->student->id;
+        $courseIds = $courses->pluck('id')->all();
+        $keys = array_merge(['all_courses', 'ONLINE_ACCESS'], array_map(fn ($id) => 'course:'.$id, $courseIds));
+
+        $active = Enrollment::where('student_id', $studentId)->where('status', 'active')->whereIn('course_id', $courseIds)->get();
+        foreach ($courseIds as $id) {
+            $this->enrollments[$studentId.'|'.$id] = $active->firstWhere('course_id', $id);
+        }
+
+        $this->entitlements[$studentId] = Entitlement::where('student_id', $studentId)->whereIn('entitlement_key', $keys)->get();
+        $this->packageEntitlements = PackageEntitlement::whereIn('entitlement_key', $keys)->get(['entitlement_key', 'package_id']);
+    }
+
+    /** Drop preloaded state (use when the same instance outlives a data change). */
+    public function flush(): void
+    {
+        $this->decisions = $this->enrollments = $this->entitlements = [];
+        $this->packageEntitlements = $this->activePackageIds = null;
+    }
+
+    /**
      * Check if user can access a specific course.
      */
     public function canAccessCourse(?TenantUser $user, Course $course): ContentAccessDecision
@@ -23,6 +75,14 @@ class ContentAccessPolicy
         if ($user === null) {
             return ContentAccessDecision::deny('unauthenticated');
         }
+
+        $memo = $user->id.'|'.$course->id;
+
+        return $this->decisions[$memo] ??= $this->decideCourseAccess($user, $course);
+    }
+
+    private function decideCourseAccess(TenantUser $user, Course $course): ContentAccessDecision
+    {
 
         // 1. Staff bypass (teacher, admin, supervisor with staff profile or courses.update)
         if (($user->staff || $user->type === 'staff') && ($user->hasPermissionTo('courses.view') || $user->hasPermissionTo('courses.update'))) {
@@ -45,10 +105,7 @@ class ContentAccessPolicy
 
         // Free courses require active enrollment only
         if ($course->is_free) {
-            $enrollment = Enrollment::where('student_id', $user->student->id)
-                ->where('course_id', $course->id)
-                ->where('status', 'active')
-                ->first();
+            $enrollment = $this->activeEnrollment($user->student->id, $course->id);
 
             if (! $enrollment) {
                 return ContentAccessDecision::deny('not_enrolled', $this->getPackageIdsForCourse($course));
@@ -64,10 +121,7 @@ class ContentAccessPolicy
         $packageIds = $this->getPackageIdsForCourse($course);
 
         // Check active enrollment
-        $enrollment = Enrollment::where('student_id', $user->student->id)
-            ->where('course_id', $course->id)
-            ->where('status', 'active')
-            ->first();
+        $enrollment = $this->activeEnrollment($user->student->id, $course->id);
 
         if (! $enrollment) {
             return ContentAccessDecision::deny('not_enrolled', $packageIds);
@@ -175,9 +229,9 @@ class ContentAccessPolicy
             'ONLINE_ACCESS',
         ];
 
-        $entitlements = Entitlement::where('student_id', $studentId)
-            ->whereIn('entitlement_key', $keys)
-            ->get();
+        $entitlements = isset($this->entitlements[$studentId])
+            ? $this->entitlements[$studentId]->whereIn('entitlement_key', $keys)->values()
+            : Entitlement::where('student_id', $studentId)->whereIn('entitlement_key', $keys)->get();
 
         if ($entitlements->isEmpty()) {
             return ContentAccessDecision::deny('no_entitlement', $packageIds);
@@ -205,17 +259,28 @@ class ContentAccessPolicy
             'ONLINE_ACCESS',
         ];
 
-        $packageIds = PackageEntitlement::whereIn('entitlement_key', $keys)
-            ->pluck('package_id')
+        $packageIds = ($this->packageEntitlements !== null
+            ? $this->packageEntitlements->whereIn('entitlement_key', $keys)->pluck('package_id')
+            : PackageEntitlement::whereIn('entitlement_key', $keys)->pluck('package_id'))
             ->unique()
             ->values()
             ->all();
 
         if (empty($packageIds)) {
             // Default to all active packages if none explicitly bound
-            return Package::where('status', 'active')->pluck('id')->values()->all();
+            return $this->activePackageIds ??= Package::where('status', 'active')->pluck('id')->values()->all();
         }
 
         return $packageIds;
+    }
+
+    private function activeEnrollment(string $studentId, string $courseId): ?Enrollment
+    {
+        $key = $studentId.'|'.$courseId;
+        if (array_key_exists($key, $this->enrollments)) {
+            return $this->enrollments[$key];
+        }
+
+        return Enrollment::where('student_id', $studentId)->where('course_id', $courseId)->where('status', 'active')->first();
     }
 }

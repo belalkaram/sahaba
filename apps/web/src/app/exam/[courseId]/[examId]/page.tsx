@@ -17,6 +17,7 @@ type Phase =
   | { kind: 'error' }
   | { kind: 'briefing'; exam: Exam; canAttempt: boolean; resume?: ActiveExamAttempt }
   | { kind: 'running'; exam: Exam; data: ActiveExamAttempt }
+  | { kind: 'paused' }
   | { kind: 'finished'; reason: FinishReason; resultsHref: string };
 
 const FINISH_COPY: Record<FinishReason, { title: string; body: string }> = {
@@ -107,7 +108,36 @@ export default function SecureExamPage({ params }: { params: Promise<{ courseId:
     );
   }
   if (phase.kind === 'running') {
-    return <ExamSession courseId={courseId} examId={examId} initial={phase.data} onFinished={onFinished} />;
+    return (
+      <ExamSession
+        courseId={courseId}
+        examId={examId}
+        initial={phase.data}
+        onFinished={onFinished}
+        onPause={() => {
+          void exitFullscreen();
+          setPhase({ kind: 'paused' });
+        }}
+      />
+    );
+  }
+  if (phase.kind === 'paused') {
+    return (
+      <div className="grid min-h-screen place-items-center bg-surface-sunken px-4">
+        <div className="max-w-md space-y-4 rounded-2xl border border-border bg-surface p-8 text-center shadow-md">
+          <h1 className="font-display text-2xl text-fg">حُفظ تقدّمك</h1>
+          <p className="text-fg-muted">توقّف العدّاد وحُفظت إجاباتك. ارجع إلى هذه الصفحة وأكمل الاختبار في أي وقت خلال فترة الاختبار؛ يُحتسب فقط الوقت الذي تقضيه داخل الاختبار.</p>
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
+            <button type="button" onClick={() => void load()} className={buttonClasses('primary', 'md')}>
+              متابعة الآن
+            </button>
+            <Link href={`/student/courses/${courseId}`} className={buttonClasses('secondary', 'md')}>
+              العودة للمقرر
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const copy = FINISH_COPY[phase.reason];

@@ -37,7 +37,7 @@ export const TeacherKpiGrid: React.FC<TeacherKpiGridProps> = ({
         value={coursesCount}
         subtitle="مقررات دراسية قيد التدريس"
         icon={<BookOpenIcon size={20} />}
-        variant="indigo"
+        variant="lime"
       />
       <StatCard
         title="طلبات دفع معلقة"

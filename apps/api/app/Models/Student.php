@@ -16,7 +16,22 @@ class Student extends TenantModel
         'student_code',
         'grade_level',
         'status',
+        'national_id',
+        'national_id_hash',
+        'region',
+        'governorate',
+        'address',
+        'education_stage',
+        'guardian_occupation',
     ];
+
+    /** The national ID and its hash never leave the API in a student payload. */
+    protected $hidden = ['national_id', 'national_id_hash'];
+
+    protected function casts(): array
+    {
+        return ['national_id' => 'encrypted'];
+    }
 
     public function user(): BelongsTo
     {

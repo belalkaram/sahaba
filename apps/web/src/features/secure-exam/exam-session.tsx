@@ -18,6 +18,8 @@ interface Props {
   examId: string;
   initial: ActiveExamAttempt;
   onFinished: (attemptId: string, reason: FinishReason) => void;
+  /** Split-session exams: leave now and continue later (the saved answers and the remaining time are kept). */
+  onPause?: () => void;
 }
 
 const clock = (secs: number) => {
@@ -27,7 +29,7 @@ const clock = (secs: number) => {
   return `${h > 0 ? `${String(h).padStart(2, '0')}:` : ''}${String(m).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 };
 
-export function ExamSession({ courseId, examId, initial, onFinished }: Props) {
+export function ExamSession({ courseId, examId, initial, onFinished, onPause }: Props) {
   const { user } = useAuth();
   const attemptId = initial.attempt.id;
   const questions = initial.questions;
@@ -145,6 +147,44 @@ export function ExamSession({ courseId, examId, initial, onFinished }: Props) {
     };
   }, [attemptId, courseId, examId, finish, onFinished]);
 
+  // ---- Split-session heartbeat -------------------------------------------------------------
+  // The server counts only ACTIVE time: this page tells it every 15 s that it is open, and gets the
+  // authoritative remaining time back. The first beat of a sitting is flagged so the time away is not charged.
+  const splitSessions = Boolean(initial.split_sessions);
+  const firstBeat = useRef(true);
+  const [pausing, setPausing] = useState(false);
+  useEffect(() => {
+    if (!splitSessions) return;
+    const beat = async () => {
+      try {
+        const res = await assessmentApi.heartbeat(courseId, examId, attemptId, firstBeat.current);
+        firstBeat.current = false;
+        endAt.current = performance.now() + res.remaining_seconds * 1000;
+        if (res.expired && !finished.current) {
+          finished.current = true;
+          onFinished(attemptId, 'time_up');
+        }
+      } catch {
+        // Offline: the local countdown keeps running; the server will charge at most a short grace.
+      }
+    };
+    void beat();
+    const id = window.setInterval(() => void beat(), 15000);
+    return () => window.clearInterval(id);
+  }, [splitSessions, courseId, examId, attemptId, onFinished]);
+
+  const pause = async () => {
+    setPausing(true);
+    try {
+      await flush();
+      await assessmentApi.heartbeat(courseId, examId, attemptId);
+    } catch {
+      // Answers still queued stay in the offline queue; leaving is allowed regardless.
+    }
+    finished.current = true; // stop timers/finish retries from this mounted session
+    onPause?.();
+  };
+
   // ---- Integrity ---------------------------------------------------------------------------
   const [violations, setViolations] = useState(0);
   const [warning, setWarning] = useState<string | null>(null);
@@ -234,6 +274,11 @@ export function ExamSession({ courseId, examId, initial, onFinished }: Props) {
             >
               <Clock size={16} aria-hidden /> {clock(remaining)}
             </span>
+            {splitSessions && onPause && (
+              <button type="button" onClick={() => void pause()} disabled={pausing || submitting} className={buttonClasses('secondary', 'md')} title="يتوقف العدّاد وتُحفظ إجاباتك، وتكمل لاحقًا خلال فترة الاختبار">
+                {pausing ? 'جارٍ الحفظ…' : 'احفظ وأكمل لاحقًا'}
+              </button>
+            )}
             <button type="button" onClick={() => setConfirmOpen(true)} className={buttonClasses('primary', 'md')}>
               تسليم
             </button>
@@ -255,6 +300,8 @@ export function ExamSession({ courseId, examId, initial, onFinished }: Props) {
               answer={answers[q.id]}
               onChange={(v) => setAnswers((prev) => ({ ...prev, [q.id]: v }))}
               onCommit={(v) => commit(q.id, v)}
+              media={{ courseId, kind: 'exams', itemId: examId }}
+              onPasteBlocked={() => void report('paste_attempt', false)}
             />
           </section>
           <nav className="flex items-center justify-between gap-3" aria-label="التنقل بين الأسئلة">

@@ -17,6 +17,10 @@ const RULES = [
   'عند انتهاء الوقت يُسلَّم الاختبار تلقائيًا من الخادم.',
 ];
 
+/** Rule 1 changes for split-session exams: the clock only runs while the exam page is open. */
+const SPLIT_FIRST_RULE =
+  'مدة الاختبار الكلية موزّعة على جلسات: تدخل وتخرج كما تشاء خلال فترة الاختبار، ولا يُحتسب إلا الوقت الذي تكون فيه صفحة الاختبار مفتوحة. زر «احفظ وأكمل لاحقًا» يوقف العدّاد ويحفظ إجاباتك. لو أُغلقت الصفحة فجأة أو انقطع الاتصال يُخصم بضع ثوانٍ فقط.';
+
 export interface BriefingProps {
   exam: Exam;
   courseId: string;
@@ -33,6 +37,7 @@ export function ExamBriefing({ exam, courseId, canAttempt, resumeSeconds, suppor
   const resuming = resumeSeconds !== undefined;
   const [agreed, setAgreed] = useState(resuming);
   const ready = (canAttempt || resuming) && agreed && !starting;
+  const rules = exam.allow_split_sessions ? [SPLIT_FIRST_RULE, ...RULES.slice(1)] : RULES;
 
   const stats = [
     { icon: Clock, label: 'المدة', value: resuming ? `متبقٍّ ${Math.max(1, Math.ceil(resumeSeconds / 60))} دقيقة` : `${formatNumber(exam.duration_minutes)} دقيقة` },
@@ -59,14 +64,19 @@ export function ExamBriefing({ exam, courseId, canAttempt, resumeSeconds, suppor
           ))}
         </dl>
 
-        {exam.closes_at && <p className="text-center text-sm text-fg-muted">آخر موعد لإنهاء الاختبار: {formatDateTime(exam.closes_at)}</p>}
+        {exam.allow_split_sessions && (exam.opens_at || exam.closes_at) && (
+          <p className="rounded-lg border border-primary/25 bg-primary-subtle p-3 text-center text-sm text-primary-subtle-fg">
+            فترة الاختبار{exam.opens_at ? ` من ${formatDateTime(exam.opens_at)}` : ''}{exam.closes_at ? ` إلى ${formatDateTime(exam.closes_at)}` : ''} — ويمكنك توزيع {formatNumber(exam.duration_minutes)} دقيقة على أكثر من جلسة.
+          </p>
+        )}
+        {exam.closes_at && !exam.allow_split_sessions && <p className="text-center text-sm text-fg-muted">آخر موعد لإنهاء الاختبار: {formatDateTime(exam.closes_at)}</p>}
 
         <section aria-labelledby="rules-title" className="space-y-3 rounded-lg border border-warning/30 bg-warning-subtle p-4">
           <h2 id="rules-title" className="flex items-center gap-2 font-bold text-warning-subtle-fg">
             <ShieldAlert size={18} aria-hidden /> قواعد صارمة — اقرأها قبل البدء
           </h2>
           <ol className="list-decimal space-y-2 ps-5 text-sm leading-relaxed text-fg">
-            {RULES.map((r) => (
+            {rules.map((r) => (
               <li key={r}>{r}</li>
             ))}
           </ol>

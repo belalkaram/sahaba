@@ -12,6 +12,8 @@ import { CheckCircleIcon, ClockIcon, FileTextIcon, PlusIcon, TrashIcon, AlertCir
 
 import { Check, ChevronDown, ChevronUp, X } from 'lucide-react';
 import { formatNumber } from '../../../../../../../lib/format';
+import { QuestionMediaFields, EMPTY_MEDIA_CHANGES, applyMediaChanges, hasMediaChanges, type MediaChanges } from '../../../../../../../features/assessment/question-media-fields';
+import { ModelAnswerReleasePanel } from '../../../../../../../features/assessment/model-answer-release-panel';
 import { partial } from '../../../../../../../lib/partial-failure';
 interface PageProps {
   params: Promise<{
@@ -45,6 +47,7 @@ export default function ExamBuilderPage({ params }: PageProps) {
   const [showResults, setShowResults] = useState<'after_submit' | 'after_publish' | 'never'>('after_publish');
   const [opensAt, setOpensAt] = useState('');
   const [closesAt, setClosesAt] = useState('');
+  const [splitSessions, setSplitSessions] = useState(false);
 
   // Question Modal State (Add/Edit)
   const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
@@ -56,6 +59,8 @@ export default function ExamBuilderPage({ params }: PageProps) {
   const [qCorrectAnswer, setQCorrectAnswer] = useState('الخيار الأول');
   const [qAcceptableAnswers, setQAcceptableAnswers] = useState('');
   const [qExplanation, setQExplanation] = useState('');
+  const [qModelAnswer, setQModelAnswer] = useState('');
+  const [qMedia, setQMedia] = useState<MediaChanges>(EMPTY_MEDIA_CHANGES);
 
   // Bank Import Modal State
   const [isBankModalOpen, setIsBankModalOpen] = useState(false);
@@ -94,6 +99,7 @@ export default function ExamBuilderPage({ params }: PageProps) {
       setShowResults(ex.show_results || 'after_publish');
       setOpensAt(ex.opens_at ? ex.opens_at.slice(0, 16) : '');
       setClosesAt(ex.closes_at ? ex.closes_at.slice(0, 16) : '');
+      setSplitSessions(Boolean(ex.allow_split_sessions));
     } catch (err: any) {
       setFeedback({ type: 'error', text: err.response?.data?.message || 'فشل في تحميل بيانات الامتحان.' });
     } finally {
@@ -121,6 +127,7 @@ export default function ExamBuilderPage({ params }: PageProps) {
         show_results: showResults,
         opens_at: opensAt ? new Date(opensAt).toISOString() : undefined,
         closes_at: closesAt ? new Date(closesAt).toISOString() : undefined,
+        allow_split_sessions: splitSessions,
       });
       setExam(updated);
       setFeedback({ type: 'success', text: 'تم حفظ إعدادات الامتحان بنجاح.' });
@@ -162,6 +169,8 @@ export default function ExamBuilderPage({ params }: PageProps) {
     setQCorrectAnswer('الخيار الأول');
     setQAcceptableAnswers('');
     setQExplanation('');
+    setQModelAnswer('');
+    setQMedia(EMPTY_MEDIA_CHANGES);
     setIsQuestionModalOpen(true);
   };
 
@@ -174,6 +183,8 @@ export default function ExamBuilderPage({ params }: PageProps) {
     setQCorrectAnswer(q.correct_answer || '');
     setQAcceptableAnswers(q.acceptable_answers ? q.acceptable_answers.join(', ') : '');
     setQExplanation(q.explanation || '');
+    setQModelAnswer(q.model_answer || '');
+    setQMedia(EMPTY_MEDIA_CHANGES);
     setIsQuestionModalOpen(true);
   };
 
@@ -186,6 +197,7 @@ export default function ExamBuilderPage({ params }: PageProps) {
         ? qAcceptableAnswers.split(',').map((s) => s.trim()).filter(Boolean)
         : undefined;
 
+      let savedId = '';
       if (editingQuestion) {
         const updated = await assessmentApi.updateExamQuestion(courseId, examId, editingQuestion.id, {
           question_text: qText,
@@ -195,7 +207,9 @@ export default function ExamBuilderPage({ params }: PageProps) {
           correct_answer: qType === 'true_false' || qType === 'multiple_choice' || qType === 'short_answer' ? qCorrectAnswer : undefined,
           acceptable_answers: acceptableArr,
           explanation: qExplanation || undefined,
+          model_answer: qModelAnswer,
         });
+        savedId = updated.id;
         setQuestions((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
       } else {
         const created = await assessmentApi.addExamQuestion(courseId, examId, {
@@ -206,8 +220,20 @@ export default function ExamBuilderPage({ params }: PageProps) {
           correct_answer: qType === 'true_false' || qType === 'multiple_choice' || qType === 'short_answer' ? qCorrectAnswer : undefined,
           acceptable_answers: acceptableArr,
           explanation: qExplanation || undefined,
+          model_answer: qModelAnswer || undefined,
         });
+        savedId = created.id;
         setQuestions((prev) => [...prev, created]);
+      }
+
+      // Images need the saved question's id, so they are uploaded after it.
+      if (savedId && hasMediaChanges(qMedia)) {
+        try {
+          await applyMediaChanges(courseId, 'exams', examId, savedId, qMedia);
+        } catch {
+          alert('حُفظ السؤال لكن تعذّر رفع الصورة. افتح السؤال وأعد المحاولة (JPG/PNG/WebP حتى 3 ميجابايت).');
+        }
+        setQuestions(await assessmentApi.getExamQuestions(courseId, examId, true).catch(() => questions));
       }
 
       // Reload exam to get updated total_points
@@ -767,6 +793,17 @@ export default function ExamBuilderPage({ params }: PageProps) {
                   </div>
                 </div>
 
+                <div className="border-t border-border pt-3 space-y-1.5">
+                  <label className="flex items-start gap-2 font-bold text-secondary">
+                    <input type="checkbox" checked={splitSessions} onChange={(e) => setSplitSessions(e.target.checked)} className="mt-0.5" />
+                    <span>السماح بحل الامتحان على أكثر من جلسة</span>
+                  </label>
+                  <p className="text-fg-muted leading-relaxed">
+                    يستطيع الطالب أن يوزّع مدة الامتحان ({formatNumber(Number(durationMinutes))} دقيقة) على عدة جلسات داخل فترة الفتح والإغلاق أعلاه، ويُحتسب فقط الوقت الذي تكون فيه صفحة الامتحان مفتوحة.
+                    {splitSessions && !(opensAt && closesAt) && <strong className="block text-warning">حدّد وقت الفتح والإغلاق لتتضح الفترة للطلاب.</strong>}
+                  </p>
+                </div>
+
                 <button
                   type="submit"
                   disabled={savingSettings}
@@ -799,6 +836,8 @@ export default function ExamBuilderPage({ params }: PageProps) {
                 </li>
               </ul>
             </Card>
+
+            <ModelAnswerReleasePanel courseId={courseId} kind="exams" itemId={examId} />
           </div>
         </div>
       )}
@@ -972,6 +1011,24 @@ export default function ExamBuilderPage({ params }: PageProps) {
                   className="w-full p-2.5 rounded-md border border-border bg-background"
                 ></textarea>
               </div>
+
+              <div className="border-t border-border pt-3">
+                <label className="block font-bold text-secondary mb-1">الحل النموذجي (يظهر للطالب فقط عندما تتيحه له)</label>
+                <textarea aria-label="الحل النموذجي"
+                  rows={3}
+                  value={qModelAnswer}
+                  onChange={(e) => setQModelAnswer(e.target.value)}
+                  placeholder="اكتب الإجابة النموذجية أو خطوات الحل..."
+                  className="w-full p-2.5 rounded-md border border-border bg-background"
+                ></textarea>
+              </div>
+
+              <QuestionMediaFields
+                value={qMedia}
+                onChange={setQMedia}
+                hasImage={Boolean(editingQuestion?.has_image)}
+                hasModelImage={Boolean(editingQuestion?.has_model_answer_image)}
+              />
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
                 <button

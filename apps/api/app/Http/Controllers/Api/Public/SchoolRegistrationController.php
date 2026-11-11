@@ -99,7 +99,13 @@ class SchoolRegistrationController extends Controller
             ]);
         }
 
-        // 5. Provision tenant
+        // 5. Provision tenant. Tenant schema migration over a remote DB (Neon) can
+        // exceed PHP's default 30s limit; a fatal timeout bypasses the catch/cleanup
+        // below and leaves a half-provisioned tenant, so lift the limit here.
+        @set_time_limit(300);
+        // Likewise, a closed tab / refresh must not abort provisioning half-way.
+        ignore_user_abort(true);
+
         try {
             $tenant = $this->provisioningService->provision([
                 'name' => $validated['school_name'],

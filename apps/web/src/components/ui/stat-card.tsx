@@ -16,14 +16,14 @@ export interface StatCardProps {
     value: string;
     isPositive: boolean;
   };
-  variant?: 'default' | 'emerald' | 'indigo' | 'amber' | 'purple';
+  variant?: 'default' | 'emerald' | 'lime' | 'amber' | 'purple';
   action?: React.ReactNode;
 }
 
 const toneMap: Record<NonNullable<StatCardProps['variant']>, KpiTone> = {
   default: 'brand',
   emerald: 'success',
-  indigo: 'info',
+  lime: 'info',
   amber: 'warning',
   purple: 'accent',
 };

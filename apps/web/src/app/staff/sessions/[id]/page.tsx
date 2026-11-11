@@ -425,7 +425,7 @@ export default function StaffSessionWorkspacePage() {
                 title="الحاضرون"
                 value={formatNumber(report.summary.present)}
                 icon={<Users className="w-5 h-5" />}
-                variant="indigo"
+                variant="lime"
               />
               <StatCard
                 title="المتأخرون"

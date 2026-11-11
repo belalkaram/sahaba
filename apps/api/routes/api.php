@@ -4,8 +4,12 @@ use App\Http\Controllers\Api\AcademicSettingsController;
 use App\Http\Controllers\Api\Analytics\AnalyticsInsightsController;
 use App\Http\Controllers\Api\Analytics\DashboardController;
 use App\Http\Controllers\Api\Analytics\MetricController;
+use App\Http\Controllers\Api\Assessment\AssessmentOverviewController;
 use App\Http\Controllers\Api\Assessment\AssignmentController;
+use App\Http\Controllers\Api\Assessment\AssignmentQuestionController;
 use App\Http\Controllers\Api\Assessment\ExamController;
+use App\Http\Controllers\Api\Assessment\ModelAnswerController;
+use App\Http\Controllers\Api\Assessment\QuestionMediaController;
 use App\Http\Controllers\Api\Assessment\GradeController;
 use App\Http\Controllers\Api\Assessment\GradingInboxController;
 use App\Http\Controllers\Api\Assessment\QuestionBankController;
@@ -55,7 +59,9 @@ use App\Http\Controllers\Api\Platform\PlatformSettingsController;
 use App\Http\Controllers\Api\Platform\SupportAccessController;
 use App\Http\Controllers\Api\Platform\TenantController;
 use App\Http\Controllers\Api\Public\ContactMessageController;
+use App\Http\Controllers\Api\Identity\RegistrationRequestController;
 use App\Http\Controllers\Api\Public\PublicAcademyController;
+use App\Http\Controllers\Api\Public\PublicRegistrationController;
 use App\Http\Controllers\Api\Public\PublicConfigController;
 use App\Http\Controllers\Api\Public\PublicDirectoryController;
 use App\Http\Controllers\Api\Public\SchoolRegistrationController;
@@ -85,6 +91,17 @@ Route::get('/public/config', [PublicConfigController::class, 'show'])
     ->name('api.public.config');
 Route::get('/public/directory/teachers', [PublicDirectoryController::class, 'teachers'])
     ->name('api.public.directory.teachers');
+Route::get('/public/registration/options', [PublicRegistrationController::class, 'options'])
+    ->name('api.public.registration.options');
+Route::get('/public/registration/academies', [PublicRegistrationController::class, 'directory'])
+    ->middleware('throttle:60,1')
+    ->name('api.public.registration.academies');
+Route::post('/public/registration', [PublicRegistrationController::class, 'store'])
+    ->middleware('throttle:auth')
+    ->name('api.public.registration.store');
+Route::get('/public/registration/status', [PublicRegistrationController::class, 'status'])
+    ->middleware('throttle:auth')
+    ->name('api.public.registration.status');
 Route::post('/public/contact', [ContactMessageController::class, 'store'])
     ->middleware('throttle:auth')
     ->name('api.public.contact');
@@ -260,6 +277,12 @@ Route::middleware(['tenant', 'throttle:api'])->group(function () {
         Route::post('/students/{id}/suspend', [StudentController::class, 'suspend'])->name('api.students.suspend');
         Route::post('/students/{id}/activate', [StudentController::class, 'activate'])->name('api.students.activate');
         Route::post('/students/import', [StudentImportController::class, 'store'])->name('api.students.import');
+
+        // Student self-registration inbox (tenant-scope students.create)
+        Route::get('/registration-requests', [RegistrationRequestController::class, 'index'])->name('api.registration_requests.index');
+        Route::get('/registration-requests/pending-count', [RegistrationRequestController::class, 'pendingCount'])->name('api.registration_requests.pending_count');
+        Route::post('/registration-requests/{id}/approve', [RegistrationRequestController::class, 'approve'])->name('api.registration_requests.approve');
+        Route::post('/registration-requests/{id}/reject', [RegistrationRequestController::class, 'reject'])->name('api.registration_requests.reject');
         Route::get('/imports', [StudentImportController::class, 'index'])->name('api.imports.index');
         Route::get('/imports/{id}', [StudentImportController::class, 'show'])->name('api.imports.show');
         Route::get('/student/academies', StudentUnifiedOverviewController::class)->name('api.student.academies');
@@ -503,6 +526,42 @@ Route::middleware(['tenant', 'throttle:api'])->group(function () {
             Route::post('/courses/{courseId}/assignments/{id}/submissions/{submissionId}/grade', [AssignmentController::class, 'grade'])
                 ->middleware('tenant.can:assignments.grade')
                 ->name('api.assignments.grade');
+            // Assignment questions (same shape as exam questions, optional image) and their grading
+            Route::get('/courses/{courseId}/assignments/{id}/questions', [AssignmentQuestionController::class, 'index'])->name('api.assignments.questions.index');
+            Route::post('/courses/{courseId}/assignments/{id}/questions', [AssignmentQuestionController::class, 'store'])
+                ->middleware('tenant.can:assignments.create')
+                ->name('api.assignments.questions.add');
+            Route::put('/courses/{courseId}/assignments/{id}/questions/{questionId}', [AssignmentQuestionController::class, 'update'])
+                ->middleware('tenant.can:assignments.create')
+                ->name('api.assignments.questions.update');
+            Route::delete('/courses/{courseId}/assignments/{id}/questions/{questionId}', [AssignmentQuestionController::class, 'destroy'])
+                ->middleware('tenant.can:assignments.create')
+                ->name('api.assignments.questions.delete');
+            Route::get('/courses/{courseId}/assignments/{id}/submissions/{submissionId}/answers', [AssignmentQuestionController::class, 'submissionAnswers'])
+                ->middleware('tenant.can:assignments.grade')
+                ->name('api.assignments.submission_answers');
+            Route::post('/courses/{courseId}/assignments/{id}/submissions/{submissionId}/answers/{answerId}/grade', [AssignmentQuestionController::class, 'gradeAnswer'])
+                ->middleware('tenant.can:assignments.grade')
+                ->name('api.assignments.grade_answer');
+
+            // Question / model-answer images and model-answer release (exams and assignments)
+            Route::post('/courses/{courseId}/{kind}/{id}/questions/{questionId}/image', [QuestionMediaController::class, 'store'])
+                ->where('kind', 'exams|assignments')->name('api.questions.image.store');
+            Route::delete('/courses/{courseId}/{kind}/{id}/questions/{questionId}/image', [QuestionMediaController::class, 'destroy'])
+                ->where('kind', 'exams|assignments')->name('api.questions.image.destroy');
+            Route::get('/courses/{courseId}/{kind}/{id}/questions/{questionId}/image', [QuestionMediaController::class, 'show'])
+                ->where('kind', 'exams|assignments')->name('api.questions.image.show');
+            Route::get('/courses/{courseId}/{kind}/{id}/model-answers', [ModelAnswerController::class, 'show'])
+                ->where('kind', 'exams|assignments')->name('api.model_answers.show');
+            Route::get('/courses/{courseId}/{kind}/{id}/model-answers/status', [ModelAnswerController::class, 'status'])
+                ->where('kind', 'exams|assignments')->name('api.model_answers.status');
+            Route::post('/courses/{courseId}/{kind}/{id}/model-answers/release', [ModelAnswerController::class, 'release'])
+                ->where('kind', 'exams|assignments')->name('api.model_answers.release');
+            Route::post('/courses/{courseId}/{kind}/{id}/model-answers/revoke', [ModelAnswerController::class, 'revoke'])
+                ->where('kind', 'exams|assignments')->name('api.model_answers.revoke');
+            Route::post('/courses/{courseId}/{kind}/{id}/model-answers/auto-release', [ModelAnswerController::class, 'setAutoRelease'])
+                ->where('kind', 'exams|assignments')->name('api.model_answers.auto_release');
+
             Route::post('/courses/{courseId}/assignments/{id}/publish-grades', [AssignmentController::class, 'publishGrades'])
                 ->middleware('tenant.can:assignments.grade')
                 ->name('api.assignments.publish_grades');
@@ -553,6 +612,7 @@ Route::middleware(['tenant', 'throttle:api'])->group(function () {
             Route::post('/courses/{courseId}/exams/{id}/attempts/{attemptId}/integrity-events', [ExamController::class, 'recordIntegrityEvent'])
                 ->middleware('throttle:60,1')
                 ->name('api.exams.integrity_events');
+            Route::post('/courses/{courseId}/exams/{id}/attempts/{attemptId}/heartbeat', [ExamController::class, 'heartbeat'])->name('api.exams.heartbeat');
             Route::get('/courses/{courseId}/exams/{id}/attempts/{attemptId}', [ExamController::class, 'getAttempt'])->name('api.exams.attempts.show');
             Route::post('/courses/{courseId}/exams/{id}/attempts/{attemptId}/answers', [ExamController::class, 'submitAnswer'])->name('api.exams.answers.submit');
             Route::post('/courses/{courseId}/exams/{id}/attempts/{attemptId}/submit', [ExamController::class, 'submit'])->name('api.exams.submit');
@@ -585,6 +645,14 @@ Route::middleware(['tenant', 'throttle:api'])->group(function () {
             Route::delete('/courses/{courseId}/question-banks/{bankId}/questions/{questionId}', [QuestionBankController::class, 'deleteQuestion'])
                 ->middleware('tenant.can:exams.create')
                 ->name('api.question_banks.questions.delete');
+
+            // Staff list pages with participation and result counters on every row
+            Route::get('/assessments/exams-overview', [AssessmentOverviewController::class, 'exams'])
+                ->middleware('tenant.can:exams.view')
+                ->name('api.assessments.exams_overview');
+            Route::get('/assessments/assignments-overview', [AssessmentOverviewController::class, 'assignments'])
+                ->middleware('tenant.can:assignments.view')
+                ->name('api.assessments.assignments_overview');
 
             // Staff Grading Inbox (R6-5)
             Route::get('/grading/pending', [GradingInboxController::class, 'pending'])

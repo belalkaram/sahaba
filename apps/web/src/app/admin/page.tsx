@@ -137,7 +137,7 @@ export default function TenantAdminDashboardPage() {
           value={sessions.length}
           subtitle="حصص حضورية ومحاضرات"
           icon={<CalendarIcon size={18} />}
-          variant="indigo"
+          variant="lime"
         />
       </div>
 

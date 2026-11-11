@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AssignmentSubmission extends TenantModel
@@ -55,5 +56,11 @@ class AssignmentSubmission extends TenantModel
     public function hasFile(): bool
     {
         return ! empty($this->file_path);
+    }
+
+    /** Submitted and not graded. The grading inbox and the assignments overview share this rule. */
+    public function scopePendingGrading(Builder $query): Builder
+    {
+        return $query->where('status', 'submitted')->whereNull('score');
     }
 }

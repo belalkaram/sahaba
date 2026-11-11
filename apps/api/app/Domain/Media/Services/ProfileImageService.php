@@ -47,14 +47,14 @@ class ProfileImageService
             && ! str_contains($path, '..');
     }
 
-    public function response(?string $path, string $tenantSlug)
+    public function response(?string $path, string $tenantSlug, bool $private = false)
     {
         if (! $this->isOwnedPath($path, $tenantSlug) || ! Storage::disk(self::DISK)->exists($path)) {
             return null;
         }
 
         return Storage::disk(self::DISK)->response($path, null, [
-            'Cache-Control' => 'public, max-age=300',
+            'Cache-Control' => $private ? 'private, no-store' : 'public, max-age=300',
             'X-Content-Type-Options' => 'nosniff',
         ]);
     }

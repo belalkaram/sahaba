@@ -2,7 +2,7 @@
 
 /**
  * R7A — Student Dashboard Page
- * Modularized into features/student-dashboard/components (< 180 lines).
+ * Modularized into features/student-dashboard (< 180 lines).
  */
 
 import React, { useEffect, useState, useMemo } from 'react';
@@ -13,23 +13,38 @@ import { integrationApi } from '../../../lib/integration-api';
 import { analyticsApi } from '../../../lib/analytics-api';
 import { assessmentApi } from '../../../lib/assessment-api';
 import { attendanceApi } from '../../../lib/attendance-api';
-import type { Course, Meeting, StudentAnalyticsSnapshot, Assignment, ClassSession } from '../../../types';
+import type {
+  Course,
+  Meeting,
+  StudentAnalyticsSnapshot,
+  Assignment,
+  ClassSession,
+  LessonProgressData,
+  Lesson,
+} from '../../../types';
 import { Skeleton } from '../../../components/ui/skeleton';
-import { StudentHeroBanner } from '../../../features/student-dashboard/components/student-hero-banner';
-import { LinkedAcademiesWidget } from '../../../features/student-dashboard/components/linked-academies-widget';
-import { StudentKpiGrid } from '../../../features/student-dashboard/components/student-kpi-grid';
-import { ContinueLearningCard } from '../../../features/student-dashboard/components/continue-learning-card';
 import {
+  StudentHeroBanner,
+  LinkedAcademiesWidget,
+  StudentKpiGrid,
+  ContinueLearningCard,
   UpcomingDeadlinesWidget,
   DeadlineItem,
-} from '../../../features/student-dashboard/components/upcoming-deadlines-widget';
+  SavedVideosWidget,
+  StudentCoursesSection,
+  StudentProgressWidget,
+  StudentActivityWidget,
+} from '../../../features/student-dashboard';
 
 import { formatRelative } from '../../../lib/format';
 import { partial } from '../../../lib/partial-failure';
+import { mapWithConcurrency } from '../../../lib/concurrency';
+
 export default function StudentDashboardPage() {
   const { user } = useAuth();
   const { setTenantSlug } = useTenant();
   const [courses, setCourses] = useState<Course[]>([]);
+  const [progressList, setProgressList] = useState<Array<LessonProgressData & { lesson?: Lesson }>>([]);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [assignments, setAssignments] = useState<{ course: Course; item: Assignment }[]>([]);
   const [sessions, setSessions] = useState<ClassSession[]>([]);
@@ -41,14 +56,16 @@ export default function StudentDashboardPage() {
     const loadData = async () => {
       try {
         setLoading(true);
-        const [cList, mList, classList, academiesData] = await Promise.all([
+        const [cList, progList, mList, classList, academiesData] = await Promise.all([
           educationApi.getCourses().catch(partial([])),
+          educationApi.getMyProgress().catch(partial([])),
           integrationApi.getMeetings().catch(partial([])),
           attendanceApi.getClasses().catch(partial([])),
-          educationApi.getStudentAcademies().catch(partial(({ academies: [], total_academies: 0 }))),
+          educationApi.getStudentAcademies().catch(partial({ academies: [], total_academies: 0 })),
         ]);
 
         setCourses(cList);
+        setProgressList(progList);
         setMeetings(mList);
         if (academiesData && academiesData.academies) {
           setLinkedAcademies(academiesData.academies);
@@ -56,10 +73,11 @@ export default function StudentDashboardPage() {
 
         if (cList.length > 0) {
           const allAssignments: { course: Course; item: Assignment }[] = [];
-          for (const course of cList) {
-            const aList = await assessmentApi.getAssignments(course.id).catch(partial([]));
-            aList.forEach((a) => allAssignments.push({ course, item: a }));
-          }
+          const lists = await mapWithConcurrency(cList, 4, async (course) => ({
+            course,
+            aList: await assessmentApi.getAssignments(course.id).catch(partial([])),
+          }));
+          lists.forEach(({ course, aList }) => aList.forEach((a) => allAssignments.push({ course, item: a })));
           setAssignments(allAssignments);
         }
 
@@ -146,11 +164,40 @@ export default function StudentDashboardPage() {
         onSelectTenant={(slug) => setTenantSlug(slug)}
       />
 
+      {/* Top Academic KPIs */}
       <StudentKpiGrid snapshot={snapshot} />
 
+      {/* Primary Academic Progress Section */}
+      <StudentProgressWidget
+        snapshot={snapshot}
+        courses={courses}
+        progressList={progressList}
+      />
+
+      {/* Quick Resume Card */}
       <ContinueLearningCard data={continueLearningData} />
 
+      {/* Enrolled Courses (All, Current/In-Progress, Completed) with Real Data */}
+      <StudentCoursesSection
+        userId={user?.id}
+        courses={courses}
+        progressList={progressList}
+      />
+
+      {/* Saved Videos with Bookmark Capability */}
+      <SavedVideosWidget
+        userId={user?.id}
+        courses={courses}
+      />
+
+      {/* Learning Activity & Upcoming Deadlines Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <StudentActivityWidget
+          sessions={sessions}
+          assignments={assignments}
+          meetings={meetings}
+          progressList={progressList}
+        />
         <UpcomingDeadlinesWidget deadlines={upcomingDeadlines} />
       </div>
     </div>

@@ -59,9 +59,49 @@ class StudentController extends Controller
             });
         }
 
+        // Progressive loading: with `page` / `per_page` the list is paged (max 100 per page) and the response keeps the
+        // same `data.students` shape plus `meta.pagination`. Without them the legacy full list is returned.
+        if ($request->filled('page') || $request->filled('per_page')) {
+            $perPage = max(1, min(100, (int) $request->input('per_page', 20)));
+            $page = $query->orderBy('created_at')->orderBy('id')->paginate($perPage);
+            $students = $page->getCollection();
+            $this->attachAnalytics($request, $user, $students);
+
+            return ApiResponse::success(['students' => $students], 200, [
+                'pagination' => [
+                    'total' => $page->total(),
+                    'page' => $page->currentPage(),
+                    'per_page' => $page->perPage(),
+                    'last_page' => $page->lastPage(),
+                ],
+            ]);
+        }
+
         $students = $query->get();
+        $this->attachAnalytics($request, $user, $students);
 
         return ApiResponse::success(['students' => $students]);
+    }
+
+    /**
+     * `include=analytics`: attach each student's pre-computed overall snapshot in ONE query (instead of one dashboard
+     * request per student). Only for students the caller may see analytics for (same scope rule as the dashboard).
+     *
+     * @param  \Illuminate\Support\Collection<int, Student>  $students
+     */
+    private function attachAnalytics(Request $request, TenantUser $user, $students): void
+    {
+        if ($request->input('include') !== 'analytics' || $students->isEmpty() || ! $user->hasPermissionTo('analytics.view')) {
+            return;
+        }
+
+        $ids = $students->pluck('id')->all();
+        $allowed = ScopeResolver::scopeStudents(Student::query()->whereIn('id', $ids), $user, 'analytics.view')->pluck('id')->flip();
+        $snapshots = \App\Models\StudentAnalyticsSnapshot::whereIn('student_id', $allowed->keys()->all())->whereNull('course_id')->get()->keyBy('student_id');
+
+        foreach ($students as $student) {
+            $student->setAttribute('analytics', $allowed->has($student->id) ? $snapshots->get($student->id) : null);
+        }
     }
 
     /**

@@ -34,8 +34,10 @@ class TenantAuthenticate
             throw new AuthorizationException('User account is suspended or inactive.');
         }
 
-        // Update token last used timestamp
-        $tokenRecord->update(['last_used_at' => now()]);
+        // "Last used" has minute resolution: skipping the write on bursts saves a network round trip per request.
+        if ($tokenRecord->last_used_at === null || $tokenRecord->last_used_at->diffInSeconds(now()) >= 60) {
+            $tokenRecord->update(['last_used_at' => now()]);
+        }
 
         // Bind user to request
         $request->setUserResolver(fn () => $user);

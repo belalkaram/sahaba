@@ -15,6 +15,7 @@ import { AwardIcon, ClockIcon } from '../../../components/icons';
 import { GraduationCap } from 'lucide-react';
 import { formatNumber } from '../../../lib/format';
 import { partial } from '../../../lib/partial-failure';
+import { mapWithConcurrency } from '../../../lib/concurrency';
 
 /**
  * Exam directory. Exams are NOT taken here: each one opens in its own secure, full-page session
@@ -30,10 +31,11 @@ export default function StudentExamsPage() {
         setLoading(true);
         const courses = await educationApi.getCourses();
         const all: { course: Course; item: Exam }[] = [];
-        for (const course of courses) {
-          const list = await assessmentApi.getExams(course.id).catch(partial([]));
-          for (const exam of list) all.push({ course, item: exam });
-        }
+        const lists = await mapWithConcurrency(courses, 4, async (course) => ({
+          course,
+          list: await assessmentApi.getExams(course.id).catch(partial([])),
+        }));
+        for (const { course, list } of lists) for (const exam of list) all.push({ course, item: exam });
         setExams(all);
       } finally {
         setLoading(false);
@@ -82,6 +84,7 @@ export default function StudentExamsPage() {
                 <span className="flex items-center gap-1">
                   <ClockIcon size={14} /> المدة: {formatNumber(item.duration_minutes || 60)} دقيقة
                 </span>
+                {item.allow_split_sessions && <span className="rounded-xs bg-primary-subtle px-2 py-0.5 font-semibold text-primary">يُحَل على أكثر من جلسة</span>}
                 <span className="flex items-center gap-1">
                   <AwardIcon size={14} className="text-primary" /> الدرجة: {formatNumber(item.total_points || 100)}
                 </span>
@@ -89,6 +92,9 @@ export default function StudentExamsPage() {
               <div className="mt-auto border-t border-border pt-4">
                 <Link href={`/exam/${course.id}/${item.id}`} className={`${buttonClasses('primary', 'md')} mt-2 w-full`}>
                   فتح صفحة الاختبار
+                </Link>
+                <Link href={`/student/model-answers/exams/${course.id}/${item.id}`} className={`${buttonClasses('ghost', 'sm')} mt-2 w-full`}>
+                  الحل النموذجي
                 </Link>
               </div>
             </Card>

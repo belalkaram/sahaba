@@ -163,7 +163,7 @@ export default function StudentAttendancePage() {
             <StatCard
               title="غياب بعذر"
               value={summary.excused}
-              variant="indigo"
+              variant="lime"
             />
             <StatCard
               title="غائب"

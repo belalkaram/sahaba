@@ -62,9 +62,11 @@ class TenantToken extends TenantModel
     {
         $hashed = hash('sha256', $plainTextToken);
 
-        $token = self::with('user.roles.permissions')
-            ->where('token', $hashed)
-            ->first();
+        $token = \App\Support\Database\PostgresFastPath::enabled('tenant')
+            ? \App\Support\Database\PostgresFastPath::tokenWithAuthGraph($hashed)
+            : self::with('user.roles.permissions')
+                ->where('token', $hashed)
+                ->first();
 
         if (! $token) {
             return null;

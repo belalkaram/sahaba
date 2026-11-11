@@ -52,6 +52,7 @@ class CourseController extends Controller
             $query = ScopeResolver::scopeCourses($query, $user, 'courses.view');
             $courses = $query->get();
 
+            $policy->preloadForCourses($user, $courses);
             $coursesWithAccess = $courses->map(function ($course) use ($policy, $user) {
                 $courseArray = $course->toArray();
                 $courseArray['access'] = $policy->canAccessCourse($user, $course)->toArray();
@@ -72,6 +73,7 @@ class CourseController extends Controller
                 })
                 ->get();
 
+            $policy->preloadForCourses($user, $courses);
             $coursesWithAccess = $courses->map(function ($course) use ($policy, $user) {
                 $courseArray = $course->toArray();
                 $courseArray['access'] = $policy->canAccessCourse($user, $course)->toArray();

@@ -21,6 +21,13 @@ class MigrateTenants extends Command
     {
         $failed = 0;
 
+        // Bring the clone template up to date first so new registrations stay fast after this deploy.
+        try {
+            $databases->refreshTemplate();
+        } catch (Throwable $e) {
+            $this->warn("Tenant template refresh failed: {$e->getMessage()}");
+        }
+
         foreach (Tenant::with('databaseConfig')->get() as $tenant) {
             try {
                 $databases->migrateTenant($tenant);

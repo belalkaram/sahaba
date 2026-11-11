@@ -34,6 +34,7 @@ class TenantCurrentController extends Controller
             'primary_color' => $tenant->primary_color ?? null,
             'secondary_color' => $tenant->secondary_color ?? null,
             'brand_tagline' => $tenant->brand_tagline,
+            'accepts_registrations' => (bool) $tenant->accepts_registrations,
             'brand_settings' => $tenant->brand_settings ?? [],
             'domains' => $tenant->domains->pluck('domain')->values()->all(),
             'features' => $tenant->features->where('enabled', true)->pluck('feature_key')->values()->all(),
@@ -62,6 +63,7 @@ class TenantCurrentController extends Controller
             'contact_phone' => 'nullable|string|max:50',
             'brand_settings' => 'nullable|array',
             'auth_mode' => 'nullable|string|in:password,coupon,hybrid',
+            'accepts_registrations' => 'sometimes|boolean',
         ]);
 
         $tenant->update($validated);
@@ -90,6 +92,7 @@ class TenantCurrentController extends Controller
                 'primary_color' => $tenant->primary_color,
                 'secondary_color' => $tenant->secondary_color,
                 'brand_tagline' => $tenant->brand_tagline,
+                'accepts_registrations' => (bool) $tenant->accepts_registrations,
                 'brand_settings' => $tenant->brand_settings ?? [],
                 'domains' => $tenant->domains->pluck('domain')->values()->all(),
                 'features' => $tenant->features->where('enabled', true)->pluck('feature_key')->values()->all(),

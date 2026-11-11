@@ -31,7 +31,6 @@ class ParentLinkRequiredTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->cleanupTenantDbs();
 
         $dbManager = app(TenantDatabaseManager::class);
         $context = app(TenantContext::class);
@@ -72,19 +71,7 @@ class ParentLinkRequiredTest extends TestCase
     protected function tearDown(): void
     {
         DB::purge('tenant');
-        $this->cleanupTenantDbs();
         parent::tearDown();
-    }
-
-    private function cleanupTenantDbs(): void
-    {
-        $tenantPath = database_path('tenants');
-        if (is_dir($tenantPath)) {
-            $files = glob("{$tenantPath}/*.sqlite*");
-            foreach ($files as $file) {
-                @unlink($file);
-            }
-        }
     }
 
     private function headers(): array

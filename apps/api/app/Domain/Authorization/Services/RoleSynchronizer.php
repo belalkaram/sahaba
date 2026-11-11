@@ -2,10 +2,9 @@
 
 namespace App\Domain\Authorization\Services;
 
-use App\Models\Permission;
-use App\Models\Role;
 use App\Support\Authorization\PermissionCatalog;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * RoleSynchronizer (R1-A3)
@@ -24,55 +23,91 @@ class RoleSynchronizer
      */
     public function sync(?array $roleNames = null): array
     {
-        return DB::connection('tenant')->transaction(function () use ($roleNames) {
-            // 1. Upsert all permissions from the catalog
-            $catalogPermissions = PermissionCatalog::permissions();
-            $permissionMap = [];
+        $db = DB::connection('tenant');
 
-            foreach ($catalogPermissions as $name => $def) {
-                $permission = Permission::updateOrCreate(
-                    ['name' => $name],
-                    [
-                        'module' => $def['module'],
-                        'description' => $def['label'],
-                    ]
-                );
+        // Set-based on purpose: each statement is a network round trip on a remote database, and the
+        // catalog is ~90 permissions and ~300 role/permission links. A per-row upsert made registering
+        // a school take minutes; this takes a handful of queries.
+        return $db->transaction(function () use ($db, $roleNames) {
+            $now = now();
 
-                $permissionMap[$name] = $permission->id;
+            // 1. Permissions
+            $permissionMap = $db->table('permissions')->pluck('id', 'name')->all();
+            $existingPerms = $db->table('permissions')->get(['name', 'module', 'description'])->keyBy('name');
+            $newPerms = [];
+            foreach (PermissionCatalog::permissions() as $name => $def) {
+                if (! isset($permissionMap[$name])) {
+                    $id = (string) Str::uuid7();
+                    $permissionMap[$name] = $id;
+                    $newPerms[] = ['id' => $id, 'name' => $name, 'module' => $def['module'],
+                        'description' => $def['label'], 'created_at' => $now, 'updated_at' => $now];
+                } elseif ($existingPerms[$name]->module !== $def['module'] || $existingPerms[$name]->description !== $def['label']) {
+                    $db->table('permissions')->where('name', $name)
+                        ->update(['module' => $def['module'], 'description' => $def['label'], 'updated_at' => $now]);
+                }
             }
+            foreach (array_chunk($newPerms, 200) as $chunk) {
+                $db->table('permissions')->insert($chunk);
+            }
+            $catalogNames = array_flip(array_keys(PermissionCatalog::permissions()));
+            $permissionMap = array_intersect_key($permissionMap, $catalogNames);
 
-            // 2. Synchronize system roles (optionally filtered by profile)
+            // 2. System roles (optionally filtered by profile)
             $catalogRoles = PermissionCatalog::roles();
             if ($roleNames !== null) {
                 $catalogRoles = array_intersect_key($catalogRoles, array_flip($roleNames));
             }
-            $rolesCount = 0;
-
+            $roleIds = $db->table('roles')->whereIn('name', array_keys($catalogRoles))->pluck('id', 'name')->all();
+            $newRoles = [];
             foreach ($catalogRoles as $roleName => $def) {
-                $role = Role::updateOrCreate(
-                    ['name' => $roleName],
-                    [
-                        'label' => $def['label'],
-                        'description' => $def['description'] ?? null,
-                        'is_system' => true,
-                    ]
-                );
+                $row = ['label' => $def['label'], 'description' => $def['description'] ?? null, 'is_system' => true];
+                if (isset($roleIds[$roleName])) {
+                    $db->table('roles')->where('id', $roleIds[$roleName])->update($row + ['updated_at' => $now]);
+                } else {
+                    $id = (string) Str::uuid7();
+                    $roleIds[$roleName] = $id;
+                    $newRoles[] = ['id' => $id, 'name' => $roleName, 'created_at' => $now, 'updated_at' => $now] + $row;
+                }
+            }
+            foreach (array_chunk($newRoles, 200) as $chunk) {
+                $db->table('roles')->insert($chunk);
+            }
 
-                // Build pivot array: permission_id => ['scope' => $scope]
-                $syncData = [];
+            // 3. role_permission links: insert missing, fix changed scope, drop links no longer in the catalog
+            $existing = [];
+            foreach ($db->table('role_permission')->whereIn('role_id', array_values($roleIds))->get(['role_id', 'permission_id', 'scope']) as $link) {
+                $existing[$link->role_id][$link->permission_id] = $link->scope;
+            }
+            $inserts = [];
+            foreach ($catalogRoles as $roleName => $def) {
+                $roleId = $roleIds[$roleName];
+                $wanted = [];
                 foreach ($def['permissions'] as $permName => $scope) {
                     if (isset($permissionMap[$permName])) {
-                        $syncData[$permissionMap[$permName]] = ['scope' => $scope];
+                        $wanted[$permissionMap[$permName]] = $scope;
                     }
                 }
-
-                $role->permissions()->sync($syncData);
-                $rolesCount++;
+                foreach ($wanted as $permId => $scope) {
+                    if (! array_key_exists($permId, $existing[$roleId] ?? [])) {
+                        $inserts[] = ['role_id' => $roleId, 'permission_id' => $permId, 'scope' => $scope,
+                            'created_at' => $now, 'updated_at' => $now];
+                    } elseif ($existing[$roleId][$permId] !== $scope) {
+                        $db->table('role_permission')->where('role_id', $roleId)->where('permission_id', $permId)
+                            ->update(['scope' => $scope, 'updated_at' => $now]);
+                    }
+                }
+                $stale = array_keys(array_diff_key($existing[$roleId] ?? [], $wanted));
+                if ($stale) {
+                    $db->table('role_permission')->where('role_id', $roleId)->whereIn('permission_id', $stale)->delete();
+                }
+            }
+            foreach (array_chunk($inserts, 200) as $chunk) {
+                $db->table('role_permission')->insert($chunk);
             }
 
             return [
                 'permissions' => count($permissionMap),
-                'roles' => $rolesCount,
+                'roles' => count($catalogRoles),
             ];
         });
     }

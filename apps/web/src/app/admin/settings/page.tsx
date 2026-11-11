@@ -8,6 +8,7 @@ import { ShieldIcon, CheckCircleIcon } from '../../../components/icons';
 import { adminApi, type TenantCurrentInfo } from '../../../lib/admin-api';
 import { useAuth } from '../../../context/auth-context';
 import { ImageUploader } from '../../../components/ui/image-uploader';
+import { Switch } from '../../../components/ui/switch';
 
 import { Check } from 'lucide-react';
 export default function TenantSettingsPage() {
@@ -23,9 +24,10 @@ export default function TenantSettingsPage() {
   const [name, setName] = useState('');
   const [tagline, setTagline] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
-  const [primaryColor, setPrimaryColor] = useState('#04c3c9');
-  const [secondaryColor, setSecondaryColor] = useState('#0284c7');
+  const [primaryColor, setPrimaryColor] = useState('#0C7F6D');
+  const [secondaryColor, setSecondaryColor] = useState('#4D7C0F');
   const [authMode, setAuthMode] = useState('hybrid');
+  const [acceptsRegistrations, setAcceptsRegistrations] = useState(false);
 
   const loadSettings = async () => {
     try {
@@ -36,9 +38,10 @@ export default function TenantSettingsPage() {
       setName(data.name || '');
       setTagline(data.brand_tagline || '');
       setLogoUrl(data.logo_url || '');
-      setPrimaryColor(data.primary_color || '#04c3c9');
-      setSecondaryColor(data.secondary_color || '#0284c7');
+      setPrimaryColor(data.primary_color || '#0C7F6D');
+      setSecondaryColor(data.secondary_color || '#4D7C0F');
       setAuthMode(data.auth_mode || 'hybrid');
+      setAcceptsRegistrations(Boolean(data.accepts_registrations));
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'فشل تحميل إعدادات المؤسسة');
     } finally {
@@ -64,6 +67,7 @@ export default function TenantSettingsPage() {
         primary_color: primaryColor,
         secondary_color: secondaryColor,
         auth_mode: authMode,
+        accepts_registrations: acceptsRegistrations,
       });
       setTenant(res.tenant);
       await refreshSession();
@@ -424,6 +428,15 @@ export default function TenantSettingsPage() {
             </Card>
           </div>
         </div>
+
+        <Card className="p-6 rounded-xl space-y-3">
+          <Switch
+            checked={acceptsRegistrations}
+            onChange={setAcceptsRegistrations}
+            label="استقبال طلبات تسجيل الطلاب من الصفحة العامة"
+            description="عند التفعيل تظهر مؤسستك في قائمة التسجيل، وتصلك الطلبات في صفحة «طلبات التسجيل» لتقبلها أو ترفضها."
+          />
+        </Card>
 
         {/* Submit */}
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">

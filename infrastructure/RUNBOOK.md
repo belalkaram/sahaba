@@ -266,7 +266,9 @@ php artisan queue:work      # worker (lms_worker in Docker)
 php artisan schedule:work   # scheduler (lms_scheduler in Docker)
 ```
 
-Scheduled commands: `lms:notify-scheduled` (hourly), `lms:compute-analytics` (02:00 daily), `lms:refresh-platform-metrics` (hourly).
+Scheduled commands: `lms:notify-scheduled` (hourly), `lms:compute-analytics` (02:00 daily), `lms:refresh-platform-metrics` (hourly), `tenants:refresh-template` (hourly safety net).
+
+**Tenant clone template (pgsql):** new schools are provisioned by cloning the `_tenant_template` schema (seconds) instead of replaying every tenant migration (minutes on a remote DB). It is refreshed automatically: after every plain `php artisan migrate`, at the start of `lms:migrate-tenants`, and hourly by the scheduler. Nothing to run by hand; `php artisan tenants:refresh-template` exists to force it. Disable cloning with `DB_TENANT_TEMPLATE=false`.
 
 On every deploy, migrate the Control DB **and** all tenant databases:
 

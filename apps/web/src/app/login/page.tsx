@@ -287,7 +287,14 @@ function LoginForm() {
             </div>
           )}
 
-          <p className="mt-8 text-center text-sm text-fg-muted" data-enter>
+          <div className="mt-8 rounded-lg border border-primary/25 bg-primary-subtle p-4 text-center" data-enter>
+            <p className="text-sm text-primary-subtle-fg">طالب جديد؟ أنشئ حسابك واختر مؤسستك أو مدرسك.</p>
+            <Link href="/register" className="mt-2 inline-block text-base font-bold text-primary hover:underline">
+              سجّل كطالب جديد
+            </Link>
+          </div>
+
+          <p className="mt-6 text-center text-sm text-fg-muted" data-enter>
             مؤسسة تعليمية جديدة؟{' '}
             <Link href="/register-school" className="font-semibold text-primary hover:underline">
               سجّل أكاديميتك

@@ -12,6 +12,9 @@ use App\Models\ExamAttempt;
 use App\Models\Grade;
 use App\Models\TenantUser;
 use App\Support\ApiResponse;
+use App\Support\Authorization\ScopeResolver;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -25,45 +28,19 @@ class GradingInboxController extends Controller
         /** @var TenantUser $user */
         $user = $request->user();
 
-        // Scope to teacher's courses if user is a teacher staff
-        $courseIds = null;
-        if ($user->staff && $user->staff->staff_type === 'teacher') {
-            $courseIds = Course::where('teacher_staff_id', $user->staff->id)->pluck('id');
-        }
-
         // 1. Pending Assignment Submissions (submitted but not graded)
-        $submissionsQuery = AssignmentSubmission::with(['assignment.course', 'student.user'])
-            ->where('status', 'submitted')
-            ->whereNull('score');
-
-        if ($courseIds !== null) {
-            $submissionsQuery->whereHas('assignment', function ($q) use ($courseIds) {
-                $q->whereIn('course_id', $courseIds);
-            });
-        }
-
-        $pendingSubmissions = $submissionsQuery->latest('submitted_at')->get();
+        $pendingSubmissions = AssignmentSubmission::with(['assignment.course', 'student.user'])
+            ->pendingGrading()
+            ->whereHas('assignment', fn ($q) => $q->whereIn('course_id', $this->gradableCourses($user, 'assignments.grade')))
+            ->latest('submitted_at')
+            ->get();
 
         // 2. Pending Exam Attempts (submitted but with ungraded essay questions or not finalized)
-        $attemptsQuery = ExamAttempt::with(['exam.course', 'student.user', 'answers.question'])
-            ->where('status', 'submitted')
-            ->where(function ($q) {
-                $q->whereNull('score')
-                    ->orWhereHas('answers', function ($aq) {
-                        $aq->whereNull('awarded_points')
-                            ->whereHas('question', function ($qq) {
-                                $qq->where('question_type', 'essay');
-                            });
-                    });
-            });
-
-        if ($courseIds !== null) {
-            $attemptsQuery->whereHas('exam', function ($q) use ($courseIds) {
-                $q->whereIn('course_id', $courseIds);
-            });
-        }
-
-        $pendingAttempts = $attemptsQuery->latest('submitted_at')->get();
+        $pendingAttempts = ExamAttempt::with(['exam.course', 'student.user', 'answers.question'])
+            ->pendingGrading()
+            ->whereHas('exam', fn ($q) => $q->whereIn('course_id', $this->gradableCourses($user, 'exams.grade')))
+            ->latest('submitted_at')
+            ->get();
 
         $totalPending = $pendingSubmissions->count() + $pendingAttempts->count();
 
@@ -85,6 +62,13 @@ class GradingInboxController extends Controller
             'assignment_ids' => 'nullable|array',
             'assignment_ids.*' => 'uuid|exists:tenant.assignments,id',
         ]);
+
+        /** @var TenantUser $user */
+        $user = $request->user();
+
+        // Checked before any write: one item outside the caller's scope rejects the whole request.
+        $this->assertGradable($user, 'exams.grade', Exam::query(), $validated['exam_ids'] ?? []);
+        $this->assertGradable($user, 'assignments.grade', Assignment::query(), $validated['assignment_ids'] ?? []);
 
         $publishedCount = 0;
 
@@ -111,6 +95,30 @@ class GradingInboxController extends Controller
             'message' => "Published grades for {$publishedCount} assessments successfully.",
             'published_count' => $publishedCount,
         ]);
+    }
+
+    /** Courses whose work the caller may grade under this permission's role scope. */
+    private function gradableCourses(TenantUser $user, string $permission): Builder
+    {
+        return ScopeResolver::scopeCourses(Course::query(), $user, $permission)->select('courses.id');
+    }
+
+    /**
+     * @param  Builder  $items  exams or assignments
+     * @param  array<int, string>  $ids
+     */
+    private function assertGradable(TenantUser $user, string $permission, Builder $items, array $ids): void
+    {
+        $ids = array_unique($ids);
+        if ($ids === []) {
+            return;
+        }
+
+        $allowed = $items->whereIn('id', $ids)->whereIn('course_id', $this->gradableCourses($user, $permission))->count();
+
+        if ($allowed !== count($ids)) {
+            throw new AuthorizationException('You can only publish grades for courses within your scope.');
+        }
     }
 
     /**

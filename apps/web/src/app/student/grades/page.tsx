@@ -114,7 +114,7 @@ export default function StudentGradesPage() {
           value={pctValue(snapshot?.attendance_rate)}
           subtitle="المجموعات الدراسية"
           icon={<CalendarDays size={20} strokeWidth={1.75} aria-hidden />}
-          variant="indigo"
+          variant="lime"
         />
       </div>
 

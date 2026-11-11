@@ -194,6 +194,7 @@ class QuestionBankController extends Controller
                 'correct_answer' => $bq->getRawOriginal('correct_answer'),
                 'acceptable_answers' => $bq->acceptable_answers,
                 'explanation' => $bq->explanation,
+                'model_answer' => $bq->model_answer,
                 'sort_order' => $currentMaxOrder,
             ]);
             $q->makeVisible(['correct_answer', 'acceptable_answers']);

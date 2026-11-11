@@ -99,7 +99,7 @@ class AuthPayloadBuilder
             'auth_mode' => $tenant->auth_mode ?? 'hybrid',
             'branding' => [
                 'logo_url' => $tenant->logo_url ?? null,
-                'primary_color' => $tenant->primary_color ?? '#2563eb',
+                'primary_color' => $tenant->primary_color ?? '#0C7F6D',
             ],
         ];
 

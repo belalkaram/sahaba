@@ -30,7 +30,7 @@ export const StudentKpiGrid: React.FC<StudentKpiGridProps> = ({ snapshot }) => {
         value={pctValue(snapshot?.assignment_completion_rate)}
         subtitle="نسبة تسليم الواجبات"
         icon={<BookOpenIcon size={20} />}
-        variant="indigo"
+        variant="lime"
       />
       <StatCard
         title="متوسط الاختبارات"

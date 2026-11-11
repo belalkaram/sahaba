@@ -2,7 +2,10 @@
 
 import React from 'react';
 import type { ExamQuestion } from '../../types';
+import type { AssessmentKind } from '../../lib/assessment-api';
 import { cn } from '../../lib/cn';
+import { QuestionImage } from '../../components/assessment/question-image';
+import { useNoPaste } from './no-paste';
 
 export interface AnswerValue {
   answer_text?: string;
@@ -49,6 +52,8 @@ export function QuestionView({
   answer,
   onChange,
   onCommit,
+  media,
+  onPasteBlocked,
 }: {
   question: ExamQuestion;
   answer?: AnswerValue;
@@ -56,8 +61,13 @@ export function QuestionView({
   onChange: (value: AnswerValue) => void;
   /** Persist now (choice made, or text field left). */
   onCommit: (value: AnswerValue) => void;
+  /** Where the question's image is served from (exam or assignment); omit to never show one. */
+  media?: { courseId: string; kind: AssessmentKind; itemId: string };
+  /** Called when a paste / drop / cut / copy on the answer field was blocked (exam runner logs it). */
+  onPasteBlocked?: () => void;
 }) {
   const q = question;
+  const noPaste = useNoPaste(onPasteBlocked);
   const choose = (value: AnswerValue) => {
     onChange(value);
     onCommit(value);
@@ -71,6 +81,8 @@ export function QuestionView({
       </div>
 
       <p className="whitespace-pre-line break-words text-lg font-bold leading-relaxed text-fg">{q.question_text}</p>
+
+      {q.has_image && media && <QuestionImage courseId={media.courseId} kind={media.kind} itemId={media.itemId} questionId={q.id} />}
 
       {q.question_type === 'multiple_choice' && (
         <div className="space-y-2.5" role="radiogroup" aria-label="الخيارات">
@@ -135,7 +147,7 @@ export function QuestionView({
           onChange={(e) => onChange({ answer_text: e.target.value })}
           onBlur={() => answer && onCommit(answer)}
           placeholder="اكتب إجابتك هنا…"
-          autoComplete="off"
+          {...noPaste.props}
           className="w-full rounded-lg border border-border bg-surface px-4 py-3 text-base text-fg outline-none focus:border-primary focus:shadow-[var(--focus-ring)]"
         />
       )}
@@ -147,8 +159,15 @@ export function QuestionView({
           onChange={(e) => onChange({ answer_text: e.target.value })}
           onBlur={() => answer && onCommit(answer)}
           placeholder="اكتب إجابتك بالتفصيل…"
+          {...noPaste.props}
           className="w-full resize-y rounded-lg border border-border bg-surface p-4 text-base leading-relaxed text-fg outline-none focus:border-primary focus:shadow-[var(--focus-ring)]"
         />
+      )}
+
+      {(q.question_type === 'short_answer' || q.question_type === 'essay') && (
+        <p role="status" className={cn('text-sm', noPaste.hint ? 'font-semibold text-danger' : 'text-fg-subtle')}>
+          {noPaste.hint ? 'اللصق والنسخ غير مسموحين هنا — اكتب إجابتك بنفسك داخل الصفحة.' : 'اكتب إجابتك بنفسك؛ اللصق من خارج الصفحة غير متاح.'}
+        </p>
       )}
     </div>
   );
