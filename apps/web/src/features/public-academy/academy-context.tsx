@@ -1,13 +1,9 @@
 'use client';
 
 import React, { createContext, useContext } from 'react';
+import type { AcademyProfile } from '../../lib/public-api';
 
-export interface AcademyInfo {
-  slug: string;
-  name: string;
-  logo_url: string | null;
-  brand_tagline: string | null;
-}
+export type AcademyInfo = AcademyProfile;
 
 const AcademyContext = createContext<AcademyInfo | null>(null);
 

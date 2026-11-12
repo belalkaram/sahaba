@@ -37,6 +37,15 @@ export function AcademiesStep({ selected, max, error, onChange }: { selected: st
     };
   }, [query, attempt]);
 
+  // Someone arriving from an academy page already has it selected; publish its name once the list
+  // is in so the review step shows a name instead of a slug.
+  useEffect(() => {
+    if (state.status !== 'ready') return;
+    const names = Object.fromEntries(Object.values(known).map((a) => [a.slug, a.name]));
+    if (selected.some((slug) => names[slug])) onChange(selected, names);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.status]);
+
   const toggle = (slug: string) => {
     const names = Object.fromEntries(Object.values(known).map((a) => [a.slug, a.name]));
     if (selected.includes(slug)) onChange(selected.filter((s) => s !== slug), names);

@@ -167,7 +167,9 @@ class PublicDirectoryAndBrandingTest extends TestCase
 
         $resp->assertJsonPath('data.teachers.0.name', 'Teacher Tariq');
         $resp->assertJsonPath('data.teachers.0.tenant_name', 'أكاديمية ألفا');
-        $resp->assertJsonPath('data.teachers.0.academy_url', '/a/academy-alpha/teachers');
+        // L1: the card links to the teacher's own page, and `academy_url` is the academy home.
+        $resp->assertJsonPath('data.teachers.0.academy_url', '/a/academy-alpha');
+        $resp->assertJsonPath('data.teachers.0.profile_url', "/a/academy-alpha/teachers/{$env['staff']->id}");
         $this->assertStringContainsString('&v=', $resp->json('data.teachers.0.photo_url'));
 
         // 6. Opting out (is_public = false) removes from public directory

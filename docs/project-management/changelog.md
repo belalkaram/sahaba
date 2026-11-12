@@ -2,6 +2,44 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Added] - 2026-11-12 — The rest of the landing, academy and teacher pages (LANDING-V2 L3–L7)
+
+- Landing now tells the whole story in 13 sections: hero, trust strip, the problem it replaces, the two services (OD-31), each role's experience with the screens it gets, academies, teachers, tenant isolation with a drawn diagram, analytics with each metric's source named, how to start, pricing (OD-39, headline from `GET /public/pricing`), testimonials, FAQ and the closing call.
+- New public pages: `/academies` and `/teachers` — search, city filter, type and service filters, paging, and designed loading, empty, no-results and error states. Both links are now in the header and footer.
+- `/a/{slug}` rebuilt: logo, kind, city, services, real course and teacher counts, and a registration call that preselects the academy on `/register`.
+- New `GET /public/academy/profile`: public pages no longer read `/tenant/current`, which answers without authentication and also carries the contact phone, domains, auth mode and brand settings.
+- A landing section can tell "no data" from "the API did not answer": on a failed server fetch the browser loads the list instead of the section silently disappearing. A missing image falls back to the brand mark instead of a broken box.
+- `Cache::forget('public.stats')` when an academy's listing changes or metrics are recomputed, so the landing numbers are not stale for up to 10 minutes.
+- Accessibility: fixed the header brand link's name mismatch and the underline on the "مدعوم بمنصة سحابة" link. axe reports no critical or serious violation on the landing, both directories and an academy page, in light and dark, at 390 and 1440.
+- Evidence: `docs/recovery-reports/LANDING-V2.md`.
+
+## [Changed] - 2026-11-12 — Hero, trust strip and header (LANDING-V2 L2)
+
+- Hero rebuilt: the headline rises line by line behind a mask, the khatam lattice is an inline SVG that draws itself (DrawSVG) instead of a mask repainted on every scroll, and the preview uses the product's own surfaces (Badge, cards, KPI tiles).
+- The hero entrance is **CSS**, started by the pre-paint boot script, so the largest text no longer waits for the JS bundle: LCP on a production build went from 4.2s to 0.46s (desktop) and 1.1s (mobile, CPU ×4).
+- The display font is preloaded (18 KB); the swap used to shift the hero on mobile. CLS is now 0 on both widths (was 0.0165 on mobile).
+- Trust strip replaces the logos strip: real numbers from `GET /public/stats` with a count-up, and real listed academies; the labelled sample content (OD-21) shows only while the platform has fewer than two real numbers or no listed academy.
+- Header: no React state per scroll frame any more — it hides on the way down, returns on the way up, and carries a reading-progress line.
+- Dropped: SplitText on the hero paragraph. Holding it hidden until the font and the bundle loaded was a large part of the old LCP; a CSS rise gives the same effect at first paint.
+- Evidence: `docs/recovery-reports/LANDING-V2.md`.
+
+## [Added] - 2026-11-12 — Public showcase API (LANDING-V2 L1)
+
+- `GET /public/directory/academies`: academies that opted in (`tenants.is_listed`, OD-40), featured first then most recently active, with search, city, type, kind and service filters, and capped paging.
+- `GET /public/stats`: headline numbers for the landing, cached 10 minutes. A count that has not been computed stays `null` instead of being shown as zero.
+- `GET /public/directory/teachers`: paging and `search` / `city` / `academy` filters, a real `courses_count`, and `profile_url` pointing at the teacher's own page (`academy_url` is now the academy home — the landing card previously linked to the academy's teacher list).
+- Platform console: `GET /platform/directory/academies` and `POST /platform/directory/academies/{id}/toggle` for listing and featuring, audited; featuring an unlisted academy is refused, unlisting clears the featured place.
+- `lms:refresh-platform-metrics` also records public course and teacher counts per tenant and per listed teacher, so public pages never open tenant databases.
+- Migrations: `tenants.is_listed` / `is_featured`, `tenant_metric_snapshots.public_courses_count` / `public_teachers_count`, `public_directory_entries.public_courses_count`.
+- Evidence: `PublicShowcaseDirectoryTest` (8 tests), full suite 331 pass. `docs/recovery-reports/LANDING-V2.md`.
+
+## [Changed] - 2026-11-12 — Landing foundation (LANDING-V2 L0)
+
+- `/` is a server component, statically rendered and revalidated every 5 minutes; the opted-in teachers list is fetched on the server (`features/landing/server-data.ts`, optional `API_INTERNAL_URL`).
+- `src/middleware.ts` renamed to `src/proxy.ts` (Next 16 convention). A signed-in visitor is redirected from `/` to their dashboard by the proxy, using the new `lms_home` cookie (whitelisted targets only).
+- Landing animation is one client island (`landing-motion.tsx`) that loads ScrollTrigger on demand; elements start hidden through CSS so nothing flashes, and content shows without JS, with reduced motion, or if scripts fail (3.5s failsafe). The endless floating-chip loop is removed.
+- FAQ answers are always in the HTML and open with a CSS height transition. Plan and evidence: `docs/design/LANDING-REDESIGN-PLAN.md`, `docs/recovery-reports/LANDING-V2.md`.
+
 ## [Changed] - 2026-11-12 — The academy reviews its own package payments (PAY-REV-1, OD-34)
 
 - Platform `/platform/payments/{tenant}/{id}/approve|reject` now refuses package payments with `403 ACADEMY_REVIEWS_PACKAGES`; the academy approves them from its payments page.

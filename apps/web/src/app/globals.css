@@ -277,6 +277,55 @@
   opacity: 0.85;
 }
 
+/*
+ * Landing entrance animations start hidden only while html.motion-ready is set (added before first
+ * paint by the boot script in app/layout.tsx, removed by features/landing/landing-motion.tsx when
+ * GSAP takes over). Without JS or with reduced motion the class is never set and all content shows.
+ */
+html.motion-ready :is([data-reveal], [data-hero-pattern]) {
+  opacity: 0;
+}
+
+/*
+ * Hero entrance. Pure CSS on purpose: the class is set before first paint by the boot script, so
+ * these elements animate immediately and the largest text paints without waiting for any script.
+ * Each element carries its own animation-delay inline. Without the class (no JS, reduced motion)
+ * nothing is hidden and nothing animates.
+ */
+html.motion-ready :is([data-hero-line], [data-hero-copy], [data-hero-cta], [data-hero-visual], [data-hero-chip]) {
+  animation: sahaba-rise var(--motion-hero, 0.8s) cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+html.motion-ready [data-hero-line] {
+  animation-name: sahaba-line;
+}
+
+html.motion-ready [data-hero-visual] {
+  animation-name: sahaba-zoom;
+  animation-duration: 0.95s;
+}
+
+@keyframes sahaba-line {
+  from {
+    opacity: 0;
+    transform: translateY(115%);
+  }
+}
+
+@keyframes sahaba-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+@keyframes sahaba-zoom {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
 /* Eight-point star (khatam) lattice, tinted with the theme pattern stroke. Decorative only. */
 @utility pattern-overlay {
   position: absolute;

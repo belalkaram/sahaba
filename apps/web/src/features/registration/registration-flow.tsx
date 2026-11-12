@@ -14,11 +14,16 @@ import { AddressStep, GuardianStep, SecurityStep, StudentStep } from './step-fie
 import { AcademiesStep } from './step-academies';
 import { RegistrationDone, ReviewStep } from './step-review';
 
-/** Multi-step student registration with a progress bar. Nothing is sent until the final step. */
-export function RegistrationFlow() {
+/**
+ * Multi-step student registration with a progress bar. Nothing is sent until the final step.
+ * `initialAcademy` preselects the academy the visitor came from (/a/{slug}).
+ */
+export function RegistrationFlow({ initialAcademy }: { initialAcademy?: string }) {
   const [options, setOptions] = useState<RegistrationOptions | null>(null);
   const [optionsError, setOptionsError] = useState(false);
-  const [form, setForm] = useState<RegistrationForm>(INITIAL_FORM);
+  const [form, setForm] = useState<RegistrationForm>(
+    initialAcademy ? { ...INITIAL_FORM, tenants: [initialAcademy] } : INITIAL_FORM,
+  );
   const [errors, setErrors] = useState<FieldErrors>({});
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);

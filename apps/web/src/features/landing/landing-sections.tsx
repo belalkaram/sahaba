@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   Award,
@@ -24,10 +24,8 @@ import {
   Wallet,
   type LucideIcon,
 } from 'lucide-react';
-import { FAQ, LOGOS, ROLE_FEATURES, STEPS, TESTIMONIALS, type RoleKey } from './content';
-import { publicApi, type DirectoryTeacher } from '../../lib/public-api';
-import { apiClient } from '../../lib/api-client';
-import { Sparkles, MapPin, GraduationCap } from 'lucide-react';
+import { FAQ, ROLE_FEATURES, STEPS, TESTIMONIALS, type RoleKey } from './content';
+import { SectionHeading } from './story-sections';
 import { Tabs } from '../../components/ui/tabs';
 import { buttonClasses } from '../../components/ui/button';
 import { IconNext } from '../../components/icons/directional';
@@ -35,9 +33,6 @@ import { SampleTag } from './sample-tag';
 import { cn } from '../../lib/cn';
 import { toArabicDigits } from '../../lib/format';
 import { gsap, useGSAP, prefersReducedMotion } from '../../lib/motion';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-
-if (typeof window !== 'undefined') gsap.registerPlugin(ScrollTrigger);
 
 /** Icons referenced by name in content.ts (explicit map keeps the bundle small). */
 const FEATURE_ICONS: Record<string, LucideIcon> = {
@@ -59,89 +54,35 @@ const FEATURE_ICONS: Record<string, LucideIcon> = {
   Wallet,
 };
 
-/** Reveals `[data-reveal]` children of each section as they scroll into view. */
-export function useScrollReveal() {
-  const ref = useRef<HTMLDivElement>(null);
-  useGSAP(
-    () => {
-      if (prefersReducedMotion()) return;
-      gsap.utils.toArray<HTMLElement>('[data-reveal-group]').forEach((group) => {
-        gsap.from(group.querySelectorAll('[data-reveal]'), {
-          autoAlpha: 0,
-          y: 28,
-          duration: 0.7,
-          stagger: 0.08,
-          ease: 'power3.out',
-          scrollTrigger: { trigger: group, start: 'top 82%', once: true },
-        });
-      });
-    },
-    { scope: ref },
-  );
-  return ref;
-}
-
-function SectionHeading({ eyebrow, title, description }: { eyebrow: string; title: string; description?: string }) {
-  return (
-    <div className="mx-auto mb-12 max-w-2xl space-y-3 text-center" data-reveal>
-      <p className="text-sm font-semibold text-primary">{eyebrow}</p>
-      <h2 className="font-display text-3xl text-fg sm:text-4xl">{title}</h2>
-      {description && <p className="text-base leading-relaxed text-fg-muted">{description}</p>}
-    </div>
-  );
-}
-
-/* Geometric generated marks for the (fictional) academies strip. */
-function LogoMark({ shape }: { shape: string }) {
-  const common = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.75 };
-  return (
-    <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden>
-      {shape === 'arch' && <path d="M5 21V11a7 7 0 0 1 14 0v10" {...common} />}
-      {shape === 'star' && <path d="M12 3l2.6 5.6L20 12l-5.4 3.4L12 21l-2.6-5.6L4 12l5.4-3.4z" {...common} />}
-      {shape === 'dome' && <path d="M4 20h16M6 20v-6a6 6 0 0 1 12 0v6M12 4v4" {...common} />}
-      {shape === 'wave' && <path d="M3 14c3-4 6 4 9 0s6 4 9 0M3 19c3-4 6 4 9 0s6 4 9 0" {...common} />}
-      {shape === 'tower' && <path d="M9 21V9l3-5 3 5v12M7 21h10M10 13h4" {...common} />}
-    </svg>
-  );
-}
-
-export function LogosStrip() {
-  return (
-    <section className="border-y border-border bg-surface py-8" data-reveal-group>
-      <div className="mx-auto flex max-w-[var(--content-max)] flex-col items-center gap-5 px-4 sm:px-6">
-        <p className="text-sm text-fg-muted" data-reveal>
-          تثق بنا مراكز وأكاديميات في أنحاء المملكة
-        </p>
-        <ul className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4" data-reveal>
-          {LOGOS.map((l) => (
-            <li key={l.name} className="flex items-center gap-2 text-fg-subtle transition-colors hover:text-fg-muted">
-              <LogoMark shape={l.shape} />
-              <span className="font-display text-lg">{l.name}</span>
-            </li>
-          ))}
-        </ul>
-        <SampleTag show={LOGOS.some((l) => l.sample)} />
-      </div>
-    </section>
-  );
-}
-
+/** One experience per role: its features, and the screens that role actually gets. */
 export function RoleFeatures() {
   const [role, setRole] = useState<RoleKey>('student');
   const data = ROLE_FEATURES[role];
-  const gridRef = useRef<HTMLDivElement>(null);
+  const paneRef = useRef<HTMLDivElement>(null);
+
   useGSAP(
     () => {
       if (prefersReducedMotion()) return;
-      gsap.from(gridRef.current?.children ?? [], { autoAlpha: 0, y: 14, duration: 0.45, stagger: 0.06, ease: 'power3.out' });
+      gsap.from(paneRef.current?.querySelectorAll('[data-role-item]') ?? [], {
+        autoAlpha: 0,
+        y: 14,
+        duration: 0.45,
+        stagger: 0.05,
+        ease: 'power3.out',
+        clearProps: 'transform,opacity,visibility',
+      });
     },
-    { dependencies: [role], scope: gridRef },
+    { dependencies: [role], scope: paneRef },
   );
 
   return (
     <section id="features" className="scroll-mt-24 py-20 lg:py-28" data-reveal-group>
       <div className="mx-auto max-w-[var(--content-max)] px-4 sm:px-6">
-        <SectionHeading eyebrow="لكل دور تجربته" title="منصة واحدة، أربع تجارب مصمّمة بعناية" description="كل مستخدم يرى ما يحتاجه فقط — بلا ازدحام وبلا تعقيد." />
+        <SectionHeading
+          eyebrow="لكل دور تجربته"
+          title="منصة واحدة، أربع تجارب مصمّمة بعناية"
+          description="كل مستخدم يرى ما يحتاجه فقط — بلا ازدحام وبلا تعقيد."
+        />
         <div className="mb-10 flex justify-center" data-reveal>
           <Tabs
             tabs={(Object.keys(ROLE_FEATURES) as RoleKey[]).map((k) => ({ id: k, label: ROLE_FEATURES[k].label }))}
@@ -149,25 +90,44 @@ export function RoleFeatures() {
             onChange={(id) => setRole(id as RoleKey)}
           />
         </div>
-        <h3 className="mb-8 text-center text-xl font-bold text-fg" data-reveal>
-          {data.title}
-        </h3>
-        <div ref={gridRef} className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {data.items.map((item) => {
-            const Icon = FEATURE_ICONS[item.icon] ?? Circle;
-            return (
-              <article
-                key={item.title}
-                className="group rounded-lg border border-border bg-surface p-6 shadow-sm transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-1 hover:border-primary/30 hover:shadow-md"
-              >
-                <span className="arch mb-5 grid h-14 w-12 place-items-center bg-primary-subtle text-primary transition-colors group-hover:bg-primary group-hover:text-primary-fg">
-                  <Icon size={22} strokeWidth={1.75} aria-hidden />
-                </span>
-                <h4 className="mb-2 text-base font-bold text-fg">{item.title}</h4>
-                <p className="text-sm leading-relaxed text-fg-muted">{item.text}</p>
-              </article>
-            );
-          })}
+
+        <div ref={paneRef} className="grid gap-6 lg:grid-cols-[1fr_20rem] lg:items-start">
+          <div>
+            <h3 className="mb-6 text-xl font-bold text-fg" data-role-item>
+              {data.title}
+            </h3>
+            <div className="grid gap-5 sm:grid-cols-2">
+              {data.items.map((item) => {
+                const Icon = FEATURE_ICONS[item.icon] ?? Circle;
+                return (
+                  <article
+                    key={item.title}
+                    data-role-item
+                    className="group rounded-lg border border-border bg-surface p-6 shadow-sm transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-1 hover:border-primary/30 hover:shadow-md"
+                  >
+                    <span className="arch mb-5 grid h-14 w-12 place-items-center bg-primary-subtle text-primary transition-colors group-hover:bg-primary group-hover:text-primary-fg">
+                      <Icon size={22} strokeWidth={1.75} aria-hidden />
+                    </span>
+                    <h4 className="mb-2 text-base font-bold text-fg">{item.title}</h4>
+                    <p className="text-sm leading-relaxed text-fg-muted">{item.text}</p>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* The actual menu this role sees after signing in. */}
+          <aside data-role-item className="rounded-xl border border-border bg-surface-muted/50 p-5">
+            <p className="mb-4 text-sm font-bold text-fg">{data.screensTitle}</p>
+            <ul className="space-y-1.5">
+              {data.screens.map((screen) => (
+                <li key={screen} className="flex items-center gap-2 rounded-md bg-surface px-3 py-2 text-sm text-fg-muted shadow-xs">
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary/60" aria-hidden />
+                  {screen}
+                </li>
+              ))}
+            </ul>
+          </aside>
         </div>
       </div>
     </section>
@@ -224,7 +184,7 @@ export function Testimonials() {
 export function Faq() {
   const [open, setOpen] = useState<number | null>(0);
   return (
-    <section className="bg-surface py-20 lg:py-28" data-reveal-group>
+    <section id="faq" className="scroll-mt-24 bg-surface py-20 lg:py-28" data-reveal-group>
       <div className="mx-auto max-w-3xl px-4 sm:px-6">
         <SectionHeading eyebrow="أسئلة شائعة" title="كل ما تودّ معرفته" />
         <div className="divide-y divide-border rounded-lg border border-border" data-reveal>
@@ -234,12 +194,21 @@ export function Faq() {
                 type="button"
                 onClick={() => setOpen(open === i ? null : i)}
                 aria-expanded={open === i}
+                aria-controls={`faq-answer-${i}`}
                 className="flex w-full items-center justify-between gap-4 px-5 py-4 text-start text-base font-semibold text-fg transition-colors hover:bg-surface-muted"
               >
                 {item.q}
                 <ChevronDown size={18} className={cn('shrink-0 text-fg-muted transition-transform duration-200', open === i && 'rotate-180')} aria-hidden />
               </button>
-              {open === i && <p className="px-5 pb-5 text-sm leading-relaxed text-fg-muted">{item.a}</p>}
+              <div
+                id={`faq-answer-${i}`}
+                inert={open !== i}
+                className={cn('grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none', open === i ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]')}
+              >
+                <div className="overflow-hidden">
+                  <p className="px-5 pb-5 text-sm leading-relaxed text-fg-muted">{item.a}</p>
+                </div>
+              </div>
             </div>
           ))}
         </div>
@@ -265,118 +234,6 @@ export function FinalCta() {
               تحدّث مع فريقنا
             </Link>
           </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-
-export function PublicTeachersSection() {
-  const [teachers, setTeachers] = useState<DirectoryTeacher[]>([]);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    publicApi
-      .getDirectoryTeachers()
-      .then((data) => {
-        setTeachers(data);
-        setLoaded(true);
-      })
-      .catch(() => {
-        setTeachers([]);
-        setLoaded(true);
-      });
-  }, []);
-
-  if (loaded && teachers.length === 0) {
-    return null;
-  }
-
-  return (
-    <section id="teachers-directory" className="py-20 lg:py-24 border-b border-border bg-surface-raised/40" data-reveal-group>
-      <div className="mx-auto max-w-[var(--content-max)] px-4 sm:px-6">
-        <SectionHeading
-          eyebrow="نخبة المعلمين والمراكز"
-          title="تعلّم مع أفضل المعلمين والأكاديميات"
-          description="معلمون ومراكز تعليمية موثوقة تستخدم سحابة لتقديم تجربة تعليمية متميزة لطلابها."
-        />
-
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" data-reveal>
-          {teachers.map((t) => {
-            const photoSrc = t.photo_url ? apiClient.url(t.photo_url) : null;
-            return (
-              <article
-                key={t.id}
-                className="group relative flex flex-col justify-between rounded-xl border border-border bg-surface p-6 shadow-sm transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-md"
-              >
-                <div>
-                  <div className="flex items-start justify-between gap-3 mb-4">
-                    <div className="flex items-center gap-3">
-                      {photoSrc ? (
-                        <img
-                          src={photoSrc}
-                          alt={t.name}
-                          className="h-14 w-14 rounded-full border border-border object-cover"
-                        />
-                      ) : (
-                        <span className="grid h-14 w-14 place-items-center rounded-full bg-primary-subtle text-lg font-bold text-primary">
-                          {t.name.slice(0, 1)}
-                        </span>
-                      )}
-                      <div>
-                        <h3 className="text-base font-bold text-fg group-hover:text-primary transition-colors">
-                          {t.name}
-                        </h3>
-                        <p className="text-xs text-fg-muted line-clamp-1">
-                          {t.headline || 'معلم معتمد'}
-                        </p>
-                      </div>
-                    </div>
-
-                    {t.is_featured && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-warning/10 px-2 py-0.5 text-[0.6875rem] font-semibold text-warning border border-warning/30">
-                        <Sparkles size={11} aria-hidden />
-                        مميز
-                      </span>
-                    )}
-                  </div>
-
-                  {t.bio && (
-                    <p className="text-xs text-fg-muted line-clamp-2 leading-relaxed mb-4">
-                      {t.bio}
-                    </p>
-                  )}
-                </div>
-
-                <div className="pt-4 border-t border-border/70 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 text-xs text-fg-subtle">
-                    <span className="flex items-center gap-1">
-                      <GraduationCap size={13} aria-hidden />
-                      {t.tenant_name}
-                    </span>
-                    {t.city && (
-                      <>
-                        <span>•</span>
-                        <span className="flex items-center gap-1">
-                          <MapPin size={11} aria-hidden />
-                          {t.city}
-                        </span>
-                      </>
-                    )}
-                  </div>
-
-                  <Link
-                    href={t.academy_url}
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
-                  >
-                    صفحة المعلم
-                    <IconNext size={13} />
-                  </Link>
-                </div>
-              </article>
-            );
-          })}
         </div>
       </div>
     </section>

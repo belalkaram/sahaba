@@ -22,8 +22,72 @@ export interface DirectoryTeacher {
   bio: string | null;
   photo_url: string | null;
   city: string | null;
+  /** Public courses this teacher owns; null until the platform metrics job has run. */
+  courses_count: number | null;
+  is_featured: boolean;
+  /** The teacher's own public page. */
+  profile_url: string;
+  /** The academy's public home. */
+  academy_url: string;
+}
+
+/** An academy that opted into the public directory (`tenants.is_listed`). */
+export interface DirectoryAcademy {
+  slug: string;
+  name: string;
+  type: 'individual_teacher' | 'organization' | string;
+  organization_kind: string | null;
+  city: string | null;
+  tagline: string | null;
+  logo_url: string | null;
+  primary_color: string | null;
+  services: ('online' | 'offline')[];
+  /** null while the counts have not been computed yet — show nothing rather than a zero. */
+  courses_count: number | null;
+  teachers_count: number | null;
+  accepts_registrations: boolean;
   is_featured: boolean;
   academy_url: string;
+}
+
+export interface DirectoryQuery {
+  search?: string;
+  city?: string;
+  featured?: boolean;
+  page?: number;
+  per_page?: number;
+  /** Academies only. */
+  type?: 'individual_teacher' | 'organization';
+  kind?: 'center' | 'academy' | 'school' | 'institute';
+  service?: 'online' | 'offline';
+  /** Teachers only: limit to one academy's slug. */
+  academy?: string;
+}
+
+export interface Pagination {
+  total: number;
+  page: number;
+  per_page: number;
+  last_page: number;
+}
+
+/** Headline numbers for the landing page; a null count means "not computed", not zero. */
+export interface PublicStats {
+  academies_count: number;
+  teachers_count: number;
+  courses_count: number | null;
+  cities_count: number;
+  computed_at: string | null;
+}
+
+function directoryQuery(params: DirectoryQuery = {}): string {
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined || value === '' || value === false) return;
+    query.set(key, value === true ? '1' : String(value));
+  });
+  const qs = query.toString();
+  return qs ? `?${qs}` : '';
 }
 
 /** OD-39: students pay the platform nothing; academies buy seats (student = code). */
@@ -50,13 +114,28 @@ export const publicApi = {
     await apiClient.post('/public/contact', payload, { skipUnauthorizedHandler: true });
   },
 
-  async getDirectoryTeachers(featured?: boolean): Promise<DirectoryTeacher[]> {
-    const query = featured ? '?featured=1' : '';
+  async getDirectoryTeachers(params: DirectoryQuery | boolean = {}): Promise<DirectoryTeacher[]> {
+    const query = typeof params === 'boolean' ? { featured: params } : params;
     const res = await apiClient.get<{ teachers: DirectoryTeacher[] }>(
-      `/public/directory/teachers${query}`,
+      `/public/directory/teachers${directoryQuery(query)}`,
       { skipUnauthorizedHandler: true }
     );
     return res.data.teachers;
+  },
+
+  async getDirectoryAcademies(params: DirectoryQuery = {}): Promise<{ academies: DirectoryAcademy[]; pagination: Pagination }> {
+    const res = await apiClient.get<{ academies: DirectoryAcademy[] }>(
+      `/public/directory/academies${directoryQuery(params)}`,
+      { skipUnauthorizedHandler: true }
+    );
+    const academies = res.data.academies ?? [];
+    const pagination = res.meta.pagination ?? { total: academies.length, page: 1, per_page: academies.length, last_page: 1 };
+    return { academies, pagination };
+  },
+
+  async getPublicStats(): Promise<PublicStats> {
+    const res = await apiClient.get<PublicStats>('/public/stats', { skipUnauthorizedHandler: true });
+    return res.data;
   },
 
   async getPricing(): Promise<PublicPricing> {
@@ -64,6 +143,21 @@ export const publicApi = {
     return res.data;
   },
 };
+
+/** What an academy publishes about itself (GET /public/academy/profile). */
+export interface AcademyProfile {
+  slug: string;
+  name: string;
+  type: 'individual_teacher' | 'organization' | string;
+  organization_kind: string | null;
+  city: string | null;
+  brand_tagline: string | null;
+  logo_url: string | null;
+  primary_color: string | null;
+  services: ('online' | 'offline')[];
+  accepts_registrations: boolean;
+  is_listed: boolean;
+}
 
 export interface PublicTeacherRef {
   id: string;
@@ -113,9 +207,10 @@ export const publicAcademyApi = {
     const res = await apiClient.get<{ teacher: PublicTeacher }>(`/public/academy/teachers/${id}`, opts(slug));
     return res.data.teacher;
   },
-  async academy(slug: string) {
-    const res = await apiClient.get<{ name: string; slug: string; logo_url: string | null; primary_color: string | null; brand_tagline: string | null }>(
-      '/tenant/current',
+  /** Marketing profile only — /tenant/current also carries operational fields. */
+  async academy(slug: string): Promise<AcademyProfile> {
+    const res = await apiClient.get<AcademyProfile>(
+      '/public/academy/profile',
       opts(slug),
     );
     return res.data;

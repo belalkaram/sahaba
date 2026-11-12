@@ -139,6 +139,8 @@ services:
     environment:
       NODE_ENV:             production
       NEXT_PUBLIC_API_URL:  ${NEXT_PUBLIC_API_URL:-/api}
+      # Absolute API URL reachable from this container; the landing fetches its directory data on the server.
+      API_INTERNAL_URL:     ${API_INTERNAL_URL:-}
     networks:
       - lms_network
     healthcheck:

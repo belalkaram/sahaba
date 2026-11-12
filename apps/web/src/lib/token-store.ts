@@ -1,11 +1,13 @@
 /**
  * R1B — Token Store
- * Manages auth token persistence in localStorage + mirrors to cookie for middleware.
+ * Manages auth token persistence in localStorage + mirrors to cookie for the proxy (src/proxy.ts).
  * SSR-safe (window guard for server-side rendering).
  */
 
 const TOKEN_KEY = 'lms_auth_token';
 const TENANT_KEY = 'lms_tenant_slug';
+/** Dashboard path of the signed-in experience; lets the proxy skip the landing for signed-in users. */
+const HOME_KEY = 'lms_home';
 
 /** Cookie maxAge: 8 hours (session-level, not permanent) */
 const COOKIE_MAX_AGE = 60 * 60 * 8;
@@ -34,6 +36,10 @@ export const tokenStore = {
     if (typeof window === 'undefined') return;
     localStorage.removeItem(TOKEN_KEY);
     deleteCookie(TOKEN_KEY);
+    deleteCookie(HOME_KEY);
+  },
+  setHome: (path: string): void => {
+    setCookie(HOME_KEY, path, COOKIE_MAX_AGE);
   },
   getTenant: (): string | null => {
     if (typeof window === 'undefined') return null;
@@ -48,5 +54,6 @@ export const tokenStore = {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(TENANT_KEY);
     deleteCookie(TOKEN_KEY);
+    deleteCookie(HOME_KEY);
   },
 };

@@ -44,6 +44,18 @@ const themeBootScript = `
     root.setAttribute('data-theme', dark ? 'dark' : 'light');
     root.classList.toggle('dark', dark);
   } catch (e) {}
+  /*
+   * Landing entrance animations: hide the animated elements before first paint (globals.css,
+   * html.motion-ready) so they never flash visible-then-hidden. If the motion code has not taken
+   * over after 3.5s (slow or failed JS) the class is dropped and everything shows as plain content.
+   */
+  try {
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      var el = document.documentElement;
+      el.classList.add('motion-ready');
+      setTimeout(function () { if (!window.__sahabaMotion) el.classList.remove('motion-ready'); }, 3500);
+    }
+  } catch (e) {}
 })();
 `;
 

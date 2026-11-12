@@ -20,6 +20,8 @@ class Tenant extends Model
         'auth_mode',
         'status',
         'accepts_registrations',
+        'is_listed',
+        'is_featured',
         'seat_quota',
         'name',
         'slug',
@@ -35,6 +37,8 @@ class Tenant extends Model
 
     protected $casts = [
         'accepts_registrations' => 'boolean',
+        'is_listed' => 'boolean',
+        'is_featured' => 'boolean',
         'brand_settings' => 'array',
     ];
 

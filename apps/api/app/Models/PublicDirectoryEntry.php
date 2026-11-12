@@ -22,6 +22,7 @@ class PublicDirectoryEntry extends Model
         'bio',
         'photo_url',
         'city',
+        'public_courses_count',
         'is_featured',
         'is_public',
         'sort_order',
@@ -31,6 +32,7 @@ class PublicDirectoryEntry extends Model
         'is_featured' => 'boolean',
         'is_public' => 'boolean',
         'sort_order' => 'integer',
+        'public_courses_count' => 'integer',
     ];
 
     public function tenant(): BelongsTo

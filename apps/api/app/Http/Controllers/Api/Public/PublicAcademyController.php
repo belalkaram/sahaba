@@ -22,6 +22,35 @@ class PublicAcademyController extends Controller
         protected TenantContext $context
     ) {}
 
+    /**
+     * Marketing profile of the academy for its public pages.
+     *
+     * `/tenant/current` also answers without authentication and carries operational fields
+     * (contact phone, domains, auth mode, brand settings); public pages use this instead so they
+     * cannot expose any of it.
+     */
+    public function profile(): JsonResponse
+    {
+        $tenant = $this->context->getTenantOrFail();
+        $logoPath = $tenant->brand_settings['logo_path'] ?? null;
+
+        return ApiResponse::success([
+            'slug' => $tenant->slug,
+            'name' => $tenant->name,
+            'type' => $tenant->type,
+            'organization_kind' => $tenant->organization_kind,
+            'city' => $tenant->city,
+            'brand_tagline' => $tenant->brand_tagline,
+            'logo_url' => $logoPath
+                ? '/api/v1/public/academy/logo?tenant='.$tenant->slug.'&v='.substr(md5($logoPath), 0, 8)
+                : $tenant->logo_url,
+            'primary_color' => $tenant->primary_color,
+            'services' => $tenant->services,
+            'accepts_registrations' => (bool) $tenant->accepts_registrations,
+            'is_listed' => (bool) $tenant->is_listed,
+        ]);
+    }
+
     public function courses(): JsonResponse
     {
         $courses = $this->listedCourses()->with('teacher.user')->orderByDesc('published_at')->get();

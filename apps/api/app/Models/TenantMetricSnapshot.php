@@ -17,6 +17,8 @@ class TenantMetricSnapshot extends Model
         'students_count',
         'staff_count',
         'courses_count',
+        'public_courses_count',
+        'public_teachers_count',
         'storage_bytes',
         'last_activity_at',
         'status',

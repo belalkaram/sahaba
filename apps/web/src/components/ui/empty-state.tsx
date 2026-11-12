@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Inbox } from 'lucide-react';
+import { Cloud } from 'lucide-react';
 import { cn } from '../../lib/cn';
 import { Button } from './button';
 
@@ -32,9 +32,8 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ icon, title, description
         className,
       )}
     >
-      <div className="arch relative grid h-16 w-14 place-items-center overflow-hidden bg-primary-subtle text-primary">
-        <span className="pattern-overlay" aria-hidden />
-        <span className="relative">{icon || <Inbox size={24} strokeWidth={1.75} aria-hidden />}</span>
+      <div className="relative grid h-16 w-16 place-items-center rounded-2xl bg-primary-subtle text-primary">
+        <span className="relative">{icon || <Cloud size={24} strokeWidth={1.75} aria-hidden />}</span>
       </div>
       <div className="max-w-md space-y-1">
         <h3 className="text-base font-bold text-fg">{title}</h3>

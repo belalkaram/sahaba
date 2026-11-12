@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Menu, X } from 'lucide-react';
 import { BrandLockup } from '../brand/brand-mark';
@@ -10,8 +10,9 @@ import { BRAND } from '../../config/brand';
 import { cn } from '../../lib/cn';
 
 const NAV = [
+  { href: '/academies', label: 'الأكاديميات' },
+  { href: '/teachers', label: 'المعلمون' },
   { href: '/#features', label: 'المزايا' },
-  { href: '/#how', label: 'كيف تعمل' },
   { href: '/pricing', label: 'الأسعار' },
   { href: '/about', label: 'عن سحابة' },
   { href: '/contact', label: 'تواصل معنا' },
@@ -19,25 +20,68 @@ const NAV = [
 
 /** Shared header for public pages (landing, pricing, about, contact, legal, register). */
 export function PublicHeader() {
-  const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const headerRef = useRef<HTMLElement>(null);
+  const progressRef = useRef<HTMLSpanElement>(null);
+  const openRef = useRef(false);
+  openRef.current = open;
+
+  // Scroll work writes to the DOM directly: a header that re-rendered on every scroll event was
+  // the main cost of this page.
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
-    onScroll();
+    const header = headerRef.current;
+    if (!header) return;
+
+    let lastY = window.scrollY;
+    let frame = 0;
+
+    const update = () => {
+      frame = 0;
+      const y = window.scrollY;
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      if (progressRef.current) {
+        progressRef.current.style.transform = `scaleX(${max > 0 ? Math.min(y / max, 1) : 0})`;
+      }
+      header.classList.toggle('shadow-md', y > 8);
+      header.classList.toggle('border-border', y > 8);
+      header.classList.toggle('border-border/60', y <= 8);
+      // Give the page back its full height while reading down; bring the header back on the way up.
+      const hide = !openRef.current && y > 180 && y > lastY + 4;
+      header.style.transform = hide ? 'translateY(-100%)' : 'translateY(0)';
+      lastY = y;
+    };
+
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+
+    update();
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    window.addEventListener('resize', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      if (frame) cancelAnimationFrame(frame);
+    };
   }, []);
+
+  // Opening the menu must never leave the header off-screen.
+  useEffect(() => {
+    if (open && headerRef.current) headerRef.current.style.transform = 'translateY(0)';
+  }, [open]);
 
   return (
     <header
+      ref={headerRef}
       className={cn(
-        'chrome-surface sticky top-0 z-40 border-b transition-shadow duration-300',
-        scrolled ? 'border-border shadow-md' : 'border-border/60 shadow-none',
+        'chrome-surface sticky top-0 z-40 border-b border-border/60',
+        'transition-[transform,box-shadow] duration-300 will-change-transform motion-reduce:transition-none',
       )}
     >
+      <span ref={progressRef} aria-hidden className="absolute inset-x-0 bottom-0 h-0.5 origin-right scale-x-0 bg-primary" />
       {/* 3 equal tracks: brand | centered links | actions — links stay optically centered at any width */}
       <div className="mx-auto grid h-[68px] max-w-[var(--content-max)] grid-cols-[1fr_auto] items-center gap-4 px-4 sm:px-6 lg:h-[76px] lg:grid-cols-[1fr_auto_1fr]">
-        <Link href="/" className="justify-self-start" aria-label={BRAND.nameAr}>
+        <Link href="/" className="justify-self-start">
           <BrandLockup size={52} />
         </Link>
 
@@ -101,12 +145,13 @@ export function PublicFooter() {
   return (
     <footer className="border-t border-border bg-surface">
       <div className="sadu w-full opacity-70" aria-hidden />
-      <div className="mx-auto grid max-w-[var(--content-max)] gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.4fr_repeat(3,1fr)]">
+      <div className="mx-auto grid max-w-[var(--content-max)] gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.4fr_repeat(4,1fr)]">
         <div className="space-y-3">
           <BrandLockup size={40} />
           <p className="max-w-sm text-sm leading-relaxed text-fg-muted">{BRAND.descriptionAr}</p>
         </div>
-        <FooterCol title="المنصة" links={[['المزايا', '/#features'], ['الأسعار', '/pricing'], ['سجّل أكاديميتك', '/register-school']]} />
+        <FooterCol title="المنصة" links={[['المزايا', '/#features'], ['كيف تعمل', '/#how'], ['الأسعار', '/pricing'], ['سجّل أكاديميتك', '/register-school']]} />
+        <FooterCol title="استكشف" links={[['الأكاديميات', '/academies'], ['المعلمون', '/teachers'], ['الأسئلة الشائعة', '/#faq']]} />
         <FooterCol title="الشركة" links={[['عن سحابة', '/about'], ['تواصل معنا', '/contact']]} />
         <FooterCol title="قانوني" links={[['سياسة الخصوصية', '/privacy'], ['الشروط والأحكام', '/terms']]} />
       </div>

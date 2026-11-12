@@ -91,7 +91,7 @@ export function AcademyChrome({ children }: { children: React.ReactNode }) {
         <div className="mx-auto flex max-w-[var(--content-max)] flex-col items-center justify-between gap-2 px-4 py-6 text-center text-sm text-fg-muted sm:flex-row sm:px-6 sm:text-start">
           <p className="break-words">© {new Date().getFullYear()} {academy.name}</p>
           <p>
-            مدعوم بمنصة <Link href="/" className="font-semibold text-primary hover:underline">{BRAND.nameAr}</Link>
+            مدعوم بمنصة <Link href="/" className="font-semibold text-primary underline underline-offset-2">{BRAND.nameAr}</Link>
           </p>
         </div>
       </footer>

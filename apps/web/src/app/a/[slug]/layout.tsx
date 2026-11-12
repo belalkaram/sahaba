@@ -38,9 +38,8 @@ export default function AcademyLayout({ children, params }: { children: React.Re
     );
   }
 
-  const a = state.data;
   return (
-    <AcademyProvider value={{ slug, name: a.name, logo_url: a.logo_url, brand_tagline: a.brand_tagline }}>
+    <AcademyProvider value={{ ...state.data, slug }}>
       <AcademyChrome>{children}</AcademyChrome>
     </AcademyProvider>
   );

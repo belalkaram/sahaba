@@ -8,11 +8,11 @@ use App\Http\Controllers\Api\Assessment\AssessmentOverviewController;
 use App\Http\Controllers\Api\Assessment\AssignmentController;
 use App\Http\Controllers\Api\Assessment\AssignmentQuestionController;
 use App\Http\Controllers\Api\Assessment\ExamController;
-use App\Http\Controllers\Api\Assessment\ModelAnswerController;
-use App\Http\Controllers\Api\Assessment\QuestionMediaController;
 use App\Http\Controllers\Api\Assessment\GradeController;
 use App\Http\Controllers\Api\Assessment\GradingInboxController;
+use App\Http\Controllers\Api\Assessment\ModelAnswerController;
 use App\Http\Controllers\Api\Assessment\QuestionBankController;
+use App\Http\Controllers\Api\Assessment\QuestionMediaController;
 use App\Http\Controllers\Api\Attendance\AttendanceController;
 use App\Http\Controllers\Api\Attendance\BranchController;
 use App\Http\Controllers\Api\Attendance\ClassController;
@@ -30,6 +30,8 @@ use App\Http\Controllers\Api\Billing\EntitlementController;
 use App\Http\Controllers\Api\Billing\PackageController;
 use App\Http\Controllers\Api\Billing\PaymentRequestController;
 use App\Http\Controllers\Api\Billing\SubscriptionController;
+use App\Http\Controllers\Api\CapacityController;
+use App\Http\Controllers\Api\Communication\AnnouncementController;
 use App\Http\Controllers\Api\Credential\CredentialController;
 use App\Http\Controllers\Api\Education\CourseController;
 use App\Http\Controllers\Api\Education\CourseModuleController;
@@ -42,18 +44,19 @@ use App\Http\Controllers\Api\Education\StudentUnifiedOverviewController;
 use App\Http\Controllers\Api\Education\VideoEventController;
 use App\Http\Controllers\Api\HealthCheckController;
 use App\Http\Controllers\Api\Identity\ParentController;
+use App\Http\Controllers\Api\Identity\RegistrationRequestController;
 use App\Http\Controllers\Api\Identity\StaffController;
 use App\Http\Controllers\Api\Identity\StudentImportController;
 use App\Http\Controllers\Api\Identity\UserController;
 use App\Http\Controllers\Api\Integration\MediaController;
 use App\Http\Controllers\Api\Integration\MeetingController;
 use App\Http\Controllers\Api\Integration\WebhookController;
+use App\Http\Controllers\Api\Me\MyAnnouncementController;
 use App\Http\Controllers\Api\Me\MyResourceController;
 use App\Http\Controllers\Api\Me\NotificationPreferenceController;
-use App\Http\Controllers\Api\Me\MyAnnouncementController;
-use App\Http\Controllers\Api\Communication\AnnouncementController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\Platform\PlatformAuthController;
+use App\Http\Controllers\Api\Platform\PlatformCapacityController;
 use App\Http\Controllers\Api\Platform\PlatformDirectoryController;
 use App\Http\Controllers\Api\Platform\PlatformPaymentController;
 use App\Http\Controllers\Api\Platform\PlatformPricingController;
@@ -61,16 +64,13 @@ use App\Http\Controllers\Api\Platform\PlatformSettingsController;
 use App\Http\Controllers\Api\Platform\SupportAccessController;
 use App\Http\Controllers\Api\Platform\TenantController;
 use App\Http\Controllers\Api\Public\ContactMessageController;
-use App\Http\Controllers\Api\Identity\RegistrationRequestController;
 use App\Http\Controllers\Api\Public\PublicAcademyController;
-use App\Http\Controllers\Api\Public\PublicRegistrationController;
 use App\Http\Controllers\Api\Public\PublicConfigController;
 use App\Http\Controllers\Api\Public\PublicDirectoryController;
+use App\Http\Controllers\Api\Public\PublicRegistrationController;
 use App\Http\Controllers\Api\Public\SchoolRegistrationController;
 use App\Http\Controllers\Api\Reporting\ReportController;
 use App\Http\Controllers\Api\TenantCurrentController;
-use App\Http\Controllers\Api\CapacityController;
-use App\Http\Controllers\Api\Platform\PlatformCapacityController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -94,7 +94,14 @@ Route::post('/public/register-school', [SchoolRegistrationController::class, 're
 Route::get('/public/config', [PublicConfigController::class, 'show'])
     ->name('api.public.config');
 Route::get('/public/directory/teachers', [PublicDirectoryController::class, 'teachers'])
+    ->middleware('throttle:60,1')
     ->name('api.public.directory.teachers');
+Route::get('/public/directory/academies', [PublicDirectoryController::class, 'academies'])
+    ->middleware('throttle:60,1')
+    ->name('api.public.directory.academies');
+Route::get('/public/stats', [PublicDirectoryController::class, 'stats'])
+    ->middleware('throttle:60,1')
+    ->name('api.public.stats');
 Route::get('/public/registration/options', [PublicRegistrationController::class, 'options'])
     ->name('api.public.registration.options');
 Route::get('/public/registration/academies', [PublicRegistrationController::class, 'directory'])
@@ -145,6 +152,8 @@ Route::middleware(['platform.auth'])->group(function () {
 
     // Platform Directory (PS-2, F-1)
     Route::get('/platform/directory/teachers', [PlatformDirectoryController::class, 'index'])->name('api.platform.directory.index');
+    Route::get('/platform/directory/academies', [PlatformDirectoryController::class, 'academies'])->name('api.platform.directory.academies');
+    Route::post('/platform/directory/academies/{id}/toggle', [PlatformDirectoryController::class, 'toggleAcademy'])->name('api.platform.directory.academies.toggle');
     Route::post('/platform/directory/teachers/{id}/toggle-featured', [PlatformDirectoryController::class, 'toggleFeatured'])->whereNumber('id')->name('api.platform.directory.toggle_featured');
 
     // Platform Payments Review Inbox & Reports (OD-27, ADR-004)
@@ -175,6 +184,7 @@ Route::middleware(['tenant', 'throttle:api'])->group(function () {
 
     // Public academy landing data (opt-in content only)
     Route::prefix('public/academy')->group(function () {
+        Route::get('/profile', [PublicAcademyController::class, 'profile'])->name('api.public.academy.profile');
         Route::get('/logo', [PublicAcademyController::class, 'logo'])->name('api.public.academy.logo');
         Route::get('/courses', [PublicAcademyController::class, 'courses'])->name('api.public.academy.courses');
         Route::get('/courses/{id}', [PublicAcademyController::class, 'course'])->name('api.public.academy.course');

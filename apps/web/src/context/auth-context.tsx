@@ -107,6 +107,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     router.push('/login');
   }, [router]);
 
+  // Tell the proxy where this user's dashboard is, so `/` redirects there before the landing renders.
+  useEffect(() => {
+    if (session) tokenStore.setHome(homePathFor(session.experience));
+  }, [session]);
+
   // Wire apiClient to trigger handleUnauthenticated on any 401 response
   useEffect(() => {
     apiClient.setUnauthorizedHandler(handleUnauthenticated);

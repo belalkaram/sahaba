@@ -11,7 +11,7 @@ const POINTS = [
   { icon: ShieldCheck, title: 'صلاحيات آمنة', text: 'كل دور يرى ما يخصّه فقط، وبيانات كل أكاديمية معزولة.' },
 ];
 
-/** Brand side of the auth screens: emerald gradient, khatam pattern, arch composition. */
+/** Brand side of the auth screens: emerald gradient, khatam pattern, cloud composition. */
 export function AuthBrandPanel() {
   const ref = useRef<HTMLDivElement>(null);
   useGSAP(
@@ -29,10 +29,10 @@ export function AuthBrandPanel() {
     <div ref={ref} className="relative hidden overflow-hidden bg-gradient-brand text-white lg:flex lg:flex-col lg:justify-between">
       <span className="pattern-overlay opacity-60 [background-color:rgba(255,255,255,0.09)]" aria-hidden />
 
-      {/* Arch composition */}
+      {/* Cloud composition */}
       <div className="relative flex flex-1 items-end justify-center gap-4 px-12 pt-16" aria-hidden>
-        <div data-arch className="arch h-44 w-28 border border-white/15 bg-white/5" />
-        <div data-arch data-float className="arch relative h-72 w-44 overflow-hidden border border-white/20 bg-white/10 backdrop-blur-sm">
+        <div data-arch className="rounded-3xl h-44 w-28 border border-white/15 bg-white/5" />
+        <div data-arch data-float className="rounded-3xl relative h-72 w-44 overflow-hidden border border-white/20 bg-white/10 backdrop-blur-sm">
           <span className="pattern-overlay opacity-80 [background-color:rgba(255,255,255,0.18)]" />
           <svg viewBox="0 0 48 48" className="absolute inset-x-0 top-14 mx-auto h-20 w-20" aria-hidden>
             <g fill="#fff">
@@ -44,7 +44,7 @@ export function AuthBrandPanel() {
             <path d="M22 33.5V28.5a3 3 0 0 1 6 0v5z" fill="#0C7F6D" />
           </svg>
         </div>
-        <div data-arch className="arch h-52 w-32 border border-white/15 bg-white/5" />
+        <div data-arch className="rounded-3xl h-52 w-32 border border-white/15 bg-white/5" />
       </div>
 
       <div className="relative space-y-8 px-12 pb-14 pt-10">

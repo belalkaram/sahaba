@@ -30,8 +30,8 @@ export const STATS: ({ value: string; label: string } & Sampled)[] = [
 ];
 
 /** Generated wordmarks for fictional academies (rendered as geometric marks + name). */
-export const LOGOS: ({ name: string; shape: 'arch' | 'star' | 'dome' | 'wave' | 'tower' } & Sampled)[] = [
-  { name: 'أكاديمية الواحة', shape: 'arch', sample: true },
+export const LOGOS: ({ name: string; shape: 'cloud' | 'star' | 'dome' | 'wave' | 'tower' } & Sampled)[] = [
+  { name: 'أكاديمية الواحة', shape: 'cloud', sample: true },
   { name: 'مركز النخبة', shape: 'star', sample: true },
   { name: 'معهد الأفق', shape: 'dome', sample: true },
   { name: 'مدارس الرمال', shape: 'wave', sample: true },
@@ -40,10 +40,12 @@ export const LOGOS: ({ name: string; shape: 'arch' | 'star' | 'dome' | 'wave' | 
 
 export type RoleKey = 'student' | 'teacher' | 'admin' | 'parent';
 
-export const ROLE_FEATURES: Record<RoleKey, { label: string; title: string; items: { icon: string; title: string; text: string }[] }> = {
+export const ROLE_FEATURES: Record<RoleKey, { label: string; title: string; screensTitle: string; screens: string[]; items: { icon: string; title: string; text: string }[] }> = {
   student: {
     label: 'الطالب',
     title: 'رحلة تعلّم واضحة من أول درس',
+    screensTitle: 'شاشات الطالب',
+    screens: ['الرئيسية', 'موادي الدراسية', 'واجباتي', 'اختباراتي', 'الحصص المباشرة', 'سجل الحضور', 'درجاتي وشهاداتي', 'بطاقتي الرقمية'],
     items: [
       { icon: 'PlayCircle', title: 'تابع من حيث توقفت', text: 'استكمل الدرس الأخير بضغطة واحدة مع حفظ تقدّمك.' },
       { icon: 'CalendarClock', title: 'مواعيدك أمامك', text: 'الحصص والواجبات والاختبارات القادمة بعدّ تنازلي.' },
@@ -54,6 +56,8 @@ export const ROLE_FEATURES: Record<RoleKey, { label: string; title: string; item
   teacher: {
     label: 'المعلّم',
     title: 'وقت أقل في الإدارة، أكثر في التعليم',
+    screensTitle: 'شاشات المعلّم',
+    screens: ['لوحة اليوم', 'المقررات والدروس', 'سجل الطلاب', 'الحضور والمسح', 'التصحيح', 'الحصص المباشرة', 'مكتبة الوسائط', 'التقارير'],
     items: [
       { icon: 'BookOpen', title: 'بناء المقررات', text: 'دروس فيديو ومستندات وملاحظات مرتبة بمنهج واضح.' },
       { icon: 'ScanLine', title: 'رصد الحضور بالمسح', text: 'امسح بطاقات الطلاب من الجوال وانتهِ في دقائق.' },
@@ -64,6 +68,8 @@ export const ROLE_FEATURES: Record<RoleKey, { label: string; title: string; item
   admin: {
     label: 'الإدارة',
     title: 'تشغيل أكاديميتك بثقة',
+    screensTitle: 'شاشات الإدارة',
+    screens: ['لوحة المؤسسة', 'المستخدمون والأدوار', 'الفروع والقاعات', 'الشُّعب والحصص', 'الباقات والأسعار', 'مراجعة المدفوعات', 'سجل التدقيق', 'إعدادات المؤسسة'],
     items: [
       { icon: 'Users', title: 'المستخدمون والأدوار', text: 'صلاحيات دقيقة لكل دور مع سجل تدقيق كامل.' },
       { icon: 'ReceiptText', title: 'الاشتراكات والمدفوعات', text: 'باقات وأسعار ومراجعة تحويلات بخطوات واضحة.' },
@@ -74,6 +80,8 @@ export const ROLE_FEATURES: Record<RoleKey, { label: string; title: string; item
   parent: {
     label: 'ولي الأمر',
     title: 'اطمئنان يومي على أبنائك',
+    screensTitle: 'شاشات ولي الأمر',
+    screens: ['متابعة الأبناء', 'ملف كل ابن', 'الحضور والغياب', 'الدرجات', 'التقارير', 'الإشعارات'],
     items: [
       { icon: 'HeartHandshake', title: 'متابعة كل الأبناء', text: 'بطاقة لكل ابن: الحضور وآخر الدرجات والتنبيهات.' },
       { icon: 'Bell', title: 'تنبيهات مهمة', text: 'غياب أو تأخر في التسليم؟ تعرف في الوقت المناسب.' },
@@ -112,10 +120,101 @@ export const TESTIMONIALS: ({ quote: string; name: string; role: string } & Samp
 
 export const FAQ = [
   { q: 'هل بيانات أكاديميتي معزولة عن غيرها؟', a: 'نعم. لكل مؤسسة قاعدة بيانات مستقلة، والصلاحيات تُفرض من الخادم لكل طلب.' },
+  { q: 'من يدفع للمنصة؟', a: 'الأكاديمية أو المدرس المستقل يشتري سعة مقاعد. الطالب لا يدفع للمنصة شيئاً، وتبقى باقات الأكاديمية الخاصة بها كما هي.' },
+  { q: 'ما معنى «الطالب = كود»؟', a: 'لكل طالب كود دخول واحد يرتبط بجهاز واحد. عدد الأكواد المفعّلة هو السعة التي تشتريها الأكاديمية، وتغطي الأونلاين والحضوري معاً.' },
   { q: 'هل تدعم المنصة الحصص المباشرة؟', a: 'نعم، يمكن جدولة الحصص المباشرة وربطها وتتبّع حضورها من نفس المنصة.' },
   { q: 'كيف يسجّل الطلاب الحضور؟', a: 'يعرض الطالب رمز QR قصير العمر من بطاقته الرقمية، ويمسحه المعلم أو المساعد من الجوال.' },
+  { q: 'هل أستطيع استخدام الحضوري فقط؟', a: 'نعم. تختار الأكاديمية خدمة الأونلاين أو الحضوري أو الاثنتين، وتظهر الشاشات حسب اختيارك.' },
+  { q: 'كيف تظهر أكاديميتي في دليل المنصة؟', a: 'العرض اختياري: تُفعّله إدارة المنصة بطلب منك، ويمكن إيقافه في أي وقت. صفحة أكاديميتك تبقى متاحة بالرابط في الحالتين.' },
   { q: 'هل يمكن تجربة المنصة قبل الاشتراك؟', a: 'يمكنك تسجيل أكاديميتك والبدء، وفريقنا يساعدك في الإعداد الأول.' },
 ];
 
+/** The story the landing tells: what an academy juggles today, and what replaces it. */
+export const PROBLEM = {
+  eyebrow: 'الوضع اليوم',
+  title: 'أكاديمية واحدة، وعشر أدوات لا تتحدث مع بعضها',
+  description: 'كشوف حضور ورقية، وجداول متفرقة، ومجموعات مراسلة للتذكير، وملفات للدرجات، وإيصالات تحويل في صور. كل معلومة في مكان، ولا أحد يرى الصورة كاملة.',
+  pains: [
+    { icon: 'ClipboardList', text: 'الحضور في كشوف ورقية تُفرَّغ يدوياً' },
+    { icon: 'Table', text: 'جداول منفصلة للدرجات والواجبات' },
+    { icon: 'MessagesSquare', text: 'تذكير أولياء الأمور في مجموعات مراسلة' },
+    { icon: 'ImageIcon', text: 'إيصالات السداد صور في الهاتف' },
+    { icon: 'FolderOpen', text: 'ملفات الطلاب موزّعة بين الأجهزة' },
+  ],
+};
+
+export const SOLUTION = {
+  title: 'كل ذلك في سحابة واحدة',
+  points: [
+    'الحضور يُسجَّل بالمسح وينعكس فوراً في تقرير الطالب وولي الأمر',
+    'الدروس والواجبات والاختبارات والدرجات في مسار واحد',
+    'الاشتراكات والمدفوعات بسجل مراجعة واضح',
+    'لوحة واحدة ترى فيها الإدارة كل شيء بصلاحيات دقيقة',
+  ],
+};
+
+/** OD-31: a tenant takes the online service, the offline one, or both. */
+export const SERVICES = [
+  {
+    key: 'online',
+    icon: 'MonitorPlay',
+    title: 'تعليم أونلاين',
+    description: 'مقررات مسجّلة وحصص مباشرة واختبارات آمنة، مع متابعة تقدّم حقيقية لكل طالب.',
+    items: [
+      { icon: 'PlayCircle', title: 'مشغّل دروس يحفظ تقدّمك', text: 'يكمل الطالب من حيث توقف، والتقدّم محفوظ على الخادم لا في المتصفح.' },
+      { icon: 'Video', title: 'حصص مباشرة مجدولة', text: 'رابط الحصة لا يظهر إلا لمن يستحق الدخول، ويُسجَّل حضوره.' },
+      { icon: 'ShieldCheck', title: 'اختبارات بوضع مركّز', text: 'توقيت من الخادم، وشاشة اختبار مستقلة، وسجل لمحاولات الخروج.' },
+      { icon: 'FileCheck2', title: 'واجبات وتسليم وتصحيح', text: 'تسليم نصي أو بملف، وتصحيح مرتب حسب الأولوية، ونشر مُتحكَّم فيه.' },
+    ],
+  },
+  {
+    key: 'offline',
+    icon: 'Building2',
+    title: 'تعليم حضوري',
+    description: 'فروع وقاعات وشُعب وجداول حصص، وحضور بالرمز من جوال المعلم أو المساعد.',
+    items: [
+      { icon: 'QrCode', title: 'حضور بالرمز في ثوانٍ', text: 'رمز الطالب قصير العمر، والمسح من الجوال، ولا تكرار في نفس الحصة.' },
+      { icon: 'Building2', title: 'فروع وقاعات وسعات', text: 'نظّم الفروع والقاعات والشُّعب، واربط كل حصة بقاعتها.' },
+      { icon: 'CalendarClock', title: 'جدول حصص واضح', text: 'حصص اليوم أمام المعلم والمساعد، مع حالة كل حصة.' },
+      { icon: 'BellRing', title: 'ولي الأمر يعرف فوراً', text: 'غياب أو تأخير؟ يصل الإشعار في وقته بدل مكالمة في آخر الشهر.' },
+    ],
+  },
+];
+
+export const SECURITY = {
+  eyebrow: 'الأمان والعزل',
+  title: 'بيانات كل أكاديمية في قاعدتها، لا في جدول مشترك',
+  description: 'العزل ليس إعداداً في الواجهة — كل مؤسسة لها قاعدة بيانات مستقلة، والصلاحية تُفحص في الخادم مع كل طلب.',
+  points: [
+    { icon: 'Database', title: 'قاعدة بيانات لكل مؤسسة', text: 'لا استعلام يعبر حدود المؤسسة، ولا معرّف مؤسسة يُؤخذ من المتصفح.' },
+    { icon: 'KeyRound', title: 'كود واحد لجهاز واحد', text: 'كود دخول الطالب يرتبط بجهازه، واستبداله يحتاج سبباً ويُسجَّل.' },
+    { icon: 'ScrollText', title: 'سجل تدقيق للأفعال الحساسة', text: 'من غيّر ماذا ومتى: الاعتمادات المالية والصلاحيات وجلسات الدعم.' },
+    { icon: 'UserCog', title: 'صلاحيات بنطاق دقيق', text: 'المعلم يرى طلابه، والمساعد شُعبه، وولي الأمر أبناءه فقط.' },
+  ],
+};
+
+export const ANALYTICS = {
+  eyebrow: 'المتابعة والتقارير',
+  title: 'أرقام تعرف من أين جاءت',
+  description: 'كل مؤشر محسوب من بيانات فعلية: الحضور من سجل الحضور، والإنجاز من التسليمات، والمعدل من الدرجات المنشورة. ولو لم تتوفر البيانات نقول ذلك بدل عرض صفر.',
+  metrics: [
+    { label: 'نسبة الحضور', value: 92, hint: 'من سجل حضور الحصص' },
+    { label: 'إنجاز الواجبات', value: 78, hint: 'من التسليمات في موعدها' },
+    { label: 'متوسط الاختبارات', value: 85, hint: 'من الدرجات المنشورة' },
+  ],
+  features: [
+    { icon: 'ChartColumn', title: 'لوحة لكل دور', text: 'الطالب يرى تقدّمه، والمعلم صفّه، والإدارة المؤسسة كاملة.' },
+    { icon: 'FileText', title: 'تقارير جاهزة للطباعة', text: 'تقرير الطالب أو الشُّعبة يُطلب ويُجهَّز في الخلفية ثم يُنزَّل.' },
+    { icon: 'TriangleAlert', title: 'تنبيه مبكر للطلاب المتعثرين', text: 'قائمة بمن يحتاج متابعة قبل أن يتأخر كثيراً.' },
+  ],
+};
+
 /** True while any placeholder content remains (used to label sections in development). */
 export const HAS_SAMPLE_CONTENT = [...STATS, ...LOGOS, ...TESTIMONIALS].some((i) => i.sample);
+
+/** What the academy pays for (OD-39). Live details come from GET /public/pricing. */
+export const PRICING_POINTS = [
+  { icon: 'UserCheck', title: 'الطالب لا يدفع للمنصة', text: 'رسوم المنصة على الأكاديمية، لا على الطالب. وباقات أكاديميتك تبقى لك بالكامل.' },
+  { icon: 'Ticket', title: 'السعة = عدد الأكواد المفعّلة', text: 'كل طالب كود واحد مرتبط بجهاز واحد، ويغطي الأونلاين والحضوري معاً.' },
+  { icon: 'ArrowUpRight', title: 'تزيد سعتك وقت ما تحتاج', text: 'اطلب سعة إضافية وأرفق إثبات التحويل، وتُعتمد بعد المراجعة.' },
+];

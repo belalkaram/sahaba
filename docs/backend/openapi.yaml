@@ -2087,6 +2087,26 @@ paths:
           description: Standard success envelope { data, meta }
         default:
           description: Standard error envelope { error, meta }
+  /platform/directory/academies:
+    get:
+      summary: "platform.directory.academies"
+      description: "Auth: platform.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /platform/directory/academies/{id}/toggle:
+    post:
+      summary: "platform.directory.academies.toggle"
+      description: "Auth: platform.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
   /platform/directory/teachers:
     get:
       summary: "platform.directory.index"
@@ -2271,6 +2291,16 @@ paths:
           description: Standard success envelope { data, meta }
         default:
           description: Standard error envelope { error, meta }
+  /public/academy/profile:
+    get:
+      summary: "public.academy.profile"
+      description: "Auth: public."
+      security: []
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
   /public/academy/teachers:
     get:
       summary: "public.academy.teachers"
@@ -2300,6 +2330,16 @@ paths:
       security: []
       parameters:
         - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /public/directory/academies:
+    get:
+      summary: "public.directory.academies"
+      description: "Auth: public."
+      security: []
       responses:
         '200':
           description: Standard success envelope { data, meta }
@@ -2368,6 +2408,16 @@ paths:
   /public/registration/status:
     get:
       summary: "public.registration.status"
+      description: "Auth: public."
+      security: []
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /public/stats:
+    get:
+      summary: "public.stats"
       description: "Auth: public."
       security: []
       responses:

@@ -4,12 +4,15 @@ namespace App\Domain\Platform;
 
 use App\Models\AuditLog;
 use App\Models\Course;
+use App\Models\PublicDirectoryEntry;
 use App\Models\Staff;
 use App\Models\Student;
 use App\Models\Tenant;
 use App\Models\TenantMetricSnapshot;
 use App\Tenancy\TenantDatabaseManager;
 use App\Tenancy\TenantRunner;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
@@ -33,6 +36,9 @@ class PlatformMetricsService
             $this->refreshTenant($tenant);
         }
 
+        // Public counts come from these snapshots; drop the cached landing numbers.
+        Cache::forget('public.stats');
+
         return $tenants->count();
     }
 
@@ -45,7 +51,11 @@ class PlatformMetricsService
                 'students_count' => Student::count(),
                 'staff_count' => Staff::count(),
                 'courses_count' => Course::count(),
+                'public_courses_count' => $this->listedCourses()->count(),
+                'public_teachers_count' => Staff::where('status', 'active')->where('is_public', true)->count(),
             ]);
+
+            $this->refreshDirectoryCounts($tenant);
 
             $storageBytes = $this->runner->run($tenant, fn () => $this->databases->storageBytes($tenant));
 
@@ -64,12 +74,36 @@ class PlatformMetricsService
                 'students_count' => null,
                 'staff_count' => null,
                 'courses_count' => null,
+                'public_courses_count' => null,
+                'public_teachers_count' => null,
                 'storage_bytes' => null,
                 'last_activity_at' => $lastActivity,
                 'status' => 'unavailable',
                 'computed_at' => now(),
             ]);
         }
+    }
+
+    /**
+     * Number of public courses per opted-in teacher, for the public teacher directory (L1).
+     */
+    private function refreshDirectoryCounts(Tenant $tenant): void
+    {
+        $perTeacher = $this->runner->run($tenant, fn () => $this->listedCourses()
+            ->whereNotNull('teacher_staff_id')
+            ->selectRaw('teacher_staff_id, COUNT(*) as total')
+            ->groupBy('teacher_staff_id')
+            ->pluck('total', 'teacher_staff_id'));
+
+        foreach (PublicDirectoryEntry::where('tenant_id', $tenant->id)->get() as $entry) {
+            $entry->update(['public_courses_count' => (int) ($perTeacher[$entry->staff_id] ?? 0)]);
+        }
+    }
+
+    /** Courses a visitor may see: published and opted in (same rule as PublicAcademyController). */
+    private function listedCourses(): Builder
+    {
+        return Course::query()->where('status', 'published')->where('is_public', true);
     }
 
     /**

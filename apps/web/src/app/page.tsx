@@ -1,31 +1,50 @@
-'use client';
-
-import React, { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { homePathFor, useAuth } from '../context/auth-context';
+import React from 'react';
 import { PublicFooter, PublicHeader } from '../components/layout/public-chrome';
 import { LandingHero } from '../features/landing/landing-hero';
-import { Faq, FinalCta, HowItWorks, LogosStrip, PublicTeachersSection, RoleFeatures, Testimonials, useScrollReveal } from '../features/landing/landing-sections';
+import { LandingMotion, SignedInRedirect } from '../features/landing/landing-motion';
+import { TrustStrip } from '../features/landing/trust-strip';
+import { Analytics, ProblemSolution, Security, Services } from '../features/landing/story-sections';
+import { AcademiesSection, TeachersSection } from '../features/landing/showcase';
+import { PricingSection } from '../features/landing/pricing-section';
+import { Faq, FinalCta, HowItWorks, RoleFeatures, Testimonials } from '../features/landing/landing-sections';
+import { getLandingAcademies, getLandingPricing, getLandingStats, getLandingTeachers } from '../features/landing/server-data';
 
-/** Public landing (R7F). Signed-in users go straight to their own dashboard. */
-export default function HomePage() {
-  const { isAuthenticated, experience, isLoading } = useAuth();
-  const router = useRouter();
-  const scope = useScrollReveal();
+// Keep in step with LANDING_REVALIDATE_SECONDS (route segment config must be a literal).
+export const revalidate = 300;
 
-  useEffect(() => {
-    if (!isLoading && isAuthenticated) router.replace(homePathFor(experience));
-  }, [isLoading, isAuthenticated, experience, router]);
+/**
+ * Public landing (LANDING-V2). A server component: every section and its data are in the HTML,
+ * animation is one client island. Signed-in visitors are redirected by src/proxy.ts.
+ *
+ * Order tells the story: what the visitor gets → who trusts it → the problem it replaces →
+ * the two services → each role's experience → who is already on it → security → analytics →
+ * how to start → price → proof → questions → act.
+ */
+export default async function HomePage() {
+  const [teachers, academies, stats, pricing] = await Promise.all([
+    getLandingTeachers(),
+    getLandingAcademies(),
+    getLandingStats(),
+    getLandingPricing(),
+  ]);
 
   return (
-    <div ref={scope} className="min-h-screen bg-surface-sunken">
+    <div className="min-h-screen bg-surface-sunken">
+      <SignedInRedirect />
+      <LandingMotion />
       <PublicHeader />
       <main>
         <LandingHero />
-        <LogosStrip />
-        <PublicTeachersSection />
+        <TrustStrip stats={stats} academies={academies ?? []} />
+        <ProblemSolution />
+        <Services />
         <RoleFeatures />
+        <AcademiesSection initial={academies} />
+        <TeachersSection initial={teachers} />
+        <Security />
+        <Analytics />
         <HowItWorks />
+        <PricingSection pricing={pricing} />
         <Testimonials />
         <Faq />
         <FinalCta />
