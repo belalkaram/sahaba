@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Assessment;
 
 use App\Domain\Assessment\Services\ExamTimeBudget;
 use App\Domain\Assessment\Services\QuestionAutoGrader;
+use App\Domain\Attendance\Services\ExamAttendanceGate;
 use App\Domain\Communication\NotificationCatalog;
 use App\Domain\Communication\NotificationService;
 use App\Http\Controllers\Controller;
@@ -430,6 +431,17 @@ class ExamController extends Controller
                 'EXAM_NOT_AVAILABLE',
                 'This exam is not open for attempts.',
                 Response::HTTP_UNPROCESSABLE_ENTITY
+            );
+        }
+
+        // OD-35: the academy's minimum attendance rate (no rule when unset).
+        $shortfall = app(ExamAttendanceGate::class)->shortfall($user->student);
+        if ($shortfall !== null) {
+            return ApiResponse::error(
+                'ATTENDANCE_BELOW_MINIMUM',
+                sprintf('نسبة حضورك %s%% وتشترط الأكاديمية %s%% على الأقل لدخول الاختبار.', rtrim(rtrim(number_format($shortfall['rate'], 2, '.', ''), '0'), '.'), rtrim(rtrim(number_format($shortfall['minimum'], 2, '.', ''), '0'), '.')),
+                Response::HTTP_FORBIDDEN,
+                $shortfall
             );
         }
 

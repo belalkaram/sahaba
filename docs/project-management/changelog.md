@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Feature] - 2026-11-12 — Academy-defined minimum attendance for exams (ATT-1, OD-35)
+### Added
+- Tenant setting `min_attendance_for_exams` (`/tenant/academic-settings`, null = no rule) with a switch and value on `/admin/academic-settings`; exposed to the UI as `tenant.min_attendance_for_exams` in `/auth/me`.
+- `ExamAttendanceGate`: `POST .../exams/{id}/start` answers `403 ATTENDANCE_BELOW_MINIMUM` (Arabic message, `details.rate` / `details.minimum`) when the student's recorded attendance is below the academy's minimum. No recorded attendance = not blocked.
+### Fixed
+- Parent pages no longer show an invented "75% required for exams" rule or describe students scanning their own QR; they show the academy's rule only when it is set.
+### Decisions
+- OD-34..OD-39 recorded; ADR-006 (academy capacity, seat = code, academy pays instead of the 10 SAR student fee).
+### Known limitation
+- Classes are not linked to courses, so attendance is an overall rate, not per course (also affects per-course analytics, audit J-16).
+
 ## [Fix] - 2026-11-12 — Self-registered students can sign in and follow their request (UX-FIX-1)
 ### Fixed
 - `/login`: the identifier field was `type="email"`, so the browser refused a mobile number and students created by self-registration (REG-1) could not sign in. It is now "البريد الإلكتروني أو رقم الجوال" (`type="text"`, `autocomplete="username"`); Arabic-Indic digits are converted before sending (the API already normalises `+966…`).

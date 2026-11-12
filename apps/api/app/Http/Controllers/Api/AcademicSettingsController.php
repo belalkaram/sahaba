@@ -18,6 +18,7 @@ class AcademicSettingsController extends Controller
         TenantSetting::NOTIFY_PARENTS_ON_ABSENCE => true,
         TenantSetting::AT_RISK_ATTENDANCE_BELOW => 75,
         TenantSetting::AT_RISK_SCORE_BELOW => 60,
+        TenantSetting::MIN_ATTENDANCE_FOR_EXAMS => null,
     ];
 
     /**
@@ -37,6 +38,7 @@ class AcademicSettingsController extends Controller
             TenantSetting::NOTIFY_PARENTS_ON_ABSENCE => 'sometimes|boolean',
             TenantSetting::AT_RISK_ATTENDANCE_BELOW => 'sometimes|numeric|min:0|max:100',
             TenantSetting::AT_RISK_SCORE_BELOW => 'sometimes|numeric|min:0|max:100',
+            TenantSetting::MIN_ATTENDANCE_FOR_EXAMS => 'sometimes|nullable|numeric|min:1|max:100',
         ]);
 
         foreach ($validated as $key => $value) {

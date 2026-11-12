@@ -9,11 +9,14 @@ import { Button } from '../../../components/ui/button';
 import { ErrorState } from '../../../components/ui/error-state';
 import { Skeleton } from '../../../components/ui/skeleton';
 import { apiClient } from '../../../lib/api-client';
+import { normalizeDigits } from '../../../lib/format';
 
 interface AcademicSettings {
   notify_parents_on_absence: boolean;
   at_risk_attendance_below: number;
   at_risk_score_below: number;
+  /** OD-35: minimum attendance % to sit exams; null = no rule. */
+  min_attendance_for_exams: number | string | null;
 }
 
 /** R8 — tenant notification and at-risk settings. */
@@ -22,6 +25,7 @@ export default function AcademicSettingsPage() {
   const [failed, setFailed] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const requireAttendance = settings !== null && settings.min_attendance_for_exams !== null;
 
   const load = useCallback(async () => {
     setFailed(false);
@@ -47,6 +51,7 @@ export default function AcademicSettingsPage() {
         ...settings,
         at_risk_attendance_below: Number(settings.at_risk_attendance_below),
         at_risk_score_below: Number(settings.at_risk_score_below),
+        min_attendance_for_exams: requireAttendance ? Number(normalizeDigits(String(settings.min_attendance_for_exams ?? ''))) : null,
       });
       setSettings(res.data);
       setMessage({ ok: true, text: 'تم حفظ الإعدادات.' });
@@ -63,7 +68,7 @@ export default function AcademicSettingsPage() {
     <div className="space-y-6">
       <PageHeader
         title="الإعدادات الأكاديمية"
-        description="تنبيهات أولياء الأمور وحدود الطلاب المعرّضين للتعثر."
+        description="تنبيهات أولياء الأمور، وشرط الحضور لدخول الاختبارات، وحدود الطلاب المعرّضين للتعثر."
         breadcrumbs={[{ label: 'لوحة المؤسسة', href: '/admin' }, { label: 'الإعدادات الأكاديمية' }]}
       />
       {!settings ? (
@@ -77,6 +82,28 @@ export default function AcademicSettingsPage() {
               onChange={(v) => setSettings({ ...settings, notify_parents_on_absence: v })}
               label="إشعار ولي الأمر عند تسجيل غياب الطالب"
             />
+          </Card>
+          <Card>
+            <CardHeader
+              title="شرط الحضور لدخول الاختبارات"
+              description="اختياري. عند تفعيله لا يبدأ الطالب أي اختبار إذا قلّت نسبة حضوره المسجّلة عن الحد. الطالب الذي لم يُسجَّل له حضور بعد لا يُمنع."
+            />
+            <div className="space-y-4">
+              <Switch
+                checked={requireAttendance}
+                onChange={(v) => setSettings({ ...settings, min_attendance_for_exams: v ? '' : null })}
+                label="اشتراط حد أدنى لنسبة الحضور"
+              />
+              {requireAttendance && (
+                <Input
+                  label="الحد الأدنى لنسبة الحضور (٪)"
+                  inputMode="decimal"
+                  value={String(settings.min_attendance_for_exams ?? '')}
+                  onChange={(e) => setSettings({ ...settings, min_attendance_for_exams: e.target.value })}
+                  helperText="من ١ إلى ١٠٠. يظهر هذا الحد للطلاب وأولياء الأمور."
+                />
+              )}
+            </div>
           </Card>
           <Card>
             <CardHeader title="الطلاب المعرّضون للتعثر" description="يظهر الطالب في القائمة إذا قلّ عن أي من الحدّين. لا يُحتسب من ليست له بيانات." />

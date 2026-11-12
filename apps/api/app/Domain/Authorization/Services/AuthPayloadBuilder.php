@@ -97,6 +97,8 @@ class AuthPayloadBuilder
             'services' => $tenant->services(),
             'modules' => $activeModules,
             'auth_mode' => $tenant->auth_mode ?? 'hybrid',
+            // OD-35: shown to students/parents so the UI states the academy's own rule (null = no rule).
+            'min_attendance_for_exams' => app(\App\Domain\Attendance\Services\ExamAttendanceGate::class)->minimum(),
             'branding' => [
                 'logo_url' => $tenant->logo_url ?? null,
                 'primary_color' => $tenant->primary_color ?? '#0C7F6D',

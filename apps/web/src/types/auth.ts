@@ -94,6 +94,8 @@ export interface AuthTenant {
   services?: ('online' | 'offline' | string)[];
   modules: string[];
   auth_mode: 'password' | 'coupon' | 'hybrid' | string;
+  /** OD-35: the academy's minimum attendance % to sit exams; null = no rule. */
+  min_attendance_for_exams?: number | null;
   branding: AuthTenantBranding;
 }
 

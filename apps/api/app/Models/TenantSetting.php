@@ -13,6 +13,9 @@ class TenantSetting extends TenantModel
 
     public const AT_RISK_SCORE_BELOW = 'at_risk_score_below';
 
+    /** OD-35: minimum attendance % in a course to sit its exams; null = no rule (the academy chooses). */
+    public const MIN_ATTENDANCE_FOR_EXAMS = 'min_attendance_for_exams';
+
     public const WHATSAPP_ENABLED = 'whatsapp_enabled';
 
     public const WHATSAPP_PHONE_NUMBER_ID = 'whatsapp_phone_number_id';

@@ -15,12 +15,14 @@ import { SearchIcon, CalendarIcon, AwardIcon, IconNext } from '../../../componen
 import { Search, Users } from 'lucide-react';
 import { formatNumber, formatPercent } from '../../../lib/format';
 import { partial } from '../../../lib/partial-failure';
+import { attendanceVariant, useAttendanceMinimum } from '../../../lib/attendance-rule';
 interface ChildCardData {
   student: Student;
   snapshot: StudentAnalyticsSnapshot | null;
 }
 
 export default function ParentChildrenDirectoryPage() {
+  const minAttendance = useAttendanceMinimum();
   const [childrenData, setChildrenData] = useState<ChildCardData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -177,7 +179,7 @@ export default function ParentChildrenDirectoryPage() {
                       </div>
                       <ProgressBar
                         value={Number(attendanceRate ?? 0)}
-                        variant={attendanceRate === null ? 'primary' : attendanceRate >= 75 ? 'success' : 'danger'}
+                        variant={attendanceVariant(attendanceRate, minAttendance)}
                       />
                     </div>
 

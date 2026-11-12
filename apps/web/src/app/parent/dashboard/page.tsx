@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../../context/auth-context';
+import { isBelowMinimum, useAttendanceMinimum } from '../../../lib/attendance-rule';
 import { educationApi } from '../../../lib/education-api';
 import { analyticsApi } from '../../../lib/analytics-api';
 import { assessmentApi } from '../../../lib/assessment-api';
@@ -21,6 +22,7 @@ import { formatPercent, pctValue } from '../../../lib/format';
 import { partial } from '../../../lib/partial-failure';
 export default function ParentDashboardPage() {
   const { user } = useAuth();
+  const minAttendance = useAttendanceMinimum();
   const [children, setChildren] = useState<Student[]>([]);
   const [selectedChildId, setSelectedChildId] = useState<string>('');
   const [snapshot, setSnapshot] = useState<StudentAnalyticsSnapshot | null>(null);
@@ -76,7 +78,7 @@ export default function ParentDashboardPage() {
 
   // Alerts calculations
   const attendanceRate = snapshot?.attendance_rate ?? null;
-  const isAttendanceLow = attendanceRate !== null && attendanceRate < 75;
+  const isAttendanceLow = isBelowMinimum(attendanceRate, minAttendance);
   const hasActiveSub = subscriptions.some((s) => s.status === 'active');
 
   return (
@@ -186,7 +188,7 @@ export default function ParentDashboardPage() {
               <AlertCircleIcon size={18} className="text-danger shrink-0 mt-0.5" />
               <div>
                 <strong className="font-bold block text-danger">تنبيه انخفاض نسبة الحضور الأكاديمي:</strong>
-                نسبة حضور الطالب الحالية هي {formatPercent(attendanceRate)} وهي أقل من الحد الموصى به (75%). يرجى حث الطالب على الانتظام في الجلسات الحضورية والمحاضرات.
+                نسبة حضور الطالب الحالية {formatPercent(attendanceRate)}، والأكاديمية تشترط {formatPercent(minAttendance)} على الأقل لدخول الاختبارات. يرجى حث الطالب على الانتظام في الحصص.
               </div>
             </div>
           )}

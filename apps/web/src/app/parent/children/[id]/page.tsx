@@ -16,6 +16,7 @@ import { UserIcon, BookOpenIcon, CalendarIcon, FileTextIcon } from '../../../../
 import { BookOpen, ChartColumn, FileText, NotebookPen, Presentation, Printer, TriangleAlert } from 'lucide-react';
 import { formatDate, formatNumber, formatPercent } from '../../../../lib/format';
 import { partial } from '../../../../lib/partial-failure';
+import { attendanceVariant, useAttendanceMinimum } from '../../../../lib/attendance-rule';
 interface PageProps {
   params: Promise<{ id: string }>;
 }
@@ -23,6 +24,7 @@ interface PageProps {
 export default function ParentChildDetailPage({ params }: PageProps) {
   const resolvedParams = use(params);
   const childId = resolvedParams.id;
+  const minAttendance = useAttendanceMinimum();
 
   const [student, setStudent] = useState<Student | null>(null);
   const [snapshot, setSnapshot] = useState<StudentAnalyticsSnapshot | null>(null);
@@ -194,7 +196,7 @@ export default function ParentChildDetailPage({ params }: PageProps) {
                   </div>
                   <ProgressBar
                     value={Number(attendanceRate ?? 0)}
-                    variant={attendanceRate === null ? 'primary' : attendanceRate >= 75 ? 'success' : 'danger'}
+                    variant={attendanceVariant(attendanceRate, minAttendance)}
                   />
                 </div>
 
@@ -359,10 +361,10 @@ export default function ParentChildDetailPage({ params }: PageProps) {
                   <span>سجل الحضور والغياب في الجلسات</span>
                 </h3>
                 <p className="text-xs text-fg-muted mt-0.5">
-                  رصد دقيق وموثق للحضور الحضوري وعبر مسح الـ QR الذكي.
+                  نسبة الحضور المسجّلة في الحصص الحضورية.
                 </p>
               </div>
-              <Badge variant={attendanceRate === null ? 'neutral' : attendanceRate >= 75 ? 'success' : 'danger'}>
+              <Badge variant={attendanceRate === null || minAttendance === null ? 'neutral' : attendanceRate >= minAttendance ? 'success' : 'danger'}>
                 {formatPercent(attendanceRate)} نسبة الحضور
               </Badge>
             </div>
@@ -371,20 +373,20 @@ export default function ParentChildDetailPage({ params }: PageProps) {
               <div className="p-4 rounded-md bg-surface-sunken border border-border space-y-2">
                 <span className="text-xs text-fg-muted">حالة الانتظام:</span>
                 <div className="text-base font-bold text-fg">
-                  {attendanceRate === null ? 'لم يُسجَّل حضور بعد' : attendanceRate >= 75 ? 'منتظم في الحضور الأكاديمي' : 'يحتاج إلى تحسين الحضور'}
+                  {attendanceRate === null ? 'لم يُسجَّل حضور بعد' : minAttendance === null ? `نسبة الحضور ${formatPercent(attendanceRate)}` : attendanceRate >= minAttendance ? 'يحقق شرط الحضور لدخول الاختبارات' : 'أقل من شرط الحضور لدخول الاختبارات'}
                 </div>
                 <p className="text-xs text-fg-muted leading-relaxed">
-                  يُشترط الحصول على نسبة حضور لا تقل عن 75% للتأهل للاختبارات النهائية للمقررات.
+                  {minAttendance === null ? 'لم تحدد الأكاديمية حداً أدنى للحضور لدخول الاختبارات.' : `تشترط الأكاديمية نسبة حضور لا تقل عن ${formatPercent(minAttendance)} لدخول الاختبارات.`}
                 </p>
               </div>
 
               <div className="p-4 rounded-md bg-surface-sunken border border-border space-y-2">
                 <span className="text-xs text-fg-muted">آلية تسجيل الحضور:</span>
                 <div className="text-base font-bold text-fg">
-                  بطاقة الطالب الذكية (Smart QR ID)
+                  بطاقة الطالب الرقمية (QR)
                 </div>
                 <p className="text-xs text-fg-muted leading-relaxed">
-                  يقوم الطالب بمسح رمز QR الفريد الخاص به في القاعة عند بداية كل حصة لتوثيق الحضور فورياً.
+                  يمسح المعلم أو المساعد بطاقة الطالب الرقمية في الحصة، فيُسجَّل الحضور فوراً.
                 </p>
               </div>
             </div>
