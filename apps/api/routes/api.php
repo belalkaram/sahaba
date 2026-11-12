@@ -69,6 +69,8 @@ use App\Http\Controllers\Api\Public\PublicDirectoryController;
 use App\Http\Controllers\Api\Public\SchoolRegistrationController;
 use App\Http\Controllers\Api\Reporting\ReportController;
 use App\Http\Controllers\Api\TenantCurrentController;
+use App\Http\Controllers\Api\CapacityController;
+use App\Http\Controllers\Api\Platform\PlatformCapacityController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -152,6 +154,15 @@ Route::middleware(['platform.auth'])->group(function () {
     Route::get('/platform/payments/{tenantId}/{paymentId}/proof', [PlatformPaymentController::class, 'proof'])->name('api.platform.payments.proof');
     Route::post('/platform/payments/{tenantId}/{paymentId}/approve', [PlatformPaymentController::class, 'approve'])->name('api.platform.payments.approve');
     Route::post('/platform/payments/{tenantId}/{paymentId}/reject', [PlatformPaymentController::class, 'reject'])->name('api.platform.payments.reject');
+
+    // ADR-006 (CAP-1): academy capacity, granted by the super admin only
+    Route::get('/platform/capacity/requests', [PlatformCapacityController::class, 'requests'])->name('api.platform.capacity.requests');
+    Route::get('/platform/capacity/requests/{id}/proof', [PlatformCapacityController::class, 'proof'])->name('api.platform.capacity.proof');
+    Route::post('/platform/capacity/requests/{id}/approve', [PlatformCapacityController::class, 'approve'])->name('api.platform.capacity.approve');
+    Route::post('/platform/capacity/requests/{id}/reject', [PlatformCapacityController::class, 'reject'])->name('api.platform.capacity.reject');
+    Route::get('/platform/capacity/tenants', [PlatformCapacityController::class, 'tenants'])->name('api.platform.capacity.tenants');
+    Route::put('/platform/capacity/tenants/{id}', [PlatformCapacityController::class, 'setQuota'])->name('api.platform.capacity.set_quota');
+    Route::put('/platform/capacity/default', [PlatformCapacityController::class, 'setDefault'])->name('api.platform.capacity.default');
 
     // Platform Pricing Settings (OD-27)
     Route::get('/platform/pricing', [PlatformPricingController::class, 'show'])->name('api.platform.pricing.show');
@@ -262,6 +273,17 @@ Route::middleware(['tenant', 'throttle:api'])->group(function () {
         Route::get('/users/{id}/effective-permissions', [RoleController::class, 'getUserEffectivePermissions'])
             ->middleware('tenant.can:roles.view')
             ->name('api.users.effective_permissions');
+
+        // ADR-006 (CAP-1): seats (student = code). The academy can read and request; only the platform can grant.
+        Route::get('/tenant/capacity', [CapacityController::class, 'show'])
+            ->middleware('tenant.can:students.view')
+            ->name('api.tenant.capacity.show');
+        Route::get('/tenant/capacity-requests', [CapacityController::class, 'index'])
+            ->middleware('tenant.can:tenant.settings')
+            ->name('api.tenant.capacity_requests.index');
+        Route::post('/tenant/capacity-requests', [CapacityController::class, 'store'])
+            ->middleware(['tenant.can:tenant.settings', 'throttle:10,1'])
+            ->name('api.tenant.capacity_requests.store');
 
         // Tenant Settings (R2-7)
         Route::put('/tenant/settings', [TenantCurrentController::class, 'update'])

@@ -17,4 +17,10 @@ return [
     |
     */
     'admin_token' => env('PLATFORM_ADMIN_TOKEN', ''),
+
+    /*
+    | ADR-006 (CAP-1): seat quota enforcement (student = code). On by default; the test suite turns it off so
+    | unrelated tests can create students freely, and the capacity tests turn it back on.
+    */
+    'capacity_enforced' => (bool) env('CAPACITY_ENFORCED', true),
 ];

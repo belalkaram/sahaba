@@ -20,6 +20,9 @@ class CredentialLifecycleService
      */
     public function issueCredential(Student $student, TenantUser $issuer, ?\DateTimeInterface $expiresAt = null): array
     {
+        // ADR-006: a second live code (another device) takes another seat; the first uses the student's own seat.
+        app(\App\Domain\Platform\Capacity\TenantCapacityService::class)->assertCanIssueCode($student);
+
         $result = AccessCredential::generate($student, $issuer, $expiresAt);
 
         AuditLogger::log(

@@ -66,6 +66,8 @@ class TenantProvisioningService
                 'contact_phone' => $contactPhone,
                 'onboarding_source' => $onboardingSource,
                 'auth_mode' => $data['auth_mode'] ?? 'hybrid',
+                // ADR-006: new academies start with the platform default seat quota.
+                'seat_quota' => \App\Domain\Platform\Capacity\TenantCapacityService::defaultQuota(),
                 'status' => 'active',
                 'logo_url' => $data['logo_url'] ?? null,
                 'primary_color' => $data['primary_color'] ?? null,

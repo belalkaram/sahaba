@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Feature] - 2026-11-12 — Academy capacity: student = code, granted by the super admin (CAP-1, ADR-006)
+### Added
+- Control migration `2026_11_12_000001`: `tenants.seat_quota`, `capacity_requests`.
+- `TenantCapacityService`: seats used = students + extra live codes; `createStudent` (form, CSV import, registration approval) and `issueCredential` (second device) answer `409 CAPACITY_EXCEEDED` (Arabic message, used/quota) when full. New academies start at the platform default; existing ones at their usage.
+- Academy API: `GET /tenant/capacity`, `GET|POST /tenant/capacity-requests` (seats, amount, transfer proof; one pending at a time). Platform API: `/platform/capacity/requests` (list, proof, approve with seats granted, reject with reason), `/platform/capacity/tenants` (usage + quota, set quota with reason), `PUT /platform/capacity/default`. All decisions audited.
+- Web: `/admin/capacity` (usage, bank details, request with proof, history) and `/platform/capacity` (requests inbox, academy limits, default quota).
+- `docs/backend/openapi.yaml` regenerated for the new announcement and capacity routes.
+### Changed
+- OD-39: the academy pays for capacity instead of students paying the 10 SAR monthly platform fee (supersedes the money part of OD-27/ADR-004). The student fee screens still exist until PLAT-FEE-1.
+
 ## [Feature] - 2026-11-12 — Academy announcements with exact audience and receipts (ANN-1, OD-37)
 ### Added
 - Tenant migration `2026_11_12_000001`: `announcements`, `announcement_recipients` (audience resolved at publish time; per-person first/last seen, count, dismissed).

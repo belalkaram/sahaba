@@ -20,6 +20,7 @@ class Tenant extends Model
         'auth_mode',
         'status',
         'accepts_registrations',
+        'seat_quota',
         'name',
         'slug',
         'logo_url',

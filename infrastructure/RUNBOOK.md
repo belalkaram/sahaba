@@ -217,6 +217,13 @@ docker exec lms_api php artisan tenant:migrate --tenant=school-slug
 
 ---
 
+### Academy capacity (ADR-006)
+
+- Seats: a student is a code; seats used = students + extra live codes (second devices). Only the platform super admin raises a quota: `/platform/capacity` (requests inbox, per-academy limit, default for new academies).
+- After deploying 2026-11-12: run `php artisan migrate` (adds `tenants.seat_quota`, `capacity_requests`) and `php artisan lms:migrate-tenants` (announcements tables). Set the default quota in `/platform/capacity` before new academies register (default is 0).
+- Existing academies get a quota equal to their usage on the first check (audited as `tenant.seat_quota.initialised`).
+- `CAPACITY_ENFORCED=false` turns enforcement off (used by the test suite only; never in production).
+
 ## 6. Incident Response
 
 ### API is returning 502 Bad Gateway

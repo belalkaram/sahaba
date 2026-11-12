@@ -31,6 +31,8 @@
         <env name="DB_TENANT_DRIVER" value="sqlite"/>
         <env name="DB_PERSISTENT" value="false"/>
         <env name="DB_TENANT_URL" value=""/>
+        <!-- ADR-006: seat quotas are tested explicitly in CapacityTest. -->
+        <env name="CAPACITY_ENFORCED" value="false"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>

@@ -101,6 +101,9 @@ class UserManagementService
 
         $this->ensureUniquePhoneAndEmail($data['email'] ?? null, $data['phone'] ?? null);
 
+        // ADR-006: every student takes a seat of the academy's quota (409 CAPACITY_EXCEEDED when full).
+        app(\App\Domain\Platform\Capacity\TenantCapacityService::class)->assertCanAdd(1);
+
         return DB::connection('tenant')->transaction(function () use ($data, $creator) {
             $password = ! empty($data['password']) ? $data['password'] : Str::random(10);
 

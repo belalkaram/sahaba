@@ -24,6 +24,81 @@ security:
   - bearerAuth: []
 paths:
   # BEGIN GENERATED ROUTES (scripts/generate-openapi.php)
+  /announcements:
+    get:
+      summary: "announcements.index"
+      description: "Auth: tenant.auth. Permission: notifications.send."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    post:
+      summary: "announcements.store"
+      description: "Auth: tenant.auth. Permission: notifications.send."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /announcements/options:
+    get:
+      summary: "announcements.options"
+      description: "Auth: tenant.auth. Permission: notifications.send."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /announcements/preview:
+    post:
+      summary: "announcements.preview"
+      description: "Auth: tenant.auth. Permission: notifications.send."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /announcements/{id}/recipients:
+    get:
+      summary: "announcements.recipients"
+      description: "Auth: tenant.auth. Permission: notifications.send."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /announcements/{id}/withdraw:
+    post:
+      summary: "announcements.withdraw"
+      description: "Auth: tenant.auth. Permission: notifications.send."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /assessments/assignments-overview:
+    get:
+      summary: "assessments.assignments_overview"
+      description: "Auth: tenant.auth. Permission: assignments.view."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /assessments/exams-overview:
+    get:
+      summary: "assessments.exams_overview"
+      description: "Auth: tenant.auth. Permission: exams.view."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
   /attendance-records/{id}:
     put:
       summary: "attendance.correct"
@@ -1251,28 +1326,10 @@ paths:
           description: Standard success envelope { data, meta }
         default:
           description: Standard error envelope { error, meta }
-  /assessments/exams-overview:
-    get:
-      summary: "assessments.exams_overview"
-      description: "Auth: tenant.auth. Permission: exams.view, staff scopes only (403 for self/linked). Module: assessment. Query: search, course_id, status (draft|published|closed|archived), needs (pending_grading|in_progress|open_now|no_participation|grades_unpublished|violations), sort (newest|oldest|title|pending|participation), date_from, date_to (Y-m-d, against opens_at or created_at), page, per_page (max 50). Returns data.exams[] with stats, data.summary, data.courses, meta.pagination. Scores use each student's best attempt."
-      responses:
-        '200':
-          description: Standard success envelope { data, meta }
-        default:
-          description: Standard error envelope { error, meta }
-  /assessments/assignments-overview:
-    get:
-      summary: "assessments.assignments_overview"
-      description: "Auth: tenant.auth. Permission: assignments.view, staff scopes only (403 for self/linked). Module: assessment. Query: search, course_id, status (draft|published|archived), needs (pending_grading|no_submissions|open_now|past_due_missing|late|grades_unpublished), sort (newest|oldest|title|pending|participation|due_soon), date_from, date_to (Y-m-d, against due_at or created_at), page, per_page (max 50). Returns data.assignments[] with stats, data.summary, data.courses, meta.pagination. Scores use each student's best submission."
-      responses:
-        '200':
-          description: Standard success envelope { data, meta }
-        default:
-          description: Standard error envelope { error, meta }
   /grading/pending:
     get:
       summary: "grading.pending"
-      description: "Auth: tenant.auth. Permission: exams.grade. Attempts are limited to the caller's exams.grade course scope and submissions to assignments.grade."
+      description: "Auth: tenant.auth. Permission: exams.grade."
       responses:
         '200':
           description: Standard success envelope { data, meta }
@@ -1281,7 +1338,7 @@ paths:
   /grading/publish-bulk:
     post:
       summary: "grading.bulk_publish"
-      description: "Auth: tenant.auth. Permission: exams.grade. exam_ids must be within the caller's exams.grade course scope and assignment_ids within assignments.grade; one item outside it returns 403 and publishes nothing."
+      description: "Auth: tenant.auth. Permission: exams.grade."
       responses:
         '200':
           description: Standard success envelope { data, meta }
@@ -1419,6 +1476,37 @@ paths:
   /materials/{id}/download:
     get:
       summary: "materials.download"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /me/announcements:
+    get:
+      summary: "me.announcements.index"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /me/announcements/{id}/dismiss:
+    post:
+      summary: "me.announcements.dismiss"
+      description: "Auth: tenant.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /me/announcements/{id}/seen:
+    post:
+      summary: "me.announcements.seen"
       description: "Auth: tenant.auth."
       parameters:
         - { name: id, in: path, required: true, schema: { type: string } }
@@ -1923,6 +2011,77 @@ paths:
     get:
       summary: "platform.auth.me"
       description: "Auth: platform.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /platform/capacity/default:
+    put:
+      summary: "platform.capacity.default"
+      description: "Auth: platform.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /platform/capacity/requests:
+    get:
+      summary: "platform.capacity.requests"
+      description: "Auth: platform.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /platform/capacity/requests/{id}/approve:
+    post:
+      summary: "platform.capacity.approve"
+      description: "Auth: platform.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /platform/capacity/requests/{id}/proof:
+    get:
+      summary: "platform.capacity.proof"
+      description: "Auth: platform.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /platform/capacity/requests/{id}/reject:
+    post:
+      summary: "platform.capacity.reject"
+      description: "Auth: platform.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /platform/capacity/tenants:
+    get:
+      summary: "platform.capacity.tenants"
+      description: "Auth: platform.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /platform/capacity/tenants/{id}:
+    put:
+      summary: "platform.capacity.set_quota"
+      description: "Auth: platform.auth."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
       responses:
         '200':
           description: Standard success envelope { data, meta }
@@ -2703,6 +2862,32 @@ paths:
       description: "Auth: tenant.auth."
       parameters:
         - { name: studentId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /tenant/capacity:
+    get:
+      summary: "tenant.capacity.show"
+      description: "Auth: tenant.auth. Permission: students.view."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+  /tenant/capacity-requests:
+    get:
+      summary: "tenant.capacity_requests.index"
+      description: "Auth: tenant.auth. Permission: tenant.settings."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    post:
+      summary: "tenant.capacity_requests.store"
+      description: "Auth: tenant.auth. Permission: tenant.settings."
       responses:
         '200':
           description: Standard success envelope { data, meta }

@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   Megaphone,
+  Gauge,
   Award,
   BadgeCheck,
   BookOpen,
@@ -42,6 +43,7 @@ export const NAV_ICONS: Record<string, LucideIcon> = {
   attendance: CalendarCheck,
   tasks: ClipboardList,
   announcements: Megaphone,
+  capacity: Gauge,
   receipts: ReceiptText,
   packages: Package,
   credentials: KeyRound,
