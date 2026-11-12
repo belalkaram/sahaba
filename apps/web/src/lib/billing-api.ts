@@ -127,7 +127,6 @@ export const billingApi = {
 
   // Payment Requests
   async getPricing(): Promise<{
-    student_monthly_fee: number;
     currency: string;
     receiving_account_type: string;
     bank_name?: string | null;
@@ -136,7 +135,6 @@ export const billingApi = {
     transfer_instructions?: string | null;
   }> {
     const res = await apiClient.get<{
-      student_monthly_fee: number;
       currency: string;
       receiving_account_type: string;
       bank_name?: string | null;

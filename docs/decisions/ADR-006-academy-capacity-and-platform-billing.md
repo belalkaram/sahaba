@@ -34,7 +34,7 @@ can only add students/codes up to a quota, and only the super admin can raise it
 ## Impact
 
 - **ADR-004 / OD-27:** students no longer pay the platform. The student 10 SAR flow (`/student/plans` platform fee,
-  `/platform/payments`) keeps working until PLAT-FEE-1 retires it, so nothing breaks mid-way. Academy packages (OD-34)
+  `/platform/payments`) keeps working until PLAT-FEE-1 retires it, so nothing breaks mid-way. **Done 2026-11-12 (PLAT-FEE-1):** package-less payments refused, fee removed from pricing endpoints and `/pricing`. Academy packages (OD-34)
   are unaffected.
 - **Registration approval** can now fail with `CAPACITY_EXCEEDED`; the reviewer sees the reason and the request stays pending.
 - **CSV import** stops at the first row over quota and reports it; earlier rows are kept (same as other row errors).

@@ -26,7 +26,6 @@ export default function StudentPlanPaymentPage({ params }: PageProps) {
 
   const [pkg, setPkg] = useState<PackageItem | null>(null);
   const [bankInfo, setBankInfo] = useState<{
-    student_monthly_fee?: number;
     currency?: string;
     receiving_account_type?: string;
     bank_name?: string | null;

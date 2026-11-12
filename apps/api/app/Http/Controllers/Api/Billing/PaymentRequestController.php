@@ -59,7 +59,8 @@ class PaymentRequestController extends Controller
         }
 
         $validated = $request->validate([
-            'package_id' => 'nullable|uuid|exists:tenant.packages,id',
+            // OD-39 / PLAT-FEE-1: students no longer pay the platform a monthly fee; a payment is always for an academy package.
+            'package_id' => 'required|uuid|exists:tenant.packages,id',
             'period_month' => ['nullable', 'string', 'regex:/^\d{4}-(0[1-9]|1[0-2])$/'],
             'amount' => 'nullable|numeric|min:0',
             'payment_method' => 'required|string|in:instapay,cash,bank_transfer',
@@ -78,9 +79,9 @@ class PaymentRequestController extends Controller
             $proofPath = $request->file('proof')->store('tenants/'.$tenantSlug.'/proofs', 'local');
         }
 
-        $package = ! empty($validated['package_id']) ? Package::find($validated['package_id']) : null;
-        $amount = isset($validated['amount']) ? (float) $validated['amount'] : (float) ($package?->price ?? $pricing->student_monthly_fee);
-        $currency = $package?->currency ?? $pricing->currency ?? 'SAR';
+        $package = Package::findOrFail($validated['package_id']);
+        $amount = isset($validated['amount']) ? (float) $validated['amount'] : (float) $package->price;
+        $currency = $package->currency ?? $pricing->currency ?? 'SAR';
         $periodMonth = $validated['period_month'] ?? now()->format('Y-m');
 
         $paymentRequest = PaymentRequest::create([
@@ -245,7 +246,6 @@ class PaymentRequestController extends Controller
         $pricing = PlatformPricing::getForTenant($tenant?->id);
 
         return ApiResponse::success([
-            'student_monthly_fee' => (float) $pricing->student_monthly_fee,
             'currency' => $pricing->currency,
             'receiving_account_type' => $pricing->receiving_account_type,
             'bank_name' => $pricing->bank_name,

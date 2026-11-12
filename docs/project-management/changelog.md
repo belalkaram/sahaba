@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Changed] - 2026-11-12 — Students no longer pay the platform a monthly fee (PLAT-FEE-1, OD-39)
+### Changed
+- `POST /payment-requests` requires `package_id`: a payment is always for an academy package; the package-less 10 SAR platform fee is gone.
+- `GET /billing/pricing` no longer returns `student_monthly_fee` (bank details stay). `GET /public/pricing` returns `student_platform_fee: 0`, `capacity_model: seats` and a new headline. `PUT /platform/pricing` accepts the legacy `student_monthly_fee` as optional (column kept, unused).
+- `/pricing` rewritten: academies and independent teachers buy seats (student = code = one device) from the platform by manual transfer; students pay the platform nothing. No seat price is published (agreed with the platform team).
+### Fixed
+- Announcement validation errors now use the project code `VALIDATION_FAILED`.
+### Verification
+- Full API suite 322/322 (sqlite); `tsc`, ESLint (0 errors), `lint:design` pass; `/pricing` checked in the browser.
+
 ## [Feature] - 2026-11-12 — Academy capacity: student = code, granted by the super admin (CAP-1, ADR-006)
 ### Added
 - Control migration `2026_11_12_000001`: `tenants.seat_quota`, `capacity_requests`.

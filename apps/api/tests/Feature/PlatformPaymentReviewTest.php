@@ -295,11 +295,12 @@ class PlatformPaymentReviewTest extends TestCase
     {
         // 1. Unauthenticated public pricing endpoint
         $publicResp = $this->getJson('/api/v1/public/pricing');
+        // OD-39 (PLAT-FEE-1): the student pays the platform nothing; academies buy seats.
         $publicResp->assertOk()
-            ->assertJsonPath('data.student_monthly_fee', 10)
+            ->assertJsonPath('data.student_platform_fee', 0)
+            ->assertJsonPath('data.capacity_model', 'seats')
             ->assertJsonPath('data.currency', 'SAR')
-            ->assertJsonPath('data.teacher_fee', 0)
-            ->assertJsonPath('data.organization_fee', 0);
+            ->assertJsonMissingPath('data.student_monthly_fee');
 
         // 2. Tenant billing pricing endpoint
         $data = $this->setupTenant();
@@ -309,7 +310,7 @@ class PlatformPaymentReviewTest extends TestCase
         ])->getJson('/api/v1/billing/pricing');
 
         $tenantResp->assertOk()
-            ->assertJsonPath('data.student_monthly_fee', 10)
+            ->assertJsonMissingPath('data.student_monthly_fee')
             ->assertJsonPath('data.currency', 'SAR');
 
         // 3. Super admin updates platform pricing
@@ -329,8 +330,18 @@ class PlatformPaymentReviewTest extends TestCase
             ->assertJsonPath('data.pricing.student_monthly_fee', '12.00')
             ->assertJsonPath('data.pricing.bank_name', 'بنك الرياض');
 
-        // Verify updated price in public pricing
+        // Bank details still reach the public page; no student fee is published.
         $this->getJson('/api/v1/public/pricing')
-            ->assertJsonPath('data.student_monthly_fee', 12);
+            ->assertJsonPath('data.bank_name', 'بنك الرياض')
+            ->assertJsonMissingPath('data.student_monthly_fee');
+    }
+
+    /** OD-39 (PLAT-FEE-1): a payment without an academy package (the old 10 SAR platform fee) is refused. */
+    public function test_package_less_platform_fee_payment_is_refused(): void
+    {
+        $data = $this->setupTenant();
+        $this->withHeaders(['X-Tenant-Slug' => $data['tenant']->slug, 'Authorization' => 'Bearer '.$data['student_token']])
+            ->postJson('/api/v1/payment-requests', ['payment_method' => 'bank_transfer', 'reference_code' => 'TX-1'])
+            ->assertStatus(422)->assertJsonPath('error.code', 'VALIDATION_FAILED')->assertJsonStructure(['error' => ['details' => ['package_id']]]);
     }
 }

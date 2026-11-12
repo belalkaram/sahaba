@@ -26,11 +26,11 @@ export interface DirectoryTeacher {
   academy_url: string;
 }
 
+/** OD-39: students pay the platform nothing; academies buy seats (student = code). */
 export interface PublicPricing {
-  student_monthly_fee: number;
+  student_platform_fee: number;
   currency: string;
-  teacher_fee: number;
-  organization_fee: number;
+  capacity_model: 'seats' | string;
   headline: string;
   receiving_account_type?: string;
   bank_name?: string | null;

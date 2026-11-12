@@ -28,7 +28,7 @@ class PlatformPricingController extends Controller
     public function update(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'student_monthly_fee' => 'required|numeric|min:0',
+            'student_monthly_fee' => 'sometimes|numeric|min:0', // legacy (OD-27), unused since OD-39
             'currency' => 'required|string|max:10',
             'receiving_account_type' => 'required|string|in:platform,teacher',
             'bank_name' => 'nullable|string|max:100',
@@ -42,7 +42,7 @@ class PlatformPricingController extends Controller
         $pricing = PlatformPricing::getForTenant($tenantId);
 
         $pricing->update([
-            'student_monthly_fee' => $validated['student_monthly_fee'],
+            'student_monthly_fee' => $validated['student_monthly_fee'] ?? $pricing->student_monthly_fee,
             'currency' => $validated['currency'],
             'receiving_account_type' => $validated['receiving_account_type'],
             'bank_name' => $validated['bank_name'] ?? null,
@@ -70,15 +70,12 @@ class PlatformPricingController extends Controller
     {
         $pricing = PlatformPricing::getForTenant();
 
-        $fee = (float) $pricing->student_monthly_fee;
-        $feeFormatted = ($fee == (int) $fee) ? (string) ((int) $fee) : (string) $fee;
-
+        // OD-39 (ADR-006): students pay the platform nothing; academies buy seats (student = code) from the super admin.
         return ApiResponse::success([
-            'student_monthly_fee' => $fee,
+            'student_platform_fee' => 0,
             'currency' => $pricing->currency,
-            'teacher_fee' => 0,
-            'organization_fee' => 0,
-            'headline' => 'مجانًا للمدرس والسنتر، '.$feeFormatted.' '.$pricing->currency.' للطالب في الشهر',
+            'capacity_model' => 'seats',
+            'headline' => 'الطالب لا يدفع للمنصة شيئاً. الأكاديمية أو المدرس يشترون مقاعد (طالب = كود) من إدارة المنصة.',
             'receiving_account_type' => $pricing->receiving_account_type,
             'bank_name' => $pricing->bank_name,
             'account_holder_name' => $pricing->account_holder_name,

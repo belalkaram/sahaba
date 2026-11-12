@@ -12,6 +12,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -181,7 +182,7 @@ class AnnouncementController extends Controller
         $audience['parents'] = (bool) ($audience['parents'] ?? false);
 
         if (! $audience['students'] && ! $audience['parents']) {
-            abort(response()->json(['error' => ['code' => 'VALIDATION_ERROR', 'message' => 'اختر الطلاب أو أولياء الأمور أو كليهما.', 'details' => ['audience.students' => ['اختر الطلاب أو أولياء الأمور أو كليهما.']]]], Response::HTTP_UNPROCESSABLE_ENTITY));
+            throw ValidationException::withMessages(['audience.students' => ['اختر الطلاب أو أولياء الأمور أو كليهما.']]);
         }
 
         return $audience;
@@ -233,7 +234,7 @@ class AnnouncementController extends Controller
         } catch (AuthorizationException $e) {
             return ApiResponse::error('FORBIDDEN', 'لا تملك صلاحية مخاطبة هذه الفئة.', Response::HTTP_FORBIDDEN);
         } catch (\InvalidArgumentException) {
-            return ApiResponse::error('VALIDATION_ERROR', 'فئة غير معروفة.', Response::HTTP_UNPROCESSABLE_ENTITY);
+            return ApiResponse::error('VALIDATION_FAILED', 'فئة غير معروفة.', Response::HTTP_UNPROCESSABLE_ENTITY);
         }
     }
 }
