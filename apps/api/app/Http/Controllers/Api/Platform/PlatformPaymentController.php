@@ -208,6 +208,12 @@ class PlatformPaymentController extends Controller
         return $this->runner->run($tenant, function () use ($tenant, $paymentId, $reviewer, $notes, $periodMonth, $request) {
             $paymentRequest = PaymentRequest::with(['package.entitlements', 'student.user'])->findOrFail($paymentId);
 
+            // OD-34 (2026-11-12): academy package payments are reviewed by the academy itself, not the platform.
+            if ($paymentRequest->package_id !== null) {
+                return ApiResponse::error('ACADEMY_REVIEWS_PACKAGES', 'مدفوعات باقات الأكاديمية تراجعها الأكاديمية نفسها.', Response::HTTP_FORBIDDEN);
+            }
+
+
             if (! $paymentRequest->isPending()) {
                 return ApiResponse::error(
                     'ALREADY_PROCESSED',
@@ -275,6 +281,12 @@ class PlatformPaymentController extends Controller
 
         return $this->runner->run($tenant, function () use ($tenant, $paymentId, $reviewer, $validated, $request) {
             $paymentRequest = PaymentRequest::with('student.user')->findOrFail($paymentId);
+
+            // OD-34 (2026-11-12): academy package payments are reviewed by the academy itself, not the platform.
+            if ($paymentRequest->package_id !== null) {
+                return ApiResponse::error('ACADEMY_REVIEWS_PACKAGES', 'مدفوعات باقات الأكاديمية تراجعها الأكاديمية نفسها.', Response::HTTP_FORBIDDEN);
+            }
+
 
             if (! $paymentRequest->isPending()) {
                 return ApiResponse::error(

@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Changed] - 2026-11-12 — The academy reviews its own package payments (PAY-REV-1, OD-34)
+
+- Platform `/platform/payments/{tenant}/{id}/approve|reject` now refuses package payments with `403 ACADEMY_REVIEWS_PACKAGES`; the academy approves them from its payments page.
+
 ## [Changed] - 2026-11-12 — Students no longer pay the platform a monthly fee (PLAT-FEE-1, OD-39)
 ### Changed
 - `POST /payment-requests` requires `package_id`: a payment is always for an academy package; the package-less 10 SAR platform fee is gone.
