@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import {
+  Megaphone,
   Award,
   BadgeCheck,
   BookOpen,
@@ -40,6 +41,7 @@ export const NAV_ICONS: Record<string, LucideIcon> = {
   students: GraduationCap,
   attendance: CalendarCheck,
   tasks: ClipboardList,
+  announcements: Megaphone,
   receipts: ReceiptText,
   packages: Package,
   credentials: KeyRound,

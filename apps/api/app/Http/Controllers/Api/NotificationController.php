@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Domain\Communication\AnnouncementService;
 use App\Http\Controllers\Controller;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -45,6 +46,8 @@ class NotificationController extends Controller
         }
 
         $notification->markAsRead();
+        // OD-37: reading a bell announcement counts as seeing it.
+        app(AnnouncementService::class)->markBellRead($user, $notification->data['dedupe_key'] ?? null);
 
         return ApiResponse::success([
             'message' => 'Notification marked as read.',
@@ -57,6 +60,10 @@ class NotificationController extends Controller
     public function markAllAsRead(Request $request): JsonResponse
     {
         $user = $request->user();
+        $announcements = app(AnnouncementService::class);
+        foreach ($user->unreadNotifications()->get(['id', 'data']) as $unread) {
+            $announcements->markBellRead($user, $unread->data['dedupe_key'] ?? null);
+        }
         $user->unreadNotifications()->update(['read_at' => now()]);
 
         return ApiResponse::success([

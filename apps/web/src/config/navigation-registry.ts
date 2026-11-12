@@ -92,6 +92,7 @@ export const NAVIGATION_REGISTRY: NavItem[] = [
   { id: 'student-plans', href: '/student/plans', label: 'باقات الاشتراك', iconName: 'packages', experience: 'student', group: 'finance', module: 'billing' },
   { id: 'student-subscriptions', href: '/student/subscriptions', label: 'اشتراكاتي', iconName: 'subscriptions', experience: 'student', group: 'finance', module: 'billing' },
   { id: 'student-payments', href: '/student/payments', label: 'سجل المدفوعات', iconName: 'wallet', experience: 'student', group: 'finance', module: 'billing' },
+  { id: 'announcements', href: '/teacher/announcements', label: 'الإعلانات والتعميمات', iconName: 'announcements', experience: ['admin', 'staff'], group: 'teaching', anyOf: ['notifications.send'] },
   { id: 'registrations', href: '/teacher/registrations', label: 'طلبات التسجيل', iconName: 'students', experience: ['admin', 'staff'], group: 'teaching', anyOf: ['students.create'] },
   { id: 'staff-profile', href: '/teacher/profile', label: 'ملفي العام', iconName: 'profile', experience: 'staff', group: 'account' },
   { id: 'student-card', href: '/student/card', label: 'بطاقتي الرقمية', iconName: 'card', experience: 'student', group: 'account', primary: true, module: 'offline' },

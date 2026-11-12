@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Feature] - 2026-11-12 — Academy announcements with exact audience and receipts (ANN-1, OD-37)
+### Added
+- Tenant migration `2026_11_12_000001`: `announcements`, `announcement_recipients` (audience resolved at publish time; per-person first/last seen, count, dismissed).
+- `AnnouncementService` + `AnnouncementController` (`/announcements` options, preview, list, create, recipients, withdraw; `notifications.send`, scope `tenant` = anyone, `own` = own courses only) and `MyAnnouncementController` (`/me/announcements`, seen, dismiss).
+- Audience: all students / courses / classes / grades / chosen students, students and/or their parents. Display: bell (normal notification, read = seen), banner, modal (closes only with ×). Frequency: once / persistent (every sign-in until it ends or is withdrawn). Optional start/end.
+- Web: `/teacher/announcements` (nav "الإعلانات والتعميمات") with compose form, live recipient count, look preview, seen-rate per announcement, recipients drawer (seen / unseen / closed, search), withdraw. `AnnouncementHost` in the app shell shows banners and pop-ups to students and parents (not during support sessions).
+### Verification
+- `AnnouncementTest` 7/7. Browser on local sqlite: publish modal -> student pop-up -> only × closes it -> receipts recorded -> does not return.
+### Known limitations
+- The audience is fixed at publish time (students added later do not receive it). Bell copies follow each person's notification preferences.
+
 ## [Feature] - 2026-11-12 — Academy-defined minimum attendance for exams (ATT-1, OD-35)
 ### Added
 - Tenant setting `min_attendance_for_exams` (`/tenant/academic-settings`, null = no rule) with a switch and value on `/admin/academic-settings`; exposed to the UI as `tenant.min_attendance_for_exams` in `/auth/me`.

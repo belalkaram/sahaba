@@ -20,6 +20,7 @@ import { filterNavItems, NAV_GROUP_LABELS, type NavGroup, type NavItem } from '.
 import { navIcon } from '../../config/nav-icons';
 import { BRAND } from '../../config/brand';
 import { SupportSessionBanner } from './support-session-banner';
+import { AnnouncementHost } from '../announcements/announcement-host';
 import { ThemeSwitcher } from './theme-switcher';
 import { CommandPalette } from './command-palette';
 import { NotificationBell } from './notification-bell';
@@ -144,6 +145,8 @@ export const AppShell: React.FC<AppShellProps> = ({ children, experienceOverride
   const [paletteOpen, setPaletteOpen] = useState(false);
 
   const activeExperience: Experience = experienceOverride || authExp || 'student';
+  // OD-37: academy announcements reach students and parents (support sessions do not trigger receipts).
+  const receivesAnnouncements = area === 'tenant' && (authExp === 'student' || authExp === 'parent') && activeExperience === authExp && !session?.support_session;
   const navItems = useMemo(
     () => filterNavItems(activeExperience, tenant?.modules ?? [], permissions, area, tenant?.type, tenant?.services),
     [activeExperience, tenant?.modules, permissions, area, tenant?.type, tenant?.services],
@@ -429,9 +432,11 @@ export const AppShell: React.FC<AppShellProps> = ({ children, experienceOverride
                   </button>
                 </div>
               )}
+              {receivesAnnouncements && <AnnouncementHost placement="banners" />}
               {children}
             </div>
           </main>
+          {receivesAnnouncements && <AnnouncementHost placement="modal" />}
         </div>
       </div>
 

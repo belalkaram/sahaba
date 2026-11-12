@@ -45,12 +45,22 @@ final class NotificationCatalog
 
     public const SUPPORT_SESSION_STARTED = 'support_session_started';
 
+    /** OD-37: an academy announcement sent as a normal (bell) notification. */
+    public const ANNOUNCEMENT = 'announcement';
+
     /**
      * @return array<string, array{label: string, title: string, message: string, mail: bool, recipients: string, whatsapp_template?: string|null}>
      */
     public static function all(): array
     {
         return [
+            self::ANNOUNCEMENT => [
+                'label' => 'تعميمات الأكاديمية',
+                'title' => ':title',
+                'message' => ':body',
+                'mail' => false,
+                'recipients' => 'both',
+            ],
             self::PAYMENT_SUBMITTED => [
                 'label' => 'طلبات دفع جديدة',
                 'title' => 'طلب دفع جديد',

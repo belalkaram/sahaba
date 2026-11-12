@@ -50,6 +50,8 @@ use App\Http\Controllers\Api\Integration\MeetingController;
 use App\Http\Controllers\Api\Integration\WebhookController;
 use App\Http\Controllers\Api\Me\MyResourceController;
 use App\Http\Controllers\Api\Me\NotificationPreferenceController;
+use App\Http\Controllers\Api\Me\MyAnnouncementController;
+use App\Http\Controllers\Api\Communication\AnnouncementController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\Platform\PlatformAuthController;
 use App\Http\Controllers\Api\Platform\PlatformDirectoryController;
@@ -200,6 +202,20 @@ Route::middleware(['tenant', 'throttle:api'])->group(function () {
             Route::get('/attendance', [MyResourceController::class, 'attendance'])->name('api.me.attendance');
             Route::get('/notification-preferences', [NotificationPreferenceController::class, 'show'])->name('api.me.notification_preferences.show');
             Route::put('/notification-preferences', [NotificationPreferenceController::class, 'update'])->name('api.me.notification_preferences.update');
+            // OD-37: announcements addressed to me (banner / modal) and receipts
+            Route::get('/announcements', [MyAnnouncementController::class, 'index'])->name('api.me.announcements.index');
+            Route::post('/announcements/{id}/seen', [MyAnnouncementController::class, 'seen'])->name('api.me.announcements.seen');
+            Route::post('/announcements/{id}/dismiss', [MyAnnouncementController::class, 'dismiss'])->name('api.me.announcements.dismiss');
+        });
+
+        // OD-37 (ANN-1): academy announcements, notifications.send (scope tenant = anyone, own = own courses)
+        Route::prefix('announcements')->middleware('tenant.can:notifications.send')->group(function () {
+            Route::get('/options', [AnnouncementController::class, 'options'])->name('api.announcements.options');
+            Route::post('/preview', [AnnouncementController::class, 'preview'])->name('api.announcements.preview');
+            Route::get('/', [AnnouncementController::class, 'index'])->name('api.announcements.index');
+            Route::post('/', [AnnouncementController::class, 'store'])->name('api.announcements.store');
+            Route::get('/{id}/recipients', [AnnouncementController::class, 'recipients'])->name('api.announcements.recipients');
+            Route::post('/{id}/withdraw', [AnnouncementController::class, 'withdraw'])->name('api.announcements.withdraw');
         });
 
         // Centralized Tenant Audit Logs — requires audit.view permission (R0-4)
