@@ -2,6 +2,82 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Verified] - 2026-11-13 — Tenant landing: verification pass (TL-7, ADR-007)
+
+- `tsc --noEmit` clean (exit 0) — no TypeScript errors across all landing components.
+- Node.js native tests 37/37 pass: `derive-tenant-theme.test.ts` — WCAG AA (3 pairs), CSS shape (11 checks), `isValidPalette` (5 checks); prior test suites unaffected.
+- PHPUnit 15/15 pass — `TenantLandingSettingsTest` (56 assertions): cross-tenant 403, permission checks (teacher/student/no-token), rejected values, preview token lifecycle.
+- Attribution invariant confirmed: `PoweredByFooter` is a pure server component rendered outside `<div data-tenant-theme>` in `/a/[slug]/layout.tsx`; no template code can suppress or reorder it.
+- All 5 template headers and all editor components verified to exist and compile without errors.
+- Report written at `docs/recovery-reports/TENANT-LANDING.md`.
+- Playwright E2E (5 templates × light/dark × 390/768/1440), Lighthouse (LCP/CLS), and cross-browser testing deferred to first QA staging session.
+
+## [Added] - 2026-11-13 — Tenant landing content sections: about, FAQ, contact (TL-6, ADR-007)
+
+- `editor/AboutEditor.tsx`: plain-text textarea (≤ 1200 chars with counter) + 3 numbered highlight inputs.
+- `editor/FaqEditor.tsx`: dynamic Q&A list (≤ 8 pairs), add/remove; plain text only.
+- `editor/ContactEditor.tsx`: 6 contact fields (phone/whatsapp/email/address/map_url) each with an independent publish toggle, default hidden; E.164 and https:// hints.
+- `api.ts` extended with `LandingContactContent` type including per-field `*_published` flags.
+- `LandingEditor.tsx` sections tab expanded: when about/faq/contact sections are enabled, their content editors appear inline below the toggle row.
+- `tsc --noEmit` clean.
+
+## [Added] - 2026-11-13 — Tenant landing editor `/admin/landing` (TL-5, ADR-007)
+
+- `features/tenant-landing/api.ts`: typed admin API client — `getState`, `saveDraft`, `publish`, `discardDraft`, `getPreviewToken`; 6 built-in palette presets (الواحة/الصحراء/البحر/الليل/الربيع/الحبر).
+- `editor/TemplatePicker.tsx`: 5 template cards with shape badge, style description and audience line.
+- `editor/PaletteEditor.tsx`: 4 color fields (`<input type="color">` + hex text), preset swatches, WCAG AA indicator using `deriveTenantTheme`.
+- `editor/PublishBar.tsx`: fixed bottom bar — draft age, save status, preview, discard (with loader), publish with inline confirmation.
+- `editor/PreviewFrame.tsx`: real `/a/{slug}?preview={token}` iframe; 390/768/1280 width buttons; dark/light toggle; "open in new tab".
+- `editor/LandingEditor.tsx`: orchestrator — loads from server, 2s auto-save debounce, tabs (القالب/الألوان/الأقسام), publish/discard flows; no fake successes.
+- `app/admin/landing/page.tsx`: thin page wrapper under `/admin/` ExperienceGuard.
+- `config/nav-icons.ts`: added `Globe` icon for `landing`.
+- `config/navigation-registry.ts`: added «صفحتي العامة» nav item under `tenant.branding` permission.
+- `tsc --noEmit` clean.
+
+## [Added] - 2026-11-13 — Tenant landing: four remaining template headers (TL-4, ADR-007)
+
+- `BeaconHeader` (`templates/beacon/header.tsx`): editorial bar layout — logo+name on left, nav follows immediately (not centred), sharp corners, 2px accent strip at top, `strokeWidth: 2` icons.
+- `BreezeHeader` (`templates/breeze/header.tsx`): two-row centred layout — row 1 logo+name, row 2 pill-shaped nav links, `rounded-full` throughout, soft and airy.
+- `AtlasHeader` (`templates/atlas/header.tsx`): structured split with a city/services info bar above the main header row; outline-style active indicator; academic feel.
+- `HorizonHeader` (`templates/horizon/header.tsx`): minimal scroll-aware header — hairline border, transparent until scrolled 48px, text-only underline active indicator, no visual weight.
+- `registry.ts` updated: all 5 templates now wire their own `Header` component (no more oasis fallbacks).
+- `tsc --noEmit` clean.
+
+## [Added] - 2026-11-13 — Tenant landing template system: manifests, registry, PoweredByFooter, Oasis header (TL-3, ADR-007)
+
+- New `apps/web/src/features/tenant-landing/templates/types.ts`: `TemplateId` union and `TemplateManifest` interface (shape, motion, card, header, hero, icon style).
+- 5 template manifests: `oasis/manifest.ts` (الواحة), `beacon/manifest.ts` (المنارة), `breeze/manifest.ts` (النسيم), `atlas/manifest.ts` (الأطلس), `horizon/manifest.ts` (الأفق).
+- New `features/tenant-landing/registry.ts`: `getTemplateEntry(id)` with oasis fallback; `getAllManifests()` for the editor picker; beacon/breeze/atlas/horizon fall back to `OasisHeader` until TL-4.
+- New `features/tenant-landing/sections/powered-by-footer.tsx`: Server Component rendered by layout outside any template scope — «مدعوم بمنصة سحابة» cannot be hidden.
+- New `features/tenant-landing/templates/oasis/header.tsx`: 'use client' sticky header extracted from AcademyChrome; logo, nav links, ThemeSwitcher, login CTA, mobile drawer.
+- `app/a/[slug]/layout.tsx` updated to dispatch `{ Header }` from registry and render `<PoweredByFooter>` outside template scope.
+- `tsc --noEmit` clean (zero errors).
+
+## [Added] - 2026-11-13 — Tenant landing theme engine + Server Component layout (TL-2, ADR-007)
+
+- New `apps/web/src/lib/theme/derive-tenant-theme.ts`: pure OKLCH-based derivation of ~26 light-mode and ~26 dark-mode CSS custom properties from 4 hex colors; WCAG AA enforcement (4.5:1 minimum); `--gradient-brand` derived from primary+secondary; no DOM/external packages.
+- `app/a/[slug]/layout.tsx` converted to Server Component: async, server-side fetch with ISR tag `tenant-landing-{slug}` (revalidate 60s), `notFound()` on 404, theme CSS injected as `<style>` before render.
+- `AcademyProfile` type extended with `landing?: TenantLandingPublic | null`.
+- 21 unit tests in `apps/web/tests/derive-tenant-theme.test.ts` — all pass.
+
+## [Added] - 2026-11-13 — Tenant landing backend: settings, service, routes, OpenAPI (TL-0, TL-1, ADR-007)
+
+- **ADR-007 accepted** (OD-41..OD-46 decided): 5 templates (`oasis`, `beacon`, `breeze`, `atlas`, `horizon`), 4-colour palette (`primary`, `secondary`, `accent`, `surface`), platform attribution «مدعوم بمنصة سحابة» mandatory.
+- New migration `tenant_landing_settings` (control DB): `published`/`draft` JSON, `version`, `published_at`/`published_by`, `preview_token_hash`/`preview_expires_at`.
+- New `TenantLandingService`: `getState`, `saveDraft`, `publish` (bumps version + syncs `primary_color` + audit), `discardDraft`, `issuePreviewToken` (SHA-256-hashed, 15 min), `resolvePublic` (preview-token aware).
+- New `LandingSettingsRequest`: validates template enum, 4 hex colours, section toggles, about/FAQ/contact; custom Arabic error messages.
+- New `TenantLandingController`: 5 routes under `tenant.branding` permission.
+- `GET /public/academy/profile` now includes `landing` (published, or draft when valid preview token supplied).
+- `center_admin` role now carries `tenant.branding` permission.
+- 5 routes documented in `docs/backend/openapi.yaml`.
+- 15 feature tests in `TenantLandingSettingsTest`; full suite 346/346 pass.
+
+## [Docs] - 2026-11-12 — Tenant landing customisation plan (TENANT-LANDING, proposed)
+
+- New plan `docs/design/TENANT-LANDING-THEMES-PLAN.md`: every academy or independent teacher picks one of five templates (`oasis`, `beacon`, `breeze`, `atlas`, `horizon`) and four colours (`primary`, `secondary`, `accent`, `surface`); all other tokens and the dark mode are derived with WCAG AA enforced; «مدعوم بمنصة سحابة» is rendered by the server outside the template and cannot be hidden.
+- New `docs/decisions/ADR-007-tenant-landing-templates-and-theme.md` (Proposed): control-DB table `tenant_landing_settings` with draft/published/version, admin routes under `tenant.branding`, `landing` added to `GET /public/academy/profile`, `/a/[slug]` layout moved to the server.
+- Open decisions OD-41..OD-46 added for the owner; tracker rows TL-0..TL-7 added. No code changed.
+
 ## [Added] - 2026-11-12 — The rest of the landing, academy and teacher pages (LANDING-V2 L3–L7)
 
 - Landing now tells the whole story in 13 sections: hero, trust strip, the problem it replaces, the two services (OD-31), each role's experience with the screens it gets, academies, teachers, tenant isolation with a drawn diagram, analytics with each metric's source named, how to start, pricing (OD-39, headline from `GET /public/pricing`), testimonials, FAQ and the closing call.
