@@ -29,7 +29,7 @@
 | R1B | R1-B3 | Navigation registry + `/staff` `/admin` | T-RBAC-07 | DONE | `src/config/navigation-registry.ts`, `src/components/layout/sidebar-nav.tsx` |
 | R1B | R1-B4 | Route guards + 403 | T-RBAC-05 | DONE | `src/middleware.ts`, `ExperienceGuard.tsx` explicit 403 |
 | R1B | R1-B5 | `useCan` / `<Can>` | T-RBAC-07 | DONE | `useCan.ts`, `Can.tsx`, `permission-gate.tsx` |
-| R1B | R1-B6 | Data-state layer, remove swallowed errors | T-UX-01 | DONE | `src/components/ui/data-state.tsx` standard states |
+| R1B | R1-B6 | Data-state layer, remove swallowed errors | T-UX-01 | PARTIAL | `src/components/ui/data-state.tsx`; 7 swallowed-error sites remain (admin/capacity, platform/payments, student/assignments, student/plans/[id]/pay, staff scan, student/card, teacher/classes/[id]) - 2026-11-16 |
 | R1B | R1-B7 | 401 handling | T-SEC-13 | DONE | `src/lib/api-client.ts`, `token-store.ts` cookie mirror |
 | R1B | R1-B8 | Role management screens | FR-AUTHZ-004 | DONE | `src/app/admin/roles/page.tsx`, `src/app/admin/layout.tsx` |
 | R1B | R1-B9 | Playwright + role navigation tests | T-QA-03 | DONE | `apps/web/tests/access-model.test.ts` (7 tests PASS), `support-session-banner.tsx` |
@@ -70,7 +70,7 @@
 | R7A | R7-0a | Tokens & themes | T-UX-03 | PARTIAL | `styles/tokens.css`, `lint:design` guard, light/dark checked on sample pages; no Playwright screenshots, no axe |
 | R7A | R7-0b | Primitives & patterns | T-UX-10, 08 | PARTIAL | `components/ui/*`, dev-only `/components`; keyboard/axe not audited |
 | R7A | R7-1 | App Shell | T-UX-07, 04 | PARTIAL | `components/layout/app-shell.tsx`, checked 1280 and 390 on sample pages; no E2E |
-| R7A | R7-2 | Break up God pages | T-UX-06 | PARTIAL | `features/*` for some pages; several pages still > 300 lines (builder 1110, `teacher/courses/[id]` 914) |
+| R7A | R7-2 | Break up God pages | T-UX-06 | PARTIAL | `features/*` for some pages; 39 `.tsx` files still > 300 lines (largest: exam builder 1162, `admin/users` 1043, `teacher/courses/[id]` 969, `staff/sessions/[id]` 890) - 2026-11-16 |
 | R7A | R7-3 | Detail page pattern | T-UX-09 | PARTIAL | `components/layout/detail-layout.tsx`; not used on every detail page |
 | R7B | R7B | Student experience | Master Â§70 | PARTIAL | codemod + sample visual check only; `docs/recovery-reports/R7B.md` |
 | R7C | R7C | Staff experience | Master Â§71-72, T-FEAT-30 | PARTIAL | codemod + nav links added 2026-11-04; `docs/recovery-reports/R7C.md` |
@@ -86,14 +86,14 @@
 | R8 | R8-5 | Reports | T-FEAT-31, 32 | PARTIAL | `ReportsAnalyticsMeetingsR8Test`; CSV + print verified; PDF pending library approval |
 | R8 | R8-6 | Google Meet real (needs Google project) | T-FEAT-10, 11, 12 | BLOCKED (Google credentials) | Manual links + join enforcement tested in `ReportsAnalyticsMeetingsR8Test`; real Google events not done |
 | R8 | R8-7 | Platform metrics | T-FEAT-27 | DONE | `ReportsAnalyticsMeetingsR8Test::test_platform_metrics_come_from_snapshots_and_include_queue_health` |
-| R9 | R9-1 | E2E suite | T-QA-03 | TODO | |
-| R9 | R9-2 | Contract tests | T-QA-04 | TODO | |
-| R9 | R9-3 | Role matrix in CI | T-QA-01, 02 | TODO | |
-| R9 | R9-4 | Visual QA | â€” | TODO | |
-| R9 | R9-5 | Accessibility | â€” | TODO | |
-| R9 | R9-6 | New release gate | T-QA-05 | TODO | |
-| R9 | R9-7 | Repository hygiene | T-QA-06, T-UX-11 | TODO | |
-| R9 | R9-8 | Documentation & status | C-09 | TODO | |
+| R9 | R9-1 | E2E suite | T-QA-03 | PARTIAL | `apps/web/e2e/flows.spec.ts` (16 flows: sign-in per role, payment->access, QR attendance, exam, provisioning, course build/watch/resume, proof upload, access code, support session), `lms:seed-e2e`, CI job `e2e`; not run in the 2026-11-16 review; no notifications/R5 mobile-scanner E2E |
+| R9 | R9-2 | Contract tests | T-QA-04 | PARTIAL | `OpenApiCoverageTest` PASS (route coverage); no response-shape tests vs OpenAPI; no TS types generated from OpenAPI in CI |
+| R9 | R9-3 | Role matrix in CI | T-QA-01, 02 | PARTIAL | `RoleMatrixTest` runs inside `php artisan test` and CI `backend` job (346/346 PASS 2026-11-16); matrix fixture not asserted against `config/authorization.php` for every endpoint |
+| R9 | R9-4 | Visual QA | â€” | PARTIAL | `apps/web/e2e/route-matrix.spec.ts` screenshots per route x theme x width; 422 files under `docs/recovery-reports/visual/` (2026-11-04/05); not re-run since; Quality Gate 38 checklist not filled |
+| R9 | R9-5 | Accessibility | â€” | PARTIAL | axe (critical/serious) in `route-matrix.spec.ts` + L7 landing run clean on 4 pages x 2 themes x 2 widths; full-route run not repeated since 2026-11-05 |
+| R9 | R9-6 | New release gate | T-QA-05 | PARTIAL | `scripts/release-gate.mjs` (+ .ps1/.sh wrappers) with pint, phpunit, audits, tsc, lint, build, E2E, coverage-matrix and landing-sample checks; `release-evidence.json` still the stale 2026-10-30 PRODUCTION_READY file until the gate is re-run; gate currently fails on matrix 63 (God Files) and `sample: true` (14) |
+| R9 | R9-7 | Repository hygiene | T-QA-06, T-UX-11 | PARTIAL | tenant test DBs not in git (0 tracked); `offline.html` is in the service-worker precache; one `file:///` link remains in `06-status-and-docs-corrections.md`; duplicate-spec note in `docs/00-INDEX.md` not verified |
+| R9 | R9-8 | Documentation & status | C-09 | PARTIAL | coverage matrix refreshed 2026-11-16; `current-state.md` still lists M14 as PRODUCTION_READY; `docs/recovery-reports/R9.md` not written |
 | DB | DB-1 | PostgreSQL (Neon) enablement, provider portability, DB audit | — | PARTIAL | ADR-002, `docs/audit/2026-11-05-database-audit/README.md`; verified on local Postgres 16 (SQLite 200/200; Postgres 199/200 then fix re-verified); Neon deployment NOT VERIFIED (network blocked) |
 
 ### Program 2026-11-05 (plan: `docs/plans/2026-11-05-platform-console-tenancy-venues-qr-plan.md`, order = plan Â§3)
@@ -129,16 +129,38 @@
 | AUD | ANN-1 | Academy announcements: exact audience, once/persistent, bell/banner/modal, seen/closed receipts | OD-37 | DONE | `AnnouncementTest` (7 tests PASS); `/teacher/announcements` (compose with live audience count + preview, list with seen %, recipients drawer, withdraw); `AnnouncementHost` in AppShell; browser 2026-11-12 on local sqlite: admin published a modal to one student -> student saw it, Escape/backdrop did not close it, × closed it, seen+dismiss receipts recorded, `once` did not return; banner/persistent covered by tests only; no E2E |
 | AUD | CAP-1 | Seat quota (student = code), capacity requests, super-admin grant | OD-38, OD-39, ADR-006 | DONE | `CapacityTest` (6 tests PASS), full suite 320/321 then OpenAPI regenerated (`OpenApiCoverageTest` PASS); `/admin/capacity`, `/platform/capacity`; browser 2026-11-12 on local sqlite: quota initialised to usage (2/2) -> request 20 seats with proof -> super admin granted 15 -> 2/17; no E2E; PLAT-FEE-1 still open |
 | AUD | PLAT-FEE-1 | Retire the student 10 SAR platform-fee flow | OD-39, ADR-006 | DONE | `PlatformPaymentReviewTest::test_package_less_platform_fee_payment_is_refused` + updated pricing test; full suite 322/322 (sqlite); `/pricing` rewritten for seats (checked in browser); package payments unchanged, still reviewed by the super admin (OD-34 open question) |
-| AUD | PAY-REV-1 | Academy reviews its own package payments; platform console refuses them | OD-34 | DONE | full suite 322/322 on sqlite (no dedicated test for the 403 yet); academy review page `/teacher/payments` already existed |
+| AUD | PAY-REV-1 | Academy reviews its own package payments; platform console refuses them | OD-34 | DONE | full suite green on sqlite (346/346 on 2026-11-16); NO dedicated test for the platform 403 yet; academy review page `/teacher/payments` existed |
 | AUD | PAY-UX-1 | Student UI labels each payment as academy package or platform fee; nav/KPI wording per ADR-004 | OD-34, J-06, J-07 | TODO | |
 | TL | TL-0 | Tenant landing: ADR-007 accepted, OD-41..OD-46 decided | owner request (`docs/design/TENANT-LANDING-THEMES-PLAN.md`) | DONE | Plan + ADR-007 accepted 2026-11-13; OD-41..OD-46 decided |
-| TL | TL-1 | Backend: `tenant_landing_settings`, `TenantLandingService`, admin + public routes, `tenant.branding` granted, OpenAPI | ADR-007 | DONE | migration + model + service + controller + 5 routes + 15 tests all pass 346/346 — 2026-11-13 |
-| TL | TL-2 | Theme engine: `deriveTenantTheme` (AA enforced, dark derived), server-injected tokens, `/a/[slug]` layout to Server + ISR tag | ADR-007 | DONE | `lib/theme/derive-tenant-theme.ts` (21 tests pass), layout → Server Component, fetch tagged `tenant-landing-{slug}`, revalidate 60s — 2026-11-13 |
-| TL | TL-3 | Template system (manifests, registry), current design moved to `oasis`, fixed `PoweredByFooter` | ADR-007, OD-46 | DONE | `features/tenant-landing/templates/types.ts`, 5 manifests, `registry.ts`, `sections/powered-by-footer.tsx`, `templates/oasis/header.tsx`, `tsc --noEmit` clean — 2026-11-13 |
-| TL | TL-4 | Templates `beacon`, `breeze`, `atlas`, `horizon` | ADR-007 | DONE | `beacon/header.tsx` (bar), `breeze/header.tsx` (centered 2-row), `atlas/header.tsx` (split+info-bar), `horizon/header.tsx` (minimal scroll-aware), registry updated, `tsc --noEmit` clean — 2026-11-13 |
-| TL | TL-5 | Editor `/admin/landing`: template picker, 4 colours + presets, live preview (draft token), publish | ADR-007, OD-44 | DONE | `features/tenant-landing/api.ts`, `editor/{TemplatePicker,PaletteEditor,PublishBar,PreviewFrame,LandingEditor}.tsx`, `/admin/landing/page.tsx`, nav item added, `tsc --noEmit` clean — 2026-11-13 |
-| TL | TL-6 | Content sections: cover, about, opt-in contact, FAQ | OD-43 | DONE | `editor/{AboutEditor,FaqEditor,ContactEditor}.tsx` + integrated in LandingEditor sections tab + `api.ts` extended with `LandingContactContent`, `tsc --noEmit` clean — 2026-11-13 |
-| TL | TL-7 | Verification: 5 templates × light/dark × 390/768/1440, axe, Lighthouse, attribution check, report | ADR-007 | DONE | `tsc --noEmit` exit 0; Node.js tests 37/37 pass (WCAG AA, CSS shape, isValidPalette); PHPUnit 15/15 pass (TenantLandingSettingsTest); `PoweredByFooter` server-side outside template scope; `docs/recovery-reports/TENANT-LANDING.md`; Playwright/Lighthouse/cross-browser deferred to QA staging — 2026-11-13 |
+| TL | TL-1 | Backend: `tenant_landing_settings`, `TenantLandingService`, admin + public routes, `tenant.branding` granted, OpenAPI | ADR-007 | PARTIAL | migration + model + service + controller + 5 routes + 15 tests pass (346/346 on 2026-11-16) - code is UNTRACKED in git (not committed) |
+| TL | TL-2 | Theme engine: `deriveTenantTheme` (AA enforced, dark derived), server-injected tokens, `/a/[slug]` layout to Server + ISR tag | ADR-007 | PARTIAL | `lib/theme/derive-tenant-theme.ts` tests pass (37/37), layout is a Server Component with ISR tag - code UNTRACKED in git |
+| TL | TL-3 | Template system (manifests, registry), current design moved to `oasis`, fixed `PoweredByFooter` | ADR-007, OD-46 | PARTIAL | templates registry, manifests, `PoweredByFooter` - code UNTRACKED in git; `tsc` clean 2026-11-16 |
+| TL | TL-4 | Templates `beacon`, `breeze`, `atlas`, `horizon` | ADR-007 | PARTIAL | beacon/breeze/atlas/horizon headers - code UNTRACKED in git; `tsc` clean 2026-11-16 |
+| TL | TL-5 | Editor `/admin/landing`: template picker, 4 colours + presets, live preview (draft token), publish | ADR-007, OD-44 | PARTIAL | editor `/admin/landing` - code UNTRACKED in git; no browser run in this review |
+| TL | TL-6 | Content sections: cover, about, opt-in contact, FAQ | OD-43 | PARTIAL | About/FAQ/Contact editors - code UNTRACKED in git |
+| TL | TL-7 | Verification: 5 templates × light/dark × 390/768/1440, axe, Lighthouse, attribution check, report | ADR-007 | PARTIAL | tsc exit 0, 37/37 node tests, 15/15 PHPUnit, report `docs/recovery-reports/TENANT-LANDING.md`; Playwright 5 templates x light/dark x 390/768/1440, axe and Lighthouse were DEFERRED (not run); commit 85a3a81 holds docs only |
+
+### Recovery review 2026-11-16 (gaps found; none started)
+
+> Priority order for the next sessions: (1) commit the untracked TL code, (2) re-run the full release gate incl. Playwright and write `docs/recovery-reports/R9.md`, (3) close the rows below, (4) resume P2, P3, P5, P7.
+
+| Phase | Task | Title | Closes | Status | Evidence |
+|---|---|---|---|---|---|
+| REV | REV-1 | Commit the untracked Tenant Landing code (TL-1..TL-6) in logical commits | TL-1..6 | TODO | `git status` shows migration, model, service, controller, `features/tenant-landing`, `lib/theme`, tests as `??` |
+| REV | REV-2 | Remove remaining swallowed errors (7 sites) and use `data-state` | T-UX-01 | TODO | list in R1-B6 row |
+| REV | REV-3 | Break up pages > 300 lines (39 files); unblocks the coverage-matrix gate row Master 63 | T-UX-06 | TODO | R7-2 row |
+| REV | REV-4 | Student dashboard sessions for every class, not only the first | J-11 | TODO | `docs/audit/2026-11-12-user-journey-ux-audit/README.md` |
+| REV | REV-5 | Assistant landing/dashboard: use `GET /grading/pending`, gate the assistant nav item by permission | J-04, J-05 | TODO | same audit |
+| REV | REV-6 | Replace native `alert()`/`confirm()` with `ConfirmDialog` and toast | J-09 | TODO | same audit |
+| REV | REV-7 | Guard `/staff/*` with `ExperienceGuard` and AppShell | J-10 | TODO | same audit |
+| REV | REV-8 | Remove the duplicate `/student/assessments`; no full reload from the grades page | J-12 | TODO | same audit |
+| REV | REV-9 | Paginated summary endpoint for the admin dashboard | J-13 | TODO | same audit |
+| REV | REV-10 | Class to course link or an explicit attendance-by-course decision | J-16 | TODO | same audit |
+| REV | REV-11 | Contract tests: response shapes vs OpenAPI and TS types generated in CI | T-QA-04 | TODO | R9-2 row |
+| REV | REV-12 | Test for the PAY-REV-1 platform 403 | OD-34 | TODO | PAY-REV-1 row |
+| REV | REV-13 | Move `/teacher/*` to `/staff/*` with redirects (OD-8) | OD-8 | TODO | `apps/web/src/app/teacher` has 20 folders, `staff` has 3 |
+| REV | REV-14 | Operations phase: deploy, backups and restore drill, monitoring, S3 storage (OD-11), Redis queue (OD-12), SMTP, PDPL notice (OD-28) | release | TODO | no tracker row existed |
+| REV | REV-15 | Docs hygiene: duplicate ADR-002 numbering, missing ADR-003/005 files, `file:///` link, mojibake in this file, stale `current-state.md` and `release-evidence.json` | C-09 | TODO | `docs/decisions/` |
 
 ## External prerequisites (owner action)
 

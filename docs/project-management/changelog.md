@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Docs] - 2026-11-16 — Recovery review: tracker and coverage matrix aligned with the code
+
+- Verified: PHPUnit 346/346 (SQLite), `tsc --noEmit` clean, 37/37 frontend unit tests. Not run: Playwright, pint, build, PostgreSQL.
+- `04-capability-coverage-matrix.md`: refreshed to REAL 34 / PARTIAL 28 / BROKEN 1 (God Files) / SIMULATED 0 / MISSING 0 (was 6 / 21 / 18 / 5 / 14).
+- Tracker: R9-1..R9-8 TODO -> PARTIAL (E2E, route matrix, axe, role matrix, release gate script already exist); TL-1..TL-7 DONE -> PARTIAL (code untracked in git, Playwright/Lighthouse deferred); R1-B6 and R7-2 corrected; added REV-1..REV-15 for the gaps found.
+- `pending.md` rewritten. `release-evidence.json` and `current-state.md` still show the superseded 2026-10-30 PRODUCTION_READY claim until the gate is re-run (REV-15).
+
 ## [Verified] - 2026-11-13 — Tenant landing: verification pass (TL-7, ADR-007)
 
 - `tsc --noEmit` clean (exit 0) — no TypeScript errors across all landing components.
