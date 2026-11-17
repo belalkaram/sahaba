@@ -458,7 +458,8 @@ export default function StudentLessonPlayerPage() {
                 </div>
 
                 {lesson.content ? (
-                  <div className="prose prose-sm dark:prose-invert max-w-none text-fg leading-relaxed whitespace-pre-wrap font-sans text-xs sm:text-sm">
+                  // OD-48: reading pane stays light "paper" even in dark mode; OD-47: reading text at text-base.
+                  <div data-tone="light" className="prose max-w-[70ch] rounded-lg border border-border bg-surface p-4 text-base leading-loose text-fg whitespace-pre-wrap font-sans sm:p-6">
                     {lesson.content}
                   </div>
                 ) : (

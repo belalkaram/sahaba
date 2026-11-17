@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Changed] - 2026-11-17 — Light/dark balance: tone zones (OD-48)
+
+- `tokens.css`: `data-tone="light|dark"` subtrees take the other theme's whole token set; `.rail-surface` is the inverse of the page theme. `dark:` variant follows tone zones.
+- Light theme: warm page `#F6F4EE`, softer ink `#1C2623`, warm borders; dark green sidebar rail; primary `#0A7363`, success/warning/danger/info darkened so text stays ≥ 4.5:1 on page and muted surfaces (checked numerically).
+- Dark theme: page `#172B27`, cards `#1F3631`/`#263F39`, borders lifted, ink `#F5F1E8`; beige sidebar and top bar kept.
+- Reading panes on light paper in both themes: lesson text (also `text-base`, max 70ch) and the secure-exam question card.
+- Verified: `tsc`, `lint:design`, 37/37 unit tests, production build; browser check of `/admin` in light and dark at 1280/1440. Lesson and exam paper panes not opened in the browser (needs a student session with content); no axe run.
+
 ## [Changed] - 2026-11-17 — Readability: larger, lighter type scale (OD-47)
 
 - `globals.css` type scale: `text-xs` 12px → 13px, `text-sm` 14px → 15px, body 15px → 16px, `text-lg` 17px → 18px, with taller line-heights; weight 500 from 13px up (600 kept only below 13px). Affects ~1,470 `text-xs` and ~475 `text-sm` uses at once.

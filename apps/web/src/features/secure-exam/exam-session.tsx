@@ -293,7 +293,8 @@ export function ExamSession({ courseId, examId, initial, onFinished, onPause }: 
 
       <div className="mx-auto grid max-w-6xl gap-6 px-4 py-6 lg:grid-cols-[1fr_280px]">
         <main className="min-w-0 space-y-5">
-          <section className="rounded-xl border border-border bg-surface p-5 shadow-xs sm:p-7" aria-live="polite">
+          {/* OD-48: the question reads on light "paper" in both themes. */}
+          <section data-tone="light" className="rounded-xl border border-border bg-surface p-5 shadow-xs sm:p-7" aria-live="polite">
             <QuestionView
               key={q.id}
               question={q}

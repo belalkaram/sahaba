@@ -54,33 +54,40 @@
 
 /* ---------------------------------------------------------------------------
  * 2a. Semantic tokens — Light (default)
+ *
+ * Tone zones (OD-48): a subtree with data-tone="light" or data-tone="dark" takes the whole other
+ * token set, whatever the page theme, so one page can mix light and dark areas and every nested
+ * component adapts. `.rail-surface` (the app sidebar) is the inverse of the theme: dark rail on a
+ * light page, beige rail on a dark page.
  * ------------------------------------------------------------------------- */
 :root,
-[data-theme="light"] {
+[data-theme="light"],
+[data-tone="light"] {
   color-scheme: light;
 
   /* Surfaces */
   --surface: var(--neutral-0);
   --surface-raised: var(--neutral-0);
-  --surface-sunken: var(--neutral-50);
-  --surface-muted: var(--neutral-100);
+  /* OD-48: warm off-white page instead of near-white, so white cards stand out without glare. */
+  --surface-sunken: #F6F4EE;
+  --surface-muted: #EFEDE5;
   --surface-overlay: rgba(11, 17, 16, 0.48);
   --surface-brand: var(--emerald-700);
   --surface-brand-fg: #FFFFFF;
 
   /* Text */
-  --fg: var(--neutral-900);
+  --fg: #1C2623;
   --fg-muted: var(--neutral-600);
   --fg-subtle: var(--neutral-500);
   --fg-inverse: #FFFFFF;
 
   /* Borders */
-  --border: var(--neutral-200);
-  --border-subtle: var(--neutral-100);
-  --border-strong: var(--neutral-300);
+  --border: #E2DFD5;
+  --border-subtle: #ECE9E0;
+  --border-strong: #CCC8BC;
 
   /* Brand — Deep Emerald-Teal (overridable by tenant branding) */
-  --primary: var(--brand-primary, var(--emerald-600));
+  --primary: var(--brand-primary, #0A7363); /* OD-48: AA (≥4.5) on the warm page and muted surfaces */
   --primary-hover: var(--emerald-700);
   --primary-fg: #FFFFFF;
   --primary-subtle: var(--emerald-50);
@@ -88,10 +95,10 @@
   --primary-ring: rgba(12, 127, 109, 0.35);
 
   /* Secondary actions (neutral) */
-  --secondary: var(--neutral-100);
-  --secondary-hover: var(--neutral-200);
+  --secondary: #EFEDE5;
+  --secondary-hover: #E2DFD5;
   --secondary-fg: var(--neutral-800);
-  --secondary-subtle: var(--neutral-50);
+  --secondary-subtle: #F6F4EE;
 
   /* Accent — Sand */
   --accent: var(--sand-700);
@@ -100,25 +107,25 @@
   --accent-subtle-fg: var(--sand-800);
 
   /* Feedback */
-  --success: #15803D;
+  --success: #137336;
   --success-hover: #166534;
   --success-fg: #FFFFFF;
   --success-subtle: #ECFDF3;
   --success-subtle-fg: #14532D;
 
-  --warning: #B45309;
+  --warning: #A14A08;
   --warning-hover: #92400E;
   --warning-fg: #FFFFFF;
   --warning-subtle: #FFF8EB;
   --warning-subtle-fg: #78350F;
 
-  --danger: #DC2626;
+  --danger: #C42020;
   --danger-hover: #B91C1C;
   --danger-fg: #FFFFFF;
   --danger-subtle: #FEF2F2;
   --danger-subtle-fg: #7F1D1D;
 
-  --info: #4D7C0F;
+  --info: #456F0D;
   --info-hover: #3F6212;
   --info-fg: #FFFFFF;
   --info-subtle: #F7FEE7;
@@ -163,26 +170,31 @@
 /* ---------------------------------------------------------------------------
  * 2b. Semantic tokens — Dark (designed, not inverted)
  * ------------------------------------------------------------------------- */
-[data-theme="dark"] {
+[data-theme="dark"],
+[data-tone="dark"],
+:root:not([data-theme="dark"]) .rail-surface {
   color-scheme: dark;
 
-  /* Deep saturated emerald: dark without feeling gloomy (near-black), vivid without looking washed out (grey). */
-  --surface: #16322C;
-  --surface-raised: #1C3D35;
-  --surface-sunken: #0F2622;
-  --surface-muted: #22483F;
+  /*
+   * OD-48: softer green-grey, one step lighter and less saturated than the earlier deep emerald
+   * (#16322C), which read as gloomy over a whole page. Cards are clearly lighter than the page.
+   */
+  --surface: #1F3631;
+  --surface-raised: #263F39;
+  --surface-sunken: #172B27;
+  --surface-muted: #2D4842;
   --surface-overlay: rgba(10, 16, 14, 0.62);
   --surface-brand: #0E3A33;
   --surface-brand-fg: #F4F0E6;
 
-  --fg: #FBF8F0;
+  --fg: #F5F1E8;
   --fg-muted: #D3DDD2;
   --fg-subtle: #A9BBAF;
   --fg-inverse: var(--neutral-950);
 
-  --border: #34594F;
-  --border-subtle: #274A41;
-  --border-strong: #4F7A6E;
+  --border: #3A5850;
+  --border-subtle: #2E4A43;
+  --border-strong: #52746A;
 
   --primary: var(--brand-primary-dark, #2FD3B1);
   --primary-hover: #5CE3C6;
@@ -191,10 +203,13 @@
   --primary-subtle-fg: #A9F0DF;
   --primary-ring: rgba(47, 211, 177, 0.5);
 
-  --secondary: #22483F;
-  --secondary-hover: #2A564B;
+  --secondary: #2D4842;
+  --secondary-hover: #35524B;
   --secondary-fg: #F3EFE4;
-  --secondary-subtle: #16322C;
+  --secondary-subtle: #1F3631;
+
+  /* Background of the sidebar when it is the dark rail of a light page. */
+  --rail-bg: #12302A;
 
   --accent: #E8C88F;
   --accent-fg: var(--sand-900);
@@ -306,7 +321,8 @@
  * Chrome surfaces (sidebar, top bars, public header). Remaps the semantic tokens locally so every
  * nested component (theme switcher, bell, avatar, menus) adapts without per-component work.
  */
-.chrome-surface {
+.chrome-surface,
+[data-theme="dark"] .rail-surface {
   --surface: var(--chrome-bg);
   --surface-raised: var(--chrome-field);
   --surface-sunken: var(--chrome-field);
@@ -327,4 +343,26 @@
   --logo-arch: #D8AB71;
   background-color: var(--chrome-bg);
   color: var(--chrome-fg);
+}
+
+/* Sidebar rail on a light page: the dark token set (above) on a deep green background. */
+.rail-surface {
+  background-color: var(--rail-bg, var(--surface-sunken));
+  color: var(--fg);
+}
+
+/*
+ * Light "paper" zone inside a dark page (reading panes: lesson text, exam questions). Warm cream
+ * instead of pure white so it does not glare against the dark surroundings.
+ */
+[data-theme="dark"] [data-tone="light"] {
+  --surface: #F6F1E6;
+  --surface-raised: #FAF6EE;
+  --surface-sunken: #EFE8DA;
+  --surface-muted: #EDE6D7;
+  --border: #DBCFB8;
+  --border-subtle: #E6DCC9;
+  --border-strong: #C9BB9F;
+  background-color: var(--surface);
+  color: var(--fg);
 }

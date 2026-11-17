@@ -280,7 +280,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children, experienceOverride
         {/* Desktop sidebar */}
         <aside
           className={cn(
-            'chrome-surface sticky top-0 z-30 hidden h-screen shrink-0 flex-col border-e border-border shadow-[inset_-1px_0_0_rgba(255,255,255,0.35)] transition-[width] duration-300 ease-out md:flex',
+            'rail-surface sticky top-0 z-30 hidden h-screen shrink-0 flex-col border-e border-border transition-[width] duration-300 ease-out md:flex',
             collapsed ? 'w-[var(--shell-sidebar-collapsed)]' : 'w-[var(--shell-sidebar)]',
           )}
           aria-label="القائمة الجانبية"

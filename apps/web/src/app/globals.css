@@ -2,7 +2,8 @@
 @import "../styles/tokens.css";
 
 /* Dark variant follows the data-theme attribute set by ThemeProvider (system/light/dark). */
-@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+/* Tone zones (OD-48): a data-tone subtree overrides the page theme for `dark:` utilities too. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *, [data-tone="dark"], [data-tone="dark"] *):not(:where([data-tone="light"], [data-tone="light"] *)));
 
 /*
  * `inline` so utilities reference the semantic variables directly — theme switches and
