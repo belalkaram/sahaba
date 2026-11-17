@@ -172,7 +172,7 @@ export default function DesignSystemGallery() {
                     <td className="py-2.5 text-primary" dir="ltr">
                       {a.icon}
                     </td>
-                    <td className="ltr-isolate py-2.5 text-xs text-fg-subtle">{a.name}</td>
+                    <td className="ltr-isolate py-2.5 text-sm text-fg-subtle">{a.name}</td>
                   </tr>
                 ))}
               </tbody>

@@ -287,7 +287,7 @@ export default function StudentImportPage() {
                 {importsHistory.map((imp) => (
                   <tr key={imp.id} className="hover:bg-card/40 transition-colors">
                     <td className="py-3 px-3 font-semibold text-fg">{imp.file_name}</td>
-                    <td className="py-3 px-3 text-secondary font-mono text-xs" dir="ltr">
+                    <td className="py-3 px-3 text-secondary font-mono text-sm" dir="ltr">
                       {formatDateTime(imp.created_at)}
                     </td>
                     <td className="py-3 px-3 text-fg">{imp.total_rows}</td>

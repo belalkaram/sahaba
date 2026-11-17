@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Changed] - 2026-11-17 — Readability: larger, lighter type scale (OD-47)
+
+- `globals.css` type scale: `text-xs` 12px → 13px, `text-sm` 14px → 15px, body 15px → 16px, `text-lg` 17px → 18px, with taller line-heights; weight 500 from 13px up (600 kept only below 13px). Affects ~1,470 `text-xs` and ~475 `text-sm` uses at once.
+- Segmented filters inside a horizontal scroller no longer wrap (one line, scroll).
+- `lint:design`: new rule `xs-data-text` (no `text-xs` on `td`/`input`/`textarea`/`select`); the 7 offending cells moved to `text-sm`. Two pre-existing emoji icons in the landing editor replaced with Lucide icons, so the guard passes again.
+- Verified: `tsc` clean, `lint:design` pass, production build pass; browser check on `/admin/users` at 1440 (light + dark) and 375 (no horizontal overflow, filter tabs one line). Other pages not reviewed one by one.
+
 ## [Docs] - 2026-11-16 — Recovery review: tracker and coverage matrix aligned with the code
 
 - Verified: PHPUnit 346/346 (SQLite), `tsc --noEmit` clean, 37/37 frontend unit tests. Not run: Playwright, pint, build, PostgreSQL.

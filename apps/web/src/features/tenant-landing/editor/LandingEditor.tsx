@@ -7,6 +7,7 @@
  * Tabs: القالب / الألوان / الأقسام (includes content editors for about/contact/faq).
  * Auto-saves draft 2s after last change. No fake successes.
  */
+import { Check } from 'lucide-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../../context/auth-context';
 import { DataState } from '../../../components/ui/data-state';
@@ -182,7 +183,7 @@ export function LandingEditor() {
     <div className="flex min-h-[calc(100vh-4rem)] flex-col">
       {publishSuccess && (
         <div className="flex items-center justify-between gap-3 border-b border-border bg-primary-subtle px-4 py-3 text-sm text-primary-subtle-fg sm:px-6" role="status">
-          <span>✓ نُشرت الصفحة (الإصدار {publishSuccess.version}). قد تستغرق التغييرات حتى دقيقة لتظهر.</span>
+          <span className="inline-flex items-center gap-1.5"><Check aria-hidden className="h-4 w-4" />نُشرت الصفحة (الإصدار {publishSuccess.version}). قد تستغرق التغييرات حتى دقيقة لتظهر.</span>
           <button type="button" onClick={() => setPublishSuccess(null)} className="text-fg-muted hover:text-fg text-xs">إغلاق</button>
         </div>
       )}

@@ -189,10 +189,10 @@ export default function SupportSessionsPage() {
                           <Badge variant="neutral">منتهية</Badge>
                         )}
                       </td>
-                      <td className="py-4 px-3 text-secondary font-mono text-xs" dir="ltr">
+                      <td className="py-4 px-3 text-secondary font-mono text-sm" dir="ltr">
                         {formatDateTime(session.accessed_at)}
                       </td>
-                      <td className="py-4 px-3 text-secondary font-mono text-xs" dir="ltr">
+                      <td className="py-4 px-3 text-secondary font-mono text-sm" dir="ltr">
                         {session.ended_at
                           ? formatDateTime(session.ended_at)
                           : formatDateTime(session.expires_at)}

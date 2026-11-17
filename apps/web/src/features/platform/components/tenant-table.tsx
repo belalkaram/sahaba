@@ -69,7 +69,7 @@ export const TenantTable: React.FC<TenantTableProps> = ({
               <td className="py-3.5 px-4 font-mono text-fg-muted" dir="ltr">
                 {t.slug}.localhost
               </td>
-              <td className="py-3.5 px-4 font-mono text-success text-xs" dir="ltr">
+              <td className="py-3.5 px-4 font-mono text-success text-sm" dir="ltr">
                 tenant_{t.slug}.sqlite
               </td>
               <td className="py-3.5 px-4">

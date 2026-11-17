@@ -15,18 +15,23 @@
   /* Numbers/codes use Plex with tabular figures (Arabic-Indic digits render correctly). */
   --font-mono: "IBM Plex Sans Arabic", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 
-  /* Type scale — taller line-heights for Arabic */
-  --text-xs: 0.75rem;
-  --text-xs--line-height: 1.125rem;
-  --text-xs--font-weight: 600;
-  --text-sm: 0.875rem;
-  --text-sm--line-height: 1.375rem;
-  --text-sm--font-weight: 600;
-  --text-base: 0.9375rem;
-  --text-base--line-height: 1.625rem;
+  /*
+   * Type scale — taller line-heights for Arabic.
+   * 2026-11-17 (OD-47): one step larger and lighter. `text-xs` was 12px/600 on ~1,470 elements and made
+   * dense pages hard to read; Arabic below 13px loses its dots. `text-xs` is now 13px and is meant for
+   * badges, dates and hints only — body copy, table cells and form fields use `text-sm` or larger.
+   */
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.25rem;
+  --text-xs--font-weight: 500;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.5rem;
+  --text-sm--font-weight: 500;
+  --text-base: 1rem;
+  --text-base--line-height: 1.75rem;
   --text-base--font-weight: 500;
-  --text-lg: 1.0625rem;
-  --text-lg--line-height: 1.75rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.875rem;
   --text-xl: 1.25rem;
   --text-xl--line-height: 1.875rem;
   --text-2xl: 1.625rem;
@@ -151,28 +156,37 @@
   }
 
   /*
-   * Arabic Typography Enhancement:
-   * IBM Plex Sans Arabic requires bolder weights at smaller sizes (≤14px)
-   * to preserve dot sharpness and stroke definition on all displays.
+   * Arabic Typography:
+   * Only sizes below 13px need the heavier 600 weight to keep dots sharp. From 13px up, 500 reads
+   * cleaner — 600 on every small line made dense pages look blotchy (OD-47).
    */
-  .text-xs,
-  [class*="text-xs"],
   [class*="text-[10px]"],
   [class*="text-[11px]"],
-  [class*="text-[12px]"],
-  small,
-  caption {
+  [class*="text-[12px]"] {
     font-weight: 600;
   }
 
+  .text-xs,
+  [class*="text-xs"],
   .text-sm,
-  [class*="text-sm"] {
-    font-weight: 600;
+  [class*="text-sm"],
+  small,
+  caption {
+    font-weight: 500;
   }
 
   th,
   label {
     font-weight: 600;
+  }
+
+  /*
+   * Segmented filters inside a horizontal scroller keep one line per option and scroll instead of
+   * wrapping (with the larger OD-47 scale, "الكادر الإداري والتعليمي" broke into three lines at 375px).
+   */
+  .overflow-x-auto > :is(button, a) {
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   /* Display face for large Arabic headings only (never < 20px, never in forms/tables). */

@@ -4,6 +4,7 @@
  * TL-5 (ADR-007): Palette editor — 4 color pickers with WCAG AA indicator.
  * Uses deriveTenantTheme to show live AA status under each swatch.
  */
+import { AlertTriangle } from 'lucide-react';
 import React, { useId, useMemo } from 'react';
 import { deriveTenantTheme, isValidPalette } from '../../../lib/theme/derive-tenant-theme';
 import { PALETTE_PRESETS } from '../api';
@@ -74,7 +75,7 @@ function ColorField({
       </div>
       {hasWarning && (
         <p className="text-xs text-fg-muted" role="status">
-          <span aria-hidden>⚠️</span> عُدّل تلقائياً للقراءة (AA)
+          <AlertTriangle aria-hidden className="inline h-3.5 w-3.5 align-[-2px]" /> عُدّل تلقائياً للقراءة (AA)
         </p>
       )}
     </div>

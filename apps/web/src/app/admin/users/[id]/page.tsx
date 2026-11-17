@@ -505,10 +505,10 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                             <td className="py-2.5 px-3 font-mono text-turquoise font-semibold">
                               {ent.entitlement_key}
                             </td>
-                            <td className="py-2.5 px-3 text-secondary text-xs">
+                            <td className="py-2.5 px-3 text-secondary text-sm">
                               {ent.reason || 'تفعيل تلقائي عبر اشتراك باقة'}
                             </td>
-                            <td className="py-2.5 px-3 text-secondary font-mono text-xs">
+                            <td className="py-2.5 px-3 text-secondary font-mono text-sm">
                               {ent.expires_at ? formatDate(ent.expires_at) : 'دائم'}
                             </td>
                             <td className="py-2.5 px-3 text-center">

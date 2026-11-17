@@ -18,6 +18,8 @@ const RULES = [
   },
   { name: 'arbitrary-font-size', re: /\btext-\[\d+px\]/, hint: 'use the type scale (text-xs … text-5xl)' },
   { name: 'hex-in-class', re: /\b(?:bg|text|border)-\[#[0-9a-fA-F]{3,8}\]/, hint: 'use a token' },
+  // OD-47: text-xs is for badges, dates and hints — data people read or type stays at text-sm or larger.
+  { name: 'xs-data-text', re: /<(?:td|input|textarea|select)\b[^>]*\btext-xs\b/, hint: 'table cells and form fields use text-sm or larger (OD-47)' },
 ];
 
 const problems = [];
