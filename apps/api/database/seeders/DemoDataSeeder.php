@@ -45,10 +45,18 @@ class DemoDataSeeder extends Seeder
             ['slug' => 'almustaqbal'],
             [
                 'name' => 'أكاديمية المستقبل للغات والعلوم',
-                'type' => 'school',
+                'type' => 'organization',
+                'organization_kind' => 'academy',
                 'status' => 'active',
+                'accepts_registrations' => true,
+                'is_listed' => true,
+                'city' => 'الرياض',
             ]
         );
+        // Ensure dev tenant appears in the registration directory even on existing databases.
+        if (! $tenant->accepts_registrations) {
+            $tenant->update(['accepts_registrations' => true, 'is_listed' => true]);
+        }
 
         TenantDatabase::firstOrCreate(
             ['tenant_id' => $tenant->id],

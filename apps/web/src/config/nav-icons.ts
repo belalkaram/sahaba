@@ -14,6 +14,7 @@ import {
   FileBarChart,
   FolderOpen,
   CreditCard,
+  Globe,
   GraduationCap,
   Home,
   IdCard,
@@ -69,6 +70,7 @@ export const NAV_ICONS: Record<string, LucideIcon> = {
   media: FolderOpen,
   analytics: ChartColumn,
   integrations: PlugZap,
+  landing: Globe,
 };
 
 export function navIcon(name: string): LucideIcon {

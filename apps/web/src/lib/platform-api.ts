@@ -449,8 +449,7 @@ export const platformApi = {
   },
 
   getPaymentProofUrl(tenantId: string, paymentId: string): string {
-    const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1').replace(/\/$/, '');
-    return `${baseUrl}/platform/payments/${tenantId}/${paymentId}/proof`;
+    return `${apiClient.baseUrl}/platform/payments/${tenantId}/${paymentId}/proof`;
   },
 
   async approvePayment(

@@ -49,8 +49,8 @@ export const reportApi = {
 
   /** Authenticated download: the file is streamed through the API, never a public URL. */
   async downloadFile(report: ReportItem): Promise<void> {
-    const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
-    const response = await fetch(`${base.replace(/\/$/, '')}/reports/${report.id}/file`, {
+    const base = apiClient.baseUrl;
+    const response = await fetch(`${base}/reports/${report.id}/file`, {
       headers: {
         Authorization: `Bearer ${tokenStore.getToken() ?? ''}`,
         'X-Tenant-Slug': tokenStore.getTenant() ?? '',

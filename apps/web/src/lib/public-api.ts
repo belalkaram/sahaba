@@ -144,6 +144,31 @@ export const publicApi = {
   },
 };
 
+/** Landing page customisation data returned by GET /public/academy/profile (TL-1, ADR-007). */
+export interface TenantLandingPublic {
+  schema: number;
+  template: 'oasis' | 'beacon' | 'breeze' | 'atlas' | 'horizon';
+  palette: {
+    primary: string;
+    secondary: string;
+    accent: string;
+    surface: string;
+  };
+  sections: {
+    stats?: boolean;
+    courses?: boolean;
+    teachers?: boolean;
+    about?: boolean;
+    contact?: boolean;
+    faq?: boolean;
+  };
+  content?: {
+    cover_path?: string | null;
+    about?: { text?: string | null; highlights?: string[] };
+    faq?: Array<{ question: string; answer: string }>;
+  };
+}
+
 /** What an academy publishes about itself (GET /public/academy/profile). */
 export interface AcademyProfile {
   slug: string;
@@ -157,6 +182,8 @@ export interface AcademyProfile {
   services: ('online' | 'offline')[];
   accepts_registrations: boolean;
   is_listed: boolean;
+  /** Published landing page settings — null when the academy has not published any yet. */
+  landing?: TenantLandingPublic | null;
 }
 
 export interface PublicTeacherRef {

@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Domain\Authorization\Services\RoleSynchronizer;
 use App\Models\AccessCredential;
 use App\Models\Assignment;
 use App\Models\AssignmentSubmission;
@@ -20,19 +19,16 @@ use App\Models\Meeting;
 use App\Models\Package;
 use App\Models\ParentProfile;
 use App\Models\PaymentRequest;
-use App\Models\PlatformRole;
-use App\Models\PlatformUser;
+use App\Models\Permission;
 use App\Models\Role;
 use App\Models\SchoolClass;
 use App\Models\Staff;
-use App\Models\StaffAssignment;
 use App\Models\Student;
 use App\Models\StudentAnalyticsSnapshot;
 use App\Models\Subscription;
 use App\Models\Tenant;
 use App\Models\TenantDatabase;
 use App\Models\TenantDomain;
-use App\Models\TenantFeature;
 use App\Models\TenantUser;
 use App\Tenancy\TenantDatabaseManager;
 use Illuminate\Database\Seeder;
@@ -43,39 +39,28 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // 0. Seed Platform Identity (R1-A9)
-        $platformRole = PlatformRole::firstOrCreate(
-            ['name' => 'super_admin'],
-            ['label' => 'مدير المنصة العام', 'description' => 'كامل صلاحيات إدارة المنصة والمؤسسات']
-        );
-
-        $platformAdmin = PlatformUser::firstOrCreate(
-            ['email' => 'admin@platform.local'],
-            [
-                'name' => 'Platform Super Administrator',
-                'password' => Hash::make('platform123456'),
-                'status' => 'active',
-            ]
-        );
-
-        if (! $platformAdmin->roles()->where('role_id', $platformRole->id)->exists()) {
-            $platformAdmin->roles()->attach($platformRole->id);
-        }
-
         // 1. Create or get Demo Tenant
         $tenant = Tenant::firstOrCreate(
             ['slug' => 'almustaqbal'],
             [
                 'name' => 'أكاديمية المستقبل للغات والعلوم',
-                'type' => 'school',
+                'type' => 'organization',
+                'organization_kind' => 'school',
                 'status' => 'active',
+                'accepts_registrations' => true,
+                'is_listed' => true,
+                'city' => 'الرياض',
             ]
         );
+
+        if (! $tenant->accepts_registrations) {
+            $tenant->update(['accepts_registrations' => true, 'is_listed' => true]);
+        }
 
         TenantDatabase::firstOrCreate(
             ['tenant_id' => $tenant->id],
             [
-                'connection_identifier' => 'tenant_'.$tenant->slug,
+                'connection_identifier' => 'tenant_' . $tenant->slug,
                 'status' => 'ready',
             ]
         );
@@ -90,7 +75,7 @@ class DatabaseSeeder extends Seeder
 
         // Enable all standard modules in tenant_features (R1-A5)
         foreach (array_keys(config('authorization.modules', [])) as $moduleKey) {
-            TenantFeature::firstOrCreate(
+            \App\Models\TenantFeature::firstOrCreate(
                 ['tenant_id' => $tenant->id, 'feature_key' => $moduleKey],
                 ['enabled' => true]
             );
@@ -102,7 +87,7 @@ class DatabaseSeeder extends Seeder
         $dbManager->configureConnection($tenant);
 
         // 3. Permissions & Standard System Roles via RoleSynchronizer (R1-A3)
-        $synchronizer = app(RoleSynchronizer::class);
+        $synchronizer = app(\App\Domain\Authorization\Services\RoleSynchronizer::class);
         $synchronizer->sync();
 
         $ownerRole = Role::where('name', 'owner')->firstOrFail();
@@ -308,7 +293,7 @@ class DatabaseSeeder extends Seeder
         );
 
         // Assign assistant to this demo class (R1-A3 / R1-A4)
-        StaffAssignment::firstOrCreate(
+        \App\Models\StaffAssignment::firstOrCreate(
             [
                 'staff_id' => $assistantStaff->id,
                 'assignable_type' => 'class',

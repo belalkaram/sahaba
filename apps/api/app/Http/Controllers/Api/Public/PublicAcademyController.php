@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Api\Public;
 
 use App\Domain\Media\Services\ProfileImageService;
+use App\Domain\Platform\Services\TenantLandingService;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\Staff;
 use App\Support\ApiResponse;
 use App\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -19,7 +21,8 @@ class PublicAcademyController extends Controller
 {
     public function __construct(
         protected ProfileImageService $images,
-        protected TenantContext $context
+        protected TenantContext $context,
+        protected TenantLandingService $landingService,
     ) {}
 
     /**
@@ -28,11 +31,18 @@ class PublicAcademyController extends Controller
      * `/tenant/current` also answers without authentication and carries operational fields
      * (contact phone, domains, auth mode, brand settings); public pages use this instead so they
      * cannot expose any of it.
+     *
+     * Optional `?preview=<token>` returns the draft landing settings when the token is valid
+     * (ADR-007). The token is never echoed back; an invalid/missing token silently returns the
+     * published settings — no error that would reveal draft existence.
      */
-    public function profile(): JsonResponse
+    public function profile(Request $request): JsonResponse
     {
         $tenant = $this->context->getTenantOrFail();
         $logoPath = $tenant->brand_settings['logo_path'] ?? null;
+
+        $previewToken = $request->query('preview');
+        $landing = $this->landingService->resolvePublic($tenant, $previewToken ?: null);
 
         return ApiResponse::success([
             'slug' => $tenant->slug,
@@ -48,6 +58,7 @@ class PublicAcademyController extends Controller
             'services' => $tenant->services,
             'accepts_registrations' => (bool) $tenant->accepts_registrations,
             'is_listed' => (bool) $tenant->is_listed,
+            'landing' => $landing,
         ]);
     }
 

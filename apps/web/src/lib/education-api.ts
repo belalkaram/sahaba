@@ -217,8 +217,7 @@ export const educationApi = {
   },
 
   getMaterialDownloadUrl(id: string): string {
-    const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1').replace(/\/$/, '');
-    return `${baseUrl}/materials/${id}/download`;
+    return `${apiClient.baseUrl}/materials/${id}/download`;
   },
 
   async getMyChildren(): Promise<Student[]> {

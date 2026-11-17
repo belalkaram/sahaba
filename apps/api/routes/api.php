@@ -71,6 +71,7 @@ use App\Http\Controllers\Api\Public\PublicRegistrationController;
 use App\Http\Controllers\Api\Public\SchoolRegistrationController;
 use App\Http\Controllers\Api\Reporting\ReportController;
 use App\Http\Controllers\Api\TenantCurrentController;
+use App\Http\Controllers\Api\TenantLandingController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -311,6 +312,21 @@ Route::middleware(['tenant', 'throttle:api'])->group(function () {
         Route::put('/tenant/academic-settings', [AcademicSettingsController::class, 'update'])
             ->middleware('tenant.can:tenant.settings')
             ->name('api.tenant.academic_settings.update');
+
+        // Landing page customisation (ADR-007, TL-1)
+        Route::prefix('tenant/landing')->middleware('tenant.can:tenant.branding')->group(function () {
+            Route::get('/', [TenantLandingController::class, 'show'])
+                ->name('api.tenant.landing.show');
+            Route::put('/draft', [TenantLandingController::class, 'saveDraft'])
+                ->name('api.tenant.landing.draft.save');
+            Route::post('/publish', [TenantLandingController::class, 'publish'])
+                ->name('api.tenant.landing.publish');
+            Route::delete('/draft', [TenantLandingController::class, 'discardDraft'])
+                ->name('api.tenant.landing.draft.discard');
+            Route::post('/preview-token', [TenantLandingController::class, 'issuePreviewToken'])
+                ->middleware('throttle:10,1')
+                ->name('api.tenant.landing.preview_token');
+        });
 
         // Core - Users (R2-1)
         Route::get('/users', [UserController::class, 'index'])->name('api.users.index');

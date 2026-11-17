@@ -7,56 +7,75 @@ import { notificationApi, type AppNotification } from '../../lib/notification-ap
 import { notificationHref, notificationText } from '../../features/notifications/notification-text';
 import { formatNumber, formatRelative } from '../../lib/format';
 import { cn } from '../../lib/cn';
+import { useAuth } from '../../context/auth-context';
 
 const POLL_MS = 60_000;
 
 /** R8-2 — bell with the real unread count (polls every 60s) and the latest notifications. */
 export function NotificationBell() {
+  const { isAuthenticated } = useAuth();
   const [items, setItems] = useState<AppNotification[]>([]);
   const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
   const [failed, setFailed] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const failCount = useRef(0);
 
   const refresh = useCallback(async () => {
+    if (!isAuthenticated) return;
+    if (failCount.current >= 3) return; // avoid request spam if server is temporarily unreachable
     try {
       const res = await notificationApi.getNotifications(1);
       setItems(res.notifications.slice(0, 10));
       setUnread(res.meta.unread_count);
       setFailed(false);
+      failCount.current = 0;
     } catch {
+      failCount.current += 1;
       setFailed(true);
     }
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     refresh();
     const timer = window.setInterval(refresh, POLL_MS);
     return () => window.clearInterval(timer);
-  }, [refresh]);
+  }, [refresh, isAuthenticated]);
 
   useEffect(() => {
     if (!open) return;
-    const onDown = (e: MouseEvent) => !ref.current?.contains(e.target as Node) && setOpen(false);
+    const onDown = (e: MouseEvent | TouchEvent) => !ref.current?.contains(e.target as Node) && setOpen(false);
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
     document.addEventListener('mousedown', onDown);
+    document.addEventListener('touchstart', onDown);
     document.addEventListener('keydown', onKey);
     return () => {
       document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('touchstart', onDown);
       document.removeEventListener('keydown', onKey);
     };
   }, [open]);
 
   const markAll = async () => {
     await notificationApi.markAllAsRead();
+    failCount.current = 0;
     await refresh();
+  };
+
+  const handleToggle = () => {
+    if (!open) {
+      failCount.current = 0;
+      refresh();
+    }
+    setOpen((v) => !v);
   };
 
   return (
     <div ref={ref} className="relative">
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={handleToggle}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={unread ? `الإشعارات: ${formatNumber(unread)} غير مقروءة` : 'الإشعارات'}

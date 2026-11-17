@@ -638,9 +638,10 @@ return [
         // 2. Center Admin — Academic & operations center director
         'center_admin' => [
             'label' => 'مدير المركز التعليمي',
-            'description' => 'إدارة يومية تشغيلية وأكاديمية للمركز بدون إعدادات العلامة التجارية',
+            'description' => 'إدارة يومية تشغيلية وأكاديمية للمركز',
             'is_system' => true,
             'permissions' => [
+                'tenant.branding' => 'tenant',
                 'users.view' => 'tenant',
                 'users.create' => 'tenant',
                 'users.update' => 'tenant',

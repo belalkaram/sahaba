@@ -161,8 +161,7 @@ export const billingApi = {
   },
 
   getPaymentProofUrl(id: string): string {
-    const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1').replace(/\/$/, '');
-    return `${baseUrl}/payment-requests/${id}/proof`;
+    return `${apiClient.baseUrl}/payment-requests/${id}/proof`;
   },
 
   async approvePayment(id: string, notes?: string): Promise<void> {

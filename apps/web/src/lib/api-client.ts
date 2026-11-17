@@ -61,21 +61,63 @@ export interface RequestOptions extends Omit<RequestInit, "body"> {
   skipUnauthorizedHandler?: boolean;
 }
 
+/**
+ * Resolves the API base URL.
+ * - In the browser: if the client is connecting via a LAN IP (e.g. 192.168.x.x) or localhost,
+ *   dynamically match window.location.hostname so mobile or other LAN devices hit the API
+ *   on the host machine without breaking when DHCP assigns a new local IP.
+ * - In SSR/Node: uses NEXT_PUBLIC_API_URL or defaults to http://127.0.0.1:8000/api/v1.
+ */
+export function resolveApiBaseUrl(overrideUrl?: string): string {
+  if (overrideUrl) return overrideUrl.replace(/\/$/, "");
+
+  const envUrl = process.env.NEXT_PUBLIC_API_URL;
+
+  if (typeof window !== "undefined") {
+    const { hostname, protocol } = window.location;
+    if (envUrl) {
+      try {
+        const parsed = new URL(envUrl);
+        const isLocalTarget =
+          parsed.hostname === "localhost" ||
+          parsed.hostname === "127.0.0.1" ||
+          parsed.hostname.startsWith("192.168.") ||
+          parsed.hostname.startsWith("10.") ||
+          parsed.hostname.endsWith(".local");
+
+        if (isLocalTarget && hostname && hostname !== parsed.hostname) {
+          const port = parsed.port || "8000";
+          return `${protocol}//${hostname}:${port}${parsed.pathname}`.replace(/\/$/, "");
+        }
+      } catch {
+        // Fall back to envUrl
+      }
+      return envUrl.replace(/\/$/, "");
+    }
+
+    if (hostname) {
+      return `${protocol}//${hostname}:8000/api/v1`;
+    }
+  }
+
+  return (envUrl || "http://127.0.0.1:8000/api/v1").replace(/\/$/, "");
+}
+
 export class ApiClient {
-  private readonly baseUrl: string;
+  private explicitBaseUrl?: string;
   private defaultTenant?: string;
   private authToken?: string;
   /** Called when any request returns HTTP 401 */
   private onUnauthorized?: () => void;
 
   constructor(baseUrl?: string, defaultTenant?: string, authToken?: string) {
-    this.baseUrl = (
-      baseUrl ||
-      process.env.NEXT_PUBLIC_API_URL ||
-      "http://localhost:8000/api/v1"
-    ).replace(/\/$/, "");
+    this.explicitBaseUrl = baseUrl;
     this.defaultTenant = defaultTenant;
     this.authToken = authToken;
+  }
+
+  public get baseUrl(): string {
+    return resolveApiBaseUrl(this.explicitBaseUrl);
   }
 
   /** Register a callback invoked on every HTTP 401 response. */

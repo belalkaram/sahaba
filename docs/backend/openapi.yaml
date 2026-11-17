@@ -3118,6 +3118,95 @@ paths:
       responses:
         '200':
           description: Preferences list
+  /tenant/landing:
+    get:
+      summary: Get landing page settings — published + draft + templates + presets (tenant.branding)
+      tags: [Tenant Landing]
+      responses:
+        '200':
+          description: Landing state (published, draft, version, templates, presets)
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Missing tenant.branding permission
+  /tenant/landing/draft:
+    put:
+      summary: Save landing page draft — full replacement, idempotent (tenant.branding)
+      tags: [Tenant Landing]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [template, palette, sections]
+              properties:
+                template:
+                  type: string
+                  enum: [oasis, beacon, breeze, atlas, horizon]
+                palette:
+                  type: object
+                  required: [primary, secondary, accent, surface]
+                  properties:
+                    primary:
+                      type: string
+                      pattern: '^#[0-9a-fA-F]{6}$'
+                    secondary:
+                      type: string
+                      pattern: '^#[0-9a-fA-F]{6}$'
+                    accent:
+                      type: string
+                      pattern: '^#[0-9a-fA-F]{6}$'
+                    surface:
+                      type: string
+                      pattern: '^#[0-9a-fA-F]{6}$'
+                sections:
+                  type: object
+                content:
+                  type: object
+      responses:
+        '200':
+          description: Draft saved
+        '422':
+          description: Validation error (invalid colour, unknown template, etc.)
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Missing tenant.branding permission
+    delete:
+      summary: Discard draft and revert to published (tenant.branding)
+      tags: [Tenant Landing]
+      responses:
+        '200':
+          description: Draft discarded
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Missing tenant.branding permission
+  /tenant/landing/publish:
+    post:
+      summary: Publish the current draft — bumps version, syncs primary_color, writes audit (tenant.branding)
+      tags: [Tenant Landing]
+      responses:
+        '200':
+          description: Published successfully
+        '422':
+          description: No draft to publish
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Missing tenant.branding permission
+  /tenant/landing/preview-token:
+    post:
+      summary: Issue a 15-minute preview token for the current draft (tenant.branding)
+      tags: [Tenant Landing]
+      responses:
+        '200':
+          description: Token and preview URL (expires in 900 seconds)
+        '401':
+          description: Unauthenticated
+        '403':
+          description: Missing tenant.branding permission
   /tenant/academic-settings:
     get:
       summary: Absence notification and at-risk thresholds (tenant.settings)

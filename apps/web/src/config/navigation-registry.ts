@@ -80,6 +80,7 @@ export const NAVIGATION_REGISTRY: NavItem[] = [
   { id: 'admin-academic-settings', href: '/admin/academic-settings', label: 'الإعدادات الأكاديمية', iconName: 'tasks', experience: 'admin', group: 'management', anyOf: ['tenant.settings'] },
   { id: 'admin-audit', href: '/admin/audit', label: 'سجل التدقيق', iconName: 'audit', experience: 'admin', group: 'management', anyOf: ['audit.view'] },
   { id: 'admin-integrations', href: '/admin/integrations', label: 'التكاملات', iconName: 'integrations', experience: 'admin', group: 'management', anyOf: ['tenant.settings', 'roles.view'] },
+  { id: 'admin-landing', href: '/admin/landing', label: 'صفحتي العامة', iconName: 'landing', experience: 'admin', group: 'management', anyOf: ['tenant.branding'] },
   { id: 'admin-settings', href: '/admin/settings', label: 'إعدادات المؤسسة', iconName: 'settings', experience: 'admin', group: 'management', anyOf: ['tenant.settings', 'tenant.branding', 'roles.view'] },
 
   // Student
