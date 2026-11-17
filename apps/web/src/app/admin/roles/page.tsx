@@ -44,8 +44,38 @@ interface Role {
 
 interface PermissionItem {
   name: string;
+  label: string;
   module: string;
   allowed_scopes: string[];
+}
+
+// Backend shapes (RoleController): GET /roles → data is an array of roles whose `permissions` is a
+// { name: scope } map; GET /permissions → data is { module: { name: { label, scopes } } }.
+type ApiRole = Omit<Role, 'permissions'> & { permissions: Record<string, string> | RolePermission[] | null };
+type ApiCatalog = Record<string, Record<string, { label?: string; scopes?: string[] }>>;
+
+function toRoles(data: ApiRole[] | { roles?: ApiRole[] } | null | undefined): Role[] {
+  const list = Array.isArray(data) ? data : (data?.roles ?? []);
+  return list.map((r) => ({
+    ...r,
+    permissions: Array.isArray(r.permissions)
+      ? r.permissions
+      : Object.entries(r.permissions ?? {}).map(([name, scope]) => ({ id: name, name, module: name.split('.')[0], scope })),
+  }));
+}
+
+function toPermissions(data: ApiCatalog | null | undefined): PermissionItem[] {
+  return Object.entries(data ?? {}).flatMap(([module, perms]) =>
+    Object.entries(perms).map(([name, p]) => ({ name, label: p.label ?? name, module, allowed_scopes: p.scopes ?? ['tenant'] })),
+  );
+}
+
+async function fetchRolesAndPermissions() {
+  const [rolesRes, permsRes] = await Promise.all([
+    apiClient.get<ApiRole[]>('/roles'),
+    apiClient.get<ApiCatalog>('/permissions'),
+  ]);
+  return { roles: toRoles(rolesRes.data), permissions: toPermissions(permsRes.data) };
 }
 
 type PageState = 'loading' | 'error' | 'ready';
@@ -72,12 +102,10 @@ export default function RolesPage() {
 
   const reloadData = useCallback(async () => {
     try {
-      const [rolesRes, permsRes] = await Promise.all([
-        apiClient.get<{ roles: Role[] }>('/roles'),
-        apiClient.get<{ permissions: PermissionItem[] }>('/permissions'),
-      ]);
-      setRoles(rolesRes.data.roles ?? []);
-      setPermissions(permsRes.data.permissions ?? []);
+      const data = await fetchRolesAndPermissions();
+      setRoles(data.roles);
+      setPermissions(data.permissions);
+      setSelectedRole((prev) => (prev ? (data.roles.find((r) => r.id === prev.id) ?? null) : prev));
       setPageState('ready');
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : 'تعذر تحميل البيانات';
@@ -88,14 +116,11 @@ export default function RolesPage() {
 
   useEffect(() => {
     let isMounted = true;
-    Promise.all([
-      apiClient.get<{ roles: Role[] }>('/roles'),
-      apiClient.get<{ permissions: PermissionItem[] }>('/permissions'),
-    ])
-      .then(([rolesRes, permsRes]) => {
+    fetchRolesAndPermissions()
+      .then((data) => {
         if (!isMounted) return;
-        setRoles(rolesRes.data.roles ?? []);
-        setPermissions(permsRes.data.permissions ?? []);
+        setRoles(data.roles);
+        setPermissions(data.permissions);
         setPageState('ready');
       })
       .catch((err) => {
@@ -139,26 +164,18 @@ export default function RolesPage() {
 
   const handleTogglePermission = async (role: Role, permName: string) => {
     if (role.is_system) return; // Cannot edit system roles
-    const hasIt = role.permissions.some((p) => p.name === permName);
-    const currentNames = role.permissions.map((p) => p.name);
-    const newNames = hasIt
-      ? currentNames.filter((n) => n !== permName)
-      : [...currentNames, permName];
+    // Send { name: scope } so existing scopes survive the toggle.
+    const next: Record<string, string> = Object.fromEntries(role.permissions.map((p) => [p.name, p.scope]));
+    if (next[permName]) delete next[permName];
+    else next[permName] = permissions.find((p) => p.name === permName)?.allowed_scopes[0] ?? 'tenant';
 
     setActionInProgress(true);
     try {
       await apiClient.put(`/roles/${role.id}`, {
-        name: role.name,
         label: role.label,
-        permissions: newNames,
+        permissions: next,
       });
       await reloadData();
-      // Refresh selectedRole
-      setSelectedRole((prev) =>
-        prev?.id === role.id
-          ? { ...prev, permissions: prev.permissions.filter((p) => p.name !== permName) }
-          : prev
-      );
     } catch (err) {
       alert(err instanceof ApiError ? err.message : 'فشل تحديث الصلاحيات');
     } finally {
@@ -367,7 +384,7 @@ export default function RolesPage() {
                               onChange={() => handleTogglePermission(selectedRole, perm.name)}
                               className="accent-[var(--accent)]"
                             />
-                            <span className="text-xs">{perm.name}</span>
+                            <span className="text-sm">{perm.label}</span>
                           </label>
                         );
                       })}

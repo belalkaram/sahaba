@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Added] - 2026-11-17 — Tenant Google connection and real Google Drive uploads (R4-3, ADR-008)
+
+- Google Cloud project `lms-platform-515016` (Drive + Calendar APIs, External consent screen in Testing, web OAuth client); credentials only in the local `.env`.
+- API: `GET/DELETE /integrations/google`, `GET /integrations/google/connect`, public `GET /integrations/google/callback` (tenant from a single-use state), `POST /media/uploads` + `/complete` (the browser uploads straight to a Drive resumable session in the tenant folder). Tokens and session URLs encrypted at rest; connect, disconnect and upload audited.
+- Pasted Drive links: malformed, trashed or non-video ⇒ 422; otherwise saved as `verified` (seen through the connection) or `unverified`. Media listings no longer return `embed_url`/`playback_url` to users without `media.upload`.
+- Web: `/admin/integrations` shows the real Google state with connect/disconnect; `/teacher/media` uploads with progress, shows the real status and verified/unverified, and drops the hard-coded fake Client ID and "API مفعّل" badges.
+- Verified: `GoogleDriveConnectionTest` 13/13 with Google faked; full API suite 358/359 before documenting the new routes in OpenAPI, then the affected tests 19/19; `tsc` clean; the live local API returns a real consent URL. Not verified: real consent, real upload and playback, a browser check of the pages, `npm run build`.
+
+## [Fixed] - 2026-11-17 — Empty roles & permissions page (/admin/roles)
+
+- The page read `data.roles` / `data.permissions`, but `GET /roles` returns the role array directly with `permissions` as a `{ name: scope }` map, and `GET /permissions` returns a `{ module: { name: { label, scopes } } }` catalog — so both lists were always empty. The page now normalises both shapes, shows permission labels, and sends `{ name: scope }` on toggle so existing scopes are kept.
+- Verified in the browser: 8 system roles listed; the teacher role shows 47 of 87 permissions checked. Toggling on a custom role was not exercised (no custom role in the local data).
+
 ## [Changed] - 2026-11-17 — Light/dark balance: tone zones (OD-48)
 
 - `tokens.css`: `data-tone="light|dark"` subtrees take the other theme's whole token set; `.rail-surface` is the inverse of the page theme. `dark:` variant follows tone zones.
