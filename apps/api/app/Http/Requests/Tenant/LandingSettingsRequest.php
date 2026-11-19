@@ -63,6 +63,11 @@ class LandingSettingsRequest extends FormRequest
             'content.contact.email'         => ['nullable', 'email', 'max:255'],
             'content.contact.address'       => ['nullable', 'string', 'max:500'],
             'content.contact.map_url'       => ['nullable', 'string', 'regex:/^https:\/\/.+/', 'max:1000'],
+            'content.contact.phone_published'    => ['sometimes', 'boolean'],
+            'content.contact.whatsapp_published' => ['sometimes', 'boolean'],
+            'content.contact.email_published'    => ['sometimes', 'boolean'],
+            'content.contact.address_published'  => ['sometimes', 'boolean'],
+            'content.contact.map_url_published'  => ['sometimes', 'boolean'],
             'content.contact.social'        => ['sometimes', 'array', 'max:6'],
             'content.contact.social.*'      => ['nullable', 'string', 'regex:/^https:\/\/.+/', 'max:500'],
 

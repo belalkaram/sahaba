@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Added] - 2026-11-19 — Templates style the whole academy page, not only the header (ADR-007, TL-4)
+
+- Each template now has its own home hero (`templates/<id>/hero.tsx`, registered next to the header): Oasis arch band, Beacon editorial split with numbered stats, Breeze soft blobs with floating stat cards, Atlas hex band with a stat tile grid, Horizon plain and spacious. Shared parts live in `templates/hero-parts.tsx`.
+- Everything below the hero follows the template through `templates/templates.css`, scoped by `[data-template]`: course and teacher cards (Oasis arch images, Beacon square outlines with offset shadow, Breeze rounded glass, Atlas split cards with hex avatars, Horizon flat hairlines), section titles, about/FAQ/contact panels, chips, icons and section bands. Shared components carry inert hook classes (`tl-card`, `tl-media`, `tl-avatar`, `tl-title`, `tl-panel`, `tl-chip`, `tl-icon`, `tl-btn`, `tl-band`), so `/courses` and `/teachers` pages follow the template too.
+- The home page is now full-width bands so templates can alternate backgrounds; empty about/FAQ/contact sections are not rendered.
+- Tenant dark surface: a light owner surface produced near-black (`L≈0.05`); dark mode now uses a fixed deep `L=0.18` (an owner-chosen dark surface keeps its own L, 0.14–0.22).
+- Verified in the browser at 1280px: all five heroes on a temporary draft of the `e2e-academy` test tenant (removed afterwards), cards for all five on `/a/almustaqbal/courses`, light and dark. `tsc` clean, web tests 37/37, ESLint 0 errors on the changed files. Not verified: 390/768 widths for every template, `npm run build`, axe/Lighthouse.
+
+## [Fixed] - 2026-11-19 — Academy public page editor showed nothing (/admin/landing, TL-5/TL-6)
+
+- The preview frame (and `/a/{slug}` itself) showed "تعذّر تحميل صفحة الأكاديمية": the server-side fetch used the LAN IP baked into `NEXT_PUBLIC_API_URL`, which had changed. New `lib/server-api-base.ts` (used by the academy layout and the landing data) maps a private LAN host to `127.0.0.1` when `API_INTERNAL_URL` is unset.
+- Drafts never reached the preview: layouts do not receive search params, so `?preview=<token>` was ignored. New `LandingShell` (client) re-fetches the profile with the token and swaps theme tokens, template header and page data; the published page keeps its ISR cache.
+- Section toggles had no effect: `/a/{slug}` now honours stats/courses/teachers and renders about, FAQ and contact sections.
+- Contact (OD-43): `<field>_published` flags are now accepted and the public profile returns only opted-in contact fields.
+- Editor: the preview opens on the draft automatically, reloads after every saved change, renews the token before it expires, no longer overflows off-screen (1280px frame), and no longer builds `/a/{slug}&theme=` without a token. The light/dark toggle now works inside the frame (`?theme=` honoured only when framed, never stored).
+- Tenant dark tokens: the selector was `[data-tenant-theme][data-theme="dark"]` while `data-theme` lives on `<html>`, so dark tokens never applied; now `[data-theme="dark"] [data-tenant-theme]` too.
+- Verified: browser on localhost — template, colour preset and section toggles all reflected in the preview, dark toggle applied without changing the stored preference; owner draft restored afterwards. `tsc` clean, theme tests 21/21, `TenantLandingSettingsTest` 16/16 (new contact opt-in test). Not verified: `npm run build`, 5 templates × sizes, publish flow end-to-end.
+
 ## [Added] - 2026-11-17 — Tenant Google connection and real Google Drive uploads (R4-3, ADR-008)
 
 - Google Cloud project `lms-platform-515016` (Drive + Calendar APIs, External consent screen in Testing, web OAuth client); credentials only in the local `.env`.

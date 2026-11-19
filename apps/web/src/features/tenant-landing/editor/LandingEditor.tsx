@@ -8,7 +8,7 @@
  * Auto-saves draft 2s after last change. No fake successes.
  */
 import { Check } from 'lucide-react';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../../context/auth-context';
 import { DataState } from '../../../components/ui/data-state';
 import { landingApi, DEFAULT_LANDING_DRAFT } from '../api';
@@ -58,6 +58,8 @@ export function LandingEditor() {
   const [previewToken, setPreviewToken] = useState<string | null>(null);
   const [loadingToken, setLoadingToken] = useState(false);
   const [publishSuccess, setPublishSuccess] = useState<{ version: number } | null>(null);
+  const [previewRefresh, setPreviewRefresh] = useState(0);
+  const tokenIssuedAt = useRef(0);
 
   // ── Auto-save timer ──────────────────────────────────────────────────────
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -78,6 +80,27 @@ export function LandingEditor() {
       .catch(() => setLoadStatus('error'));
   }, []);
 
+  // Preview token for the draft (15 minutes). Declared before the effects that use it.
+  async function requestToken() {
+    setLoadingToken(true);
+    try {
+      const { data } = await landingApi.getPreviewToken();
+      tokenIssuedAt.current = Date.now();
+      setPreviewToken(data.token);
+    } catch {
+      // No token: the frame shows the published page and the overlay offers a retry.
+      setPreviewToken(null);
+    } finally {
+      setLoadingToken(false);
+    }
+  }
+  const handleRequestToken = requestToken;
+
+  // Open the editor on the draft, not the published page.
+  useEffect(() => {
+    if (loadStatus === 'ready' && tokenIssuedAt.current === 0) void requestToken();
+  }, [loadStatus]);
+
   // Auto-save on draft change (skip the first render)
   useEffect(() => {
     if (loadStatus !== 'ready') return;
@@ -92,7 +115,10 @@ export function LandingEditor() {
           sections: draft.sections,
           content: draft.content,
         })
-        .then(() => {
+        .then(async () => {
+          // Tokens live 15 minutes; renew shortly before expiry so the preview keeps the draft.
+          if (Date.now() - tokenIssuedAt.current > 13 * 60_000) await requestToken();
+          setPreviewRefresh((n) => n + 1);
           setSaveStatus('saved');
           setHasDraft(true);
           setDraftUpdatedAt(new Date().toISOString());
@@ -111,15 +137,6 @@ export function LandingEditor() {
   const setContent = (patch: Partial<LandingContent>) =>
     setDraft((d) => ({ ...d, content: { ...d.content, ...patch } }));
 
-  const handleRequestToken = useCallback(async () => {
-    setLoadingToken(true);
-    try {
-      const { data } = await landingApi.getPreviewToken();
-      setPreviewToken(data.token);
-    } finally {
-      setLoadingToken(false);
-    }
-  }, []);
 
   const handleDiscard = async () => {
     setDiscarding(true);
@@ -131,6 +148,9 @@ export function LandingEditor() {
       setHasDraft(false);
       setDraftUpdatedAt(null);
       setPreviewToken(null);
+      // Publishing/discarding invalidates the token server-side; the next save asks for a new one.
+      tokenIssuedAt.current = 0;
+      setPreviewRefresh((n) => n + 1);
     } finally {
       setDiscarding(false);
     }
@@ -143,6 +163,9 @@ export function LandingEditor() {
       setHasDraft(false);
       setDraftUpdatedAt(null);
       setPreviewToken(null);
+      // Publishing/discarding invalidates the token server-side; the next save asks for a new one.
+      tokenIssuedAt.current = 0;
+      setPreviewRefresh((n) => n + 1);
       setPublishSuccess({ version: data.version });
     } finally {
       setPublishing(false);
@@ -281,12 +304,14 @@ export function LandingEditor() {
         </aside>
 
         {/* ── Preview column ─────────────────────────────────────────────── */}
-        <div className="flex flex-1 flex-col bg-surface-sunken">
+        <div className="flex min-w-0 flex-1 flex-col bg-surface-sunken">
           <PreviewFrame
             slug={slug}
             previewToken={previewToken}
             onRequestToken={handleRequestToken}
             loadingToken={loadingToken}
+            refreshKey={previewRefresh}
+            hasDraft={hasDraft}
           />
         </div>
       </div>

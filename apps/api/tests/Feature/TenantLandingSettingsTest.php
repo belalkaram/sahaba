@@ -403,4 +403,30 @@ class TenantLandingSettingsTest extends TestCase
         $noTokenRes = $this->getJson('/api/v1/public/academy/profile?preview=wrongtoken', ['X-Tenant-Slug' => 'tl_tok', 'Accept' => 'application/json']);
         $noTokenRes->assertOk()->assertJsonPath('data.landing.template', 'oasis');
     }
+
+    /** 16. OD-43: only contact fields the owner opted to publish leave the server. */
+    public function test_public_profile_exposes_only_opted_in_contact_fields(): void
+    {
+        $env = $this->createTenantEnv('tl_contact');
+
+        $draft = $this->validDraft();
+        $draft['sections']['contact'] = true;
+        $draft['content']['contact'] = [
+            'phone' => '+966500000001', 'phone_published' => true,
+            'email' => 'private@example.com', 'email_published' => false,
+            'whatsapp' => '+966500000002',
+            'address' => null, 'map_url' => null, 'social' => [],
+        ];
+        $this->putJson('/api/v1/tenant/landing/draft', $draft, $this->headers('tl_contact', $env['ownerToken']))->assertOk();
+        $this->postJson('/api/v1/tenant/landing/publish', [], $this->headers('tl_contact', $env['ownerToken']))->assertOk();
+
+        $res = $this->getJson('/api/v1/public/academy/profile', ['X-Tenant-Slug' => 'tl_contact', 'Accept' => 'application/json']);
+
+        $res->assertOk()
+            ->assertJsonPath('data.landing.content.contact.phone', '+966500000001')
+            ->assertJsonMissingPath('data.landing.content.contact.email')
+            ->assertJsonMissingPath('data.landing.content.contact.whatsapp')
+            ->assertJsonMissingPath('data.landing.content.contact.phone_published');
+        $this->assertStringNotContainsString('private@example.com', $res->getContent());
+    }
 }

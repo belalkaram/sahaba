@@ -25,9 +25,9 @@ export function CourseCard({ course, slug }: { course: PublicCourse; slug: strin
   return (
     <Link
       href={`/a/${slug}/courses/${course.id}`}
-      className="group flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-xs transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-md"
+      className="tl-card tl-course group flex min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-xs transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-md"
     >
-      <div className="aspect-[16/9] overflow-hidden bg-surface-muted">
+      <div className="tl-media aspect-[16/9] overflow-hidden bg-surface-muted">
         <PublicImage src={course.image_url} alt="" fallback={course.title} className="transition-transform duration-300 group-hover:scale-[1.03]" />
       </div>
       <div className="flex flex-1 flex-col gap-3 p-4">
@@ -47,16 +47,16 @@ export function TeacherCard({ teacher, slug }: { teacher: PublicTeacher; slug: s
   return (
     <Link
       href={`/a/${slug}/teachers/${teacher.id}`}
-      className="group flex min-w-0 flex-col items-center gap-3 rounded-xl border border-border bg-surface p-5 text-center shadow-xs transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-md"
+      className="tl-card group flex min-w-0 flex-col items-center gap-3 rounded-xl border border-border bg-surface p-5 text-center shadow-xs transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-md"
     >
-      <div className="h-28 w-28 overflow-hidden rounded-full border-2 border-border bg-surface-muted">
+      <div className="tl-avatar h-28 w-28 overflow-hidden rounded-full border-2 border-border bg-surface-muted">
         <PublicImage src={teacher.image_url} alt="" fallback={teacher.name} />
       </div>
       <div className="min-w-0 space-y-1">
         <h3 className="break-words text-lg font-bold text-fg">{teacher.name}</h3>
         {teacher.headline && <p className="line-clamp-2 break-words text-sm text-fg-muted">{teacher.headline}</p>}
       </div>
-      <span className="mt-auto inline-flex items-center gap-1.5 rounded-full bg-primary-subtle px-3 py-1 text-xs font-semibold text-primary-subtle-fg">
+      <span className="tl-chip mt-auto inline-flex items-center gap-1.5 rounded-full bg-primary-subtle px-3 py-1 text-xs font-semibold text-primary-subtle-fg">
         <BookOpen size={13} aria-hidden /> {teacher.courses_count} مقرر
       </span>
     </Link>
@@ -71,8 +71,8 @@ export function GridSkeleton({ count = 6 }: { count?: number }) {
   return (
     <CardGrid>
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="overflow-hidden rounded-xl border border-border bg-surface">
-          <div className="aspect-[16/9] animate-pulse bg-surface-muted" />
+        <div key={i} className="tl-card overflow-hidden rounded-xl border border-border bg-surface">
+          <div className="tl-media aspect-[16/9] animate-pulse bg-surface-muted" />
           <div className="space-y-3 p-4">
             <div className="h-4 w-1/3 animate-pulse rounded bg-surface-muted" />
             <div className="h-5 w-3/4 animate-pulse rounded bg-surface-muted" />

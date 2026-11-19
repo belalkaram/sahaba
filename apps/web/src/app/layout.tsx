@@ -40,6 +40,10 @@ const themeBootScript = `
   try {
     var stored = localStorage.getItem('lms_theme');
     var dark = stored === 'dark' || ((!stored || stored === 'system') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    if (window.self !== window.top) {
+      var framed = new URLSearchParams(window.location.search).get('theme');
+      if (framed === 'light' || framed === 'dark') dark = framed === 'dark';
+    }
     var root = document.documentElement;
     root.setAttribute('data-theme', dark ? 'dark' : 'light');
     root.classList.toggle('dark', dark);

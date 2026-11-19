@@ -54,7 +54,7 @@ export function SectionTitle({ title, subtitle, action }: { title: string; subti
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
       <div className="min-w-0">
-        <h2 className="heading-accent break-words font-display text-2xl text-fg">{title}</h2>
+        <h2 className="tl-title heading-accent break-words font-display text-2xl text-fg">{title}</h2>
         {subtitle && <p className="mt-2 max-w-2xl text-fg-muted">{subtitle}</p>}
       </div>
       {action}

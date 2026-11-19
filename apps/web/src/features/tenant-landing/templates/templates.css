@@ -1,0 +1,100 @@
+/*
+ * ADR-007: per-template look for everything below the hero on the public academy pages.
+ *
+ * Shared components carry inert hook classes (tl-card, tl-media, tl-avatar, tl-title, tl-panel,
+ * tl-chip, tl-icon, tl-btn, tl-band). They mean nothing outside [data-template]; each template
+ * gives them its radius, card style, shape motif and motion from its manifest.
+ *
+ * These rules are unlayered, so they win over Tailwind utilities (which live in @layer).
+ * Colours only come from theme tokens, so every template follows the owner's palette and
+ * light/dark mode.
+ */
+
+/* ── Oasis: radius lg · elevated cards · arch motif · subtle motion ─────────────────────── */
+[data-template="oasis"] .tl-card { border-radius: 1rem; box-shadow: var(--shadow-sm); }
+[data-template="oasis"] .tl-card:hover { box-shadow: var(--shadow-lg); }
+[data-template="oasis"] .tl-media { border-radius: 999px 999px 0 0; margin: 0.75rem 0.75rem 0; }
+[data-template="oasis"] .tl-avatar { border-radius: 999px 999px 1rem 1rem; height: 8rem; }
+[data-template="oasis"] .tl-panel { border-radius: 1.25rem; box-shadow: var(--shadow-sm); }
+[data-template="oasis"] .tl-band:nth-of-type(even) { background: var(--surface); }
+
+/* ── Beacon: no radius · outlined · square motif · bold editorial type ──────────────────── */
+[data-template="beacon"] .tl-card,
+[data-template="beacon"] .tl-panel,
+[data-template="beacon"] .tl-media,
+[data-template="beacon"] .tl-chip,
+[data-template="beacon"] .tl-icon,
+[data-template="beacon"] .tl-btn { border-radius: 0; }
+[data-template="beacon"] .tl-card { box-shadow: none; border: 2px solid var(--fg); }
+[data-template="beacon"] .tl-card:hover { box-shadow: 6px 6px 0 var(--accent); transform: translate(-3px, -3px); }
+[data-template="beacon"] .tl-avatar { border-radius: 0; border: 2px solid var(--fg); }
+[data-template="beacon"] .tl-panel { box-shadow: none; border: 2px solid var(--fg); }
+[data-template="beacon"] .tl-title { font-weight: 900; font-size: 2rem; letter-spacing: -0.01em; }
+[data-template="beacon"] .tl-title::after { width: 3.5rem; height: 6px; border-radius: 0; }
+[data-template="beacon"] .tl-band { border-bottom: 2px solid var(--border-strong); }
+
+/* ── Breeze: fully round · glass cards · blob motif · soft and playful ──────────────────── */
+[data-template="breeze"] .tl-card {
+  border-radius: 1.75rem;
+  border-color: transparent;
+  background: color-mix(in oklab, var(--surface) 75%, transparent);
+  backdrop-filter: blur(8px);
+  box-shadow: var(--shadow-md);
+}
+[data-template="breeze"] .tl-card:hover { transform: translateY(-4px) rotate(-0.4deg); }
+[data-template="breeze"] .tl-media { border-radius: 1.5rem; margin: 0.6rem 0.6rem 0; }
+[data-template="breeze"] .tl-avatar { border-radius: 42% 58% 55% 45% / 50% 45% 55% 50%; border-color: var(--accent-subtle); border-width: 4px; }
+[data-template="breeze"] .tl-panel { border-radius: 2rem; border-color: transparent; background: color-mix(in oklab, var(--surface) 80%, transparent); box-shadow: var(--shadow-md); }
+[data-template="breeze"] .tl-chip,
+[data-template="breeze"] .tl-btn { border-radius: 999px; }
+[data-template="breeze"] .tl-icon { border-radius: 999px; background: var(--accent-subtle); color: var(--accent-subtle-fg); }
+[data-template="breeze"] .tl-title::after { width: 3rem; height: 6px; border-radius: 999px; background: var(--primary); }
+[data-template="breeze"] .tl-band {
+  background:
+    radial-gradient(40rem 20rem at 100% 0%, color-mix(in oklab, var(--primary) 9%, transparent), transparent 70%),
+    radial-gradient(30rem 18rem at 0% 100%, color-mix(in oklab, var(--accent) 9%, transparent), transparent 70%);
+}
+
+/* ── Atlas: small radius · split cards · hex motif · organised ──────────────────────────── */
+[data-template="atlas"] .tl-card,
+[data-template="atlas"] .tl-panel,
+[data-template="atlas"] .tl-chip,
+[data-template="atlas"] .tl-btn { border-radius: 0.25rem; }
+[data-template="atlas"] .tl-card { box-shadow: none; border-inline-start: 4px solid var(--primary); }
+[data-template="atlas"] .tl-card:hover { transform: none; box-shadow: var(--shadow-md); border-inline-start-color: var(--accent); }
+@media (min-width: 640px) {
+  /* Split card: image beside the text. */
+  [data-template="atlas"] .tl-card.tl-course { display: grid; grid-template-columns: 9rem 1fr; }
+  [data-template="atlas"] .tl-card.tl-course .tl-media { aspect-ratio: auto; height: 100%; }
+}
+[data-template="atlas"] .tl-avatar { border-radius: 0.25rem; clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); border: 0; }
+[data-template="atlas"] .tl-icon { border-radius: 0.25rem; background: transparent; border: 1.5px solid var(--primary); color: var(--primary); }
+[data-template="atlas"] .tl-title { text-transform: none; padding-inline-start: 0.875rem; border-inline-start: 4px solid var(--primary); padding-bottom: 0; }
+[data-template="atlas"] .tl-title::after { display: none; }
+[data-template="atlas"] .tl-band:nth-of-type(even) { background: var(--surface); border-block: 1px solid var(--border); }
+
+/* ── Horizon: minimal · flat · hairlines · no motion ────────────────────────────────────── */
+[data-template="horizon"] .tl-card,
+[data-template="horizon"] .tl-panel {
+  border-radius: 0.25rem;
+  box-shadow: none;
+  border-color: transparent;
+  background: transparent;
+}
+[data-template="horizon"] .tl-card { border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+[data-template="horizon"] .tl-card:hover { transform: none; box-shadow: none; }
+[data-template="horizon"] .tl-card:hover .tl-media img { transform: none; }
+[data-template="horizon"] .tl-media { border-radius: 0.25rem; }
+[data-template="horizon"] .tl-avatar { border-width: 1px; }
+[data-template="horizon"] .tl-panel { border-top: 1px solid var(--border); border-radius: 0; padding-inline: 0; }
+[data-template="horizon"] .tl-chip { background: transparent; padding-inline: 0; color: var(--fg-muted); }
+[data-template="horizon"] .tl-icon { background: transparent; color: var(--fg-muted); }
+[data-template="horizon"] .tl-title { font-weight: 300; }
+[data-template="horizon"] .tl-title::after { width: 1.5rem; height: 1px; background: var(--primary); }
+[data-template="horizon"] .tl-content { max-width: 56rem; }
+/* motion: none */
+[data-template="horizon"] * { transition-duration: 0s !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-template] .tl-card:hover { transform: none; }
+}

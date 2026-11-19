@@ -166,6 +166,13 @@ export interface TenantLandingPublic {
     cover_path?: string | null;
     about?: { text?: string | null; highlights?: string[] };
     faq?: Array<{ question: string; answer: string }>;
+    contact?: {
+      phone?: string | null;
+      whatsapp?: string | null;
+      email?: string | null;
+      address?: string | null;
+      map_url?: string | null;
+    } | null;
   };
 }
 
@@ -235,10 +242,11 @@ export const publicAcademyApi = {
     return res.data.teacher;
   },
   /** Marketing profile only — /tenant/current also carries operational fields. */
-  async academy(slug: string): Promise<AcademyProfile> {
+  async academy(slug: string, previewToken?: string): Promise<AcademyProfile> {
     const res = await apiClient.get<AcademyProfile>(
       '/public/academy/profile',
-      opts(slug),
+      // A valid preview token makes the API return the unpublished draft (TL-5, ADR-007).
+      { ...opts(slug), params: previewToken ? { preview: previewToken } : undefined },
     );
     return res.data;
   },

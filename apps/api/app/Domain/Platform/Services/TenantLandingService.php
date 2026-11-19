@@ -207,7 +207,20 @@ class TenantLandingService
     {
         if (empty($data['sections']['contact'])) {
             $data['content']['contact'] = null;
+
+            return $data;
         }
+
+        // OD-43: each contact field is opt-in. Only fields whose `<field>_published` flag is true
+        // leave the server; the flags themselves are not exposed.
+        $contact = $data['content']['contact'] ?? [];
+        $public = [];
+        foreach (['phone', 'whatsapp', 'email', 'address', 'map_url'] as $field) {
+            if (! empty($contact[$field]) && ! empty($contact["{$field}_published"])) {
+                $public[$field] = $contact[$field];
+            }
+        }
+        $data['content']['contact'] = $public === [] ? null : $public;
 
         return $data;
     }

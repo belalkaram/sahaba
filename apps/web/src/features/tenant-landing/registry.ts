@@ -2,8 +2,8 @@
  * TL-3 (ADR-007): Template registry.
  *
  * Maps each template ID to its manifest and Header component.
- * TL-4 will replace the oasis fallbacks with real implementations for
- * beacon, breeze, atlas, and horizon.
+ * Each template owns its Header and home Hero; cards, section titles and content panels are
+ * re-styled per template through `templates.css` (scoped by [data-template]).
  */
 import type { ComponentType } from 'react';
 import { oasisManifest }   from './templates/oasis/manifest';
@@ -20,20 +20,30 @@ import { BreezeHeader }  from './templates/breeze/header';
 import { AtlasHeader }   from './templates/atlas/header';
 import { HorizonHeader } from './templates/horizon/header';
 
+// Hero components — the first band of the academy home, one per template.
+import { OasisHero }   from './templates/oasis/hero';
+import { BeaconHero }  from './templates/beacon/hero';
+import { BreezeHero }  from './templates/breeze/hero';
+import { AtlasHero }   from './templates/atlas/hero';
+import { HorizonHero } from './templates/horizon/hero';
+import type { HeroProps } from './templates/hero-parts';
+
 export const DEFAULT_TEMPLATE: TemplateId = 'oasis';
 
 interface TemplateEntry {
   manifest: TemplateManifest;
   /** Sticky navigation header rendered by the layout (outside page content). */
   Header: ComponentType;
+  /** Home-page hero. The rest of the page is styled per template by templates.css. */
+  Hero: ComponentType<HeroProps>;
 }
 
 const REGISTRY: Record<TemplateId, TemplateEntry> = {
-  oasis:   { manifest: oasisManifest,   Header: OasisHeader },
-  beacon:  { manifest: beaconManifest,  Header: BeaconHeader },
-  breeze:  { manifest: breezeManifest,  Header: BreezeHeader },
-  atlas:   { manifest: atlasManifest,   Header: AtlasHeader },
-  horizon: { manifest: horizonManifest, Header: HorizonHeader },
+  oasis:   { manifest: oasisManifest,   Header: OasisHeader,   Hero: OasisHero },
+  beacon:  { manifest: beaconManifest,  Header: BeaconHeader,  Hero: BeaconHero },
+  breeze:  { manifest: breezeManifest,  Header: BreezeHeader,  Hero: BreezeHero },
+  atlas:   { manifest: atlasManifest,   Header: AtlasHeader,   Hero: AtlasHero },
+  horizon: { manifest: horizonManifest, Header: HorizonHeader, Hero: HorizonHero },
 };
 
 /** Returns the registry entry for `id`, falling back to oasis for unknown IDs. */

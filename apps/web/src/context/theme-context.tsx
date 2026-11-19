@@ -32,6 +32,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     if (saved && (saved === 'light' || saved === 'dark' || saved === 'system')) {
       setThemeState(saved);
     }
+    // The landing editor's preview frame forces a scheme via ?theme= (never stored).
+    const framed = framedTheme();
+    if (framed) setThemeState(framed);
     setMounted(true);
   }, []);
 
@@ -102,6 +105,17 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       {children}
     </ThemeContext.Provider>
   );
+}
+
+/** `?theme=light|dark` applies only inside an iframe (the landing editor preview). */
+function framedTheme(): ResolvedTheme | null {
+  try {
+    if (window.self === window.top) return null;
+    const t = new URLSearchParams(window.location.search).get('theme');
+    return t === 'light' || t === 'dark' ? t : null;
+  } catch {
+    return null;
+  }
 }
 
 export function useTheme(): ThemeContextType {

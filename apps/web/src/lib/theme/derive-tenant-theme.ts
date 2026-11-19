@@ -3,7 +3,7 @@
  *
  * Input:  4 owner-chosen hex colors (primary, secondary, accent, surface)
  * Output: CSS custom-property overrides for [data-tenant-theme] and
- *         [data-tenant-theme][data-theme="dark"]
+ *         [data-theme="dark"] [data-tenant-theme] (dark mode set on <html>)
  *
  * No DOM, no external packages — runs in Server Components, Vitest, and the
  * editor's live preview. The 4 inputs are always validated hex #RRGGBB before
@@ -177,8 +177,10 @@ function surfaceTokens(surfaceHex: string, darkMode: boolean, warnings: string[]
     tokens['--fg-subtle']= enforceAA({ l: 0.54, c, h }, bg, 3.0, '#777777', warnings, 'fg-subtle');
     return tokens;
   } else {
-    // Dark mode: invert — dark surface derived from same hue, very low L
-    const L = Math.min(0.20, 1 - ok.l + 0.02);
+    // Dark mode: dark surface in the same hue. A light surface (the usual case) maps to a fixed
+    // deep L; `1 - l` would give ~0.05 for near-white surfaces, i.e. pure black with no room
+    // for the raised/sunken steps. An owner-chosen dark surface keeps its own L within range.
+    const L = ok.l < 0.5 ? Math.min(0.22, Math.max(0.14, ok.l)) : 0.18;
     const bg = oklchToHex({ l: L, c, h });
     const tokens: Record<string, string> = {
       '--surface':         bg,
@@ -263,7 +265,9 @@ export function deriveTenantTheme(palette: TenantPalette): DeriveResult {
 
   const css = [
     block('[data-tenant-theme]', light),
-    block('[data-tenant-theme][data-theme="dark"]', dark),
+    // data-theme is set on <html> by ThemeProvider, so the descendant form is the one that
+    // matches; the compound form stays for an explicitly themed tenant scope.
+    block('[data-theme="dark"] [data-tenant-theme], [data-tenant-theme][data-theme="dark"]', dark),
   ].join('\n');
 
   return { css, warnings };

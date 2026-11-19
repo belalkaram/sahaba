@@ -1,17 +1,10 @@
 import type { DirectoryAcademy, DirectoryTeacher, Pagination, PublicPricing, PublicStats } from '../../lib/public-api';
 import type { DirectoryInitial } from '../directory/directory-view';
+import { serverApiBase } from '../../lib/server-api-base';
 
 /** How long public pages keep directory data before asking the API again (seconds). */
 export const LANDING_REVALIDATE_SECONDS = 300;
 
-/**
- * API origin as seen from the Next server. In production NEXT_PUBLIC_API_URL is a relative path
- * behind nginx, which the server cannot fetch, so API_INTERNAL_URL points at the API service.
- */
-function serverApiBase(): string | null {
-  const base = process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || '';
-  return /^https?:\/\//.test(base) ? base.replace(/\/$/, '') : null;
-}
 
 /**
  * Reads a public endpoint on the server so its data is part of the HTML. Returns null when the

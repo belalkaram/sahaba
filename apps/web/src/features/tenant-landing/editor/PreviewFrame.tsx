@@ -13,6 +13,10 @@ interface Props {
   previewToken: string | null;
   onRequestToken: () => Promise<void>;
   loadingToken: boolean;
+  /** Bumped after every saved draft so the iframe reloads with the latest changes. */
+  refreshKey: number;
+  /** Without a draft the published page is exactly what the owner edits — no token needed. */
+  hasDraft: boolean;
 }
 
 type Width = '390' | '768' | '1280';
@@ -24,7 +28,7 @@ const SIZE_BUTTONS: Array<{ label: string; value: Width; Icon: React.ComponentTy
   { label: 'سطح مكتب', value: '1280', Icon: Monitor },
 ];
 
-export function PreviewFrame({ slug, previewToken, onRequestToken, loadingToken }: Props) {
+export function PreviewFrame({ slug, previewToken, onRequestToken, loadingToken, refreshKey, hasDraft }: Props) {
   const [width, setWidth] = useState<Width>('1280');
   const [scheme, setScheme] = useState<Scheme>('light');
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -33,10 +37,15 @@ export function PreviewFrame({ slug, previewToken, onRequestToken, loadingToken 
     ? `/a/${slug}?preview=${encodeURIComponent(previewToken)}`
     : `/a/${slug}`;
 
-  const iframeSrc = `${previewUrl}&theme=${scheme}`;
+  // `theme` is honoured only inside a frame (ThemeProvider); `v` forces a reload after each save.
+  const iframeParams = new URLSearchParams();
+  if (previewToken) iframeParams.set('preview', previewToken);
+  iframeParams.set('theme', scheme);
+  iframeParams.set('v', String(refreshKey));
+  const iframeSrc = `/a/${slug}?${iframeParams.toString()}`;
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-w-0 flex-col">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-surface px-4 py-2">
         {/* Width buttons */}
@@ -86,11 +95,11 @@ export function PreviewFrame({ slug, previewToken, onRequestToken, loadingToken 
       </div>
 
       {/* Iframe container */}
-      <div className="relative flex flex-1 items-start justify-center overflow-auto bg-surface-sunken p-4">
-        {!previewToken && (
+      <div className="relative flex min-w-0 flex-1 items-start justify-center overflow-auto bg-surface-sunken p-4">
+        {!previewToken && hasDraft && (
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-surface/90 backdrop-blur-sm">
             <p className="text-sm text-fg-muted">
-              المعاينة تعرض الصفحة المنشورة. أنشئ رمز معاينة لترى المسودة.
+              انتهت صلاحية المعاينة أو لم تبدأ بعد. أنشئ رمز معاينة لترى تعديلاتك.
             </p>
             <button
               type="button"
