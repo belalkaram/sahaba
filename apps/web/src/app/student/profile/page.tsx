@@ -130,7 +130,7 @@ export default function StudentProfilePage() {
         <div className="lg:col-span-1 space-y-4">
           <Card className="p-6 text-center space-y-4">
             <div className="flex justify-center">
-              <Avatar name={studentName} size="xl" />
+              <Avatar name={studentName} seed={user?.id} kind="friendly" size="xl" />
             </div>
 
             <div>

@@ -70,7 +70,7 @@ export const CredentialsStudentSidebar: React.FC<CredentialsStudentSidebarProps>
                     : 'hover:bg-surface-raised text-fg'
                 }`}
               >
-                <Avatar name={s.user?.name} size="sm" />
+                <Avatar name={s.user?.name} seed={s.user?.id ?? s.id} kind="friendly" size="sm" />
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-semibold truncate">{s.user?.name || 'طالب مسجل'}</p>
                   <p className="text-xs text-fg-muted font-mono">

@@ -255,7 +255,7 @@ export default function StudentCoursesPage() {
 
                   {course.teacher?.user && (
                     <div className="mt-3 text-xs text-fg-muted flex items-center gap-2">
-                      <Avatar name={course.teacher.user.name} size="xs" />
+                      <Avatar name={course.teacher.user.name} seed={course.teacher.user.id} kind="formal" size="xs" />
                       <span>المعلم: {course.teacher.user.name}</span>
                     </div>
                   )}

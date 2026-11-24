@@ -78,7 +78,7 @@ services:
       dockerfile: infrastructure/docker/api/Dockerfile
     container_name: lms_worker
     restart: unless-stopped
-    command: ["php", "artisan", "queue:work", "redis", "--sleep=3", "--tries=3", "--max-time=3600"]
+    command: ["php", "artisan", "queue:work", "redis", "--queue=media,default", "--sleep=3", "--tries=3", "--max-time=3600"]
     environment:
       APP_ENV:          ${APP_ENV:-production}
       APP_KEY:          ${APP_KEY}

@@ -1,12 +1,15 @@
 'use client';
 
 import React from 'react';
-import { Avatar } from './avatar';
+import { Avatar, avatarKindFor } from './avatar';
 
 export interface ActivityFeedItem {
   id: string;
   actorName: string;
   actorAvatar?: string | null;
+  /** Stable id and role of the actor, for the generated avatar (OD-49). */
+  actorId?: string | null;
+  actorRole?: string | null;
   actionText: string;
   targetText?: string;
   timeAgo: string;
@@ -32,7 +35,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
     <div className={`divide-y divide-border text-start ${className}`}>
       {items.map((item) => (
         <div key={item.id} className="py-3 flex items-start gap-3">
-          <Avatar src={item.actorAvatar} name={item.actorName} size="sm" />
+          <Avatar src={item.actorAvatar} name={item.actorName} seed={item.actorId} kind={avatarKindFor(item.actorRole)} size="sm" />
           <div className="flex-1 min-w-0">
             <p className="text-xs text-fg leading-relaxed">
               <strong className="font-semibold">{item.actorName}</strong> {item.actionText}{' '}

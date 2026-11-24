@@ -45,6 +45,20 @@ return [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         'redirect_uri' => env('GOOGLE_REDIRECT_URI', 'http://localhost:8000/api/v1/integrations/google/callback'),
+        // ADR-008: one consent covers Drive uploads (R4-3) and Meet via Calendar events (R8-6).
+        'scopes' => [
+            'openid',
+            'email',
+            'https://www.googleapis.com/auth/drive.file',
+            'https://www.googleapis.com/auth/calendar.events',
+        ],
+        // Where the browser lands after the OAuth callback (the web app, not the API).
+        'connect_return_url' => rtrim((string) env('WEB_APP_URL', 'http://localhost:3000'), '/').'/admin/integrations',
+        'upload_max_bytes' => (int) env('GOOGLE_DRIVE_UPLOAD_MAX_BYTES', 5 * 1024 * 1024 * 1024),
+        // ADR-009: platform storage pool. The super admin page the pool OAuth callback returns to, and the free
+        // space every account must keep on top of the file being uploaded.
+        'pool_return_url' => rtrim((string) env('WEB_APP_URL', 'http://localhost:3000'), '/').'/platform/storage',
+        'pool_margin_bytes' => (int) env('GOOGLE_DRIVE_POOL_MARGIN_BYTES', 1024 * 1024 * 1024),
     ],
 
 ];

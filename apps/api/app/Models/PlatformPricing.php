@@ -58,10 +58,11 @@ class PlatformPricing extends Model
                 'student_monthly_fee' => 10.00,
                 'currency' => 'SAR',
                 'receiving_account_type' => 'platform',
-                'bank_name' => 'مصرف الراجحي',
-                'account_holder_name' => 'منصة سحابة التعليمية',
-                'iban' => 'SA0000000000000000000000',
-                'transfer_instructions' => 'يرجى تحويل رسوم الاشتراك الشهري (10 ريال) وإرفاق إشعار التحويل لتفعيل الحساب.',
+                // No placeholder account: the super admin enters the real one (/platform/pricing).
+                'bank_name' => null,
+                'account_holder_name' => null,
+                'iban' => null,
+                'transfer_instructions' => null,
                 'is_active' => true,
             ]);
         }

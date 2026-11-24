@@ -48,7 +48,9 @@ use App\Http\Controllers\Api\Identity\RegistrationRequestController;
 use App\Http\Controllers\Api\Identity\StaffController;
 use App\Http\Controllers\Api\Identity\StudentImportController;
 use App\Http\Controllers\Api\Identity\UserController;
+use App\Http\Controllers\Api\Integration\GoogleIntegrationController;
 use App\Http\Controllers\Api\Integration\MediaController;
+use App\Http\Controllers\Api\Integration\MediaUploadController;
 use App\Http\Controllers\Api\Integration\MeetingController;
 use App\Http\Controllers\Api\Integration\WebhookController;
 use App\Http\Controllers\Api\Me\MyAnnouncementController;
@@ -60,6 +62,7 @@ use App\Http\Controllers\Api\Platform\PlatformCapacityController;
 use App\Http\Controllers\Api\Platform\PlatformDirectoryController;
 use App\Http\Controllers\Api\Platform\PlatformPaymentController;
 use App\Http\Controllers\Api\Platform\PlatformPricingController;
+use App\Http\Controllers\Api\Platform\PlatformDriveAccountController;
 use App\Http\Controllers\Api\Platform\PlatformSettingsController;
 use App\Http\Controllers\Api\Platform\SupportAccessController;
 use App\Http\Controllers\Api\Platform\TenantController;
@@ -129,6 +132,12 @@ Route::middleware(['platform.auth'])->group(function () {
     Route::post('/platform/support-sessions', [SupportAccessController::class, 'generateToken'])->name('api.platform.support_sessions.create');
     Route::get('/platform/metrics', [TenantController::class, 'metrics'])->name('api.platform.metrics');
     Route::post('/platform/metrics/refresh', [TenantController::class, 'refreshMetrics'])->name('api.platform.metrics.refresh');
+    // ADR-009: platform Google Drive storage pool
+    Route::get('/platform/drive-accounts', [PlatformDriveAccountController::class, 'index'])->name('api.platform.drive_accounts.index');
+    Route::get('/platform/drive-accounts/connect', [PlatformDriveAccountController::class, 'connect'])->middleware('throttle:10,1')->name('api.platform.drive_accounts.connect');
+    Route::put('/platform/drive-accounts/{id}', [PlatformDriveAccountController::class, 'update'])->whereUuid('id')->name('api.platform.drive_accounts.update');
+    Route::post('/platform/drive-accounts/{id}/refresh-quota', [PlatformDriveAccountController::class, 'refreshQuota'])->whereUuid('id')->middleware('throttle:30,1')->name('api.platform.drive_accounts.refresh_quota');
+    Route::delete('/platform/drive-accounts/{id}', [PlatformDriveAccountController::class, 'destroy'])->whereUuid('id')->name('api.platform.drive_accounts.destroy');
     Route::get('/platform/settings', [PlatformSettingsController::class, 'show'])->name('api.platform.settings.show');
     Route::put('/platform/settings', [PlatformSettingsController::class, 'update'])->name('api.platform.settings.update');
     Route::get('/platform/contact-messages', [PlatformSettingsController::class, 'contactMessages'])->name('api.platform.contact_messages.index');
@@ -178,6 +187,12 @@ Route::middleware(['platform.auth'])->group(function () {
     Route::get('/platform/pricing', [PlatformPricingController::class, 'show'])->name('api.platform.pricing.show');
     Route::put('/platform/pricing', [PlatformPricingController::class, 'update'])->name('api.platform.pricing.update');
 });
+
+// Google OAuth callback (ADR-008). Google sends no tenant header or token: the tenant comes only from the
+// single-use state issued by GET /integrations/google/connect.
+Route::get('/integrations/google/callback', [GoogleIntegrationController::class, 'callback'])
+    ->middleware('throttle:20,1')
+    ->name('api.integrations.google.callback');
 
 // Tenant-scoped endpoints (protected by TenantResolutionMiddleware)
 Route::middleware(['tenant', 'throttle:api'])->group(function () {
@@ -306,6 +321,12 @@ Route::middleware(['tenant', 'throttle:api'])->group(function () {
         Route::delete('/tenant/logo', [TenantCurrentController::class, 'destroyLogo'])
             ->middleware('tenant.can:tenant.settings')
             ->name('api.tenant.logo.destroy');
+        // Tenant Google connection (OD-3, ADR-008)
+        Route::prefix('integrations/google')->middleware('tenant.can:tenant.settings')->group(function () {
+            Route::get('/', [GoogleIntegrationController::class, 'show'])->name('api.integrations.google.show');
+            Route::get('/connect', [GoogleIntegrationController::class, 'connect'])->middleware('throttle:10,1')->name('api.integrations.google.connect');
+            Route::delete('/', [GoogleIntegrationController::class, 'destroy'])->name('api.integrations.google.destroy');
+        });
         Route::get('/tenant/academic-settings', [AcademicSettingsController::class, 'show'])
             ->middleware('tenant.can:tenant.settings')
             ->name('api.tenant.academic_settings.show');
@@ -461,6 +482,10 @@ Route::middleware(['tenant', 'throttle:api'])->group(function () {
             Route::get('/meetings/{id}/join', [MeetingController::class, 'joinUrl'])->middleware('tenant.can:meetings.view')->name('api.meetings.join');
             Route::post('/meetings/{id}/cancel', [MeetingController::class, 'cancel'])->middleware('tenant.can:meetings.manage')->name('api.meetings.cancel');
 
+            // ADR-008: direct uploads to the tenant's Google Drive folder
+            Route::post('/media/uploads', [MediaUploadController::class, 'store'])->middleware(['tenant.can:media.upload', 'throttle:30,1'])->name('api.media.uploads.store');
+            Route::get('/media/uploads/{id}', [MediaUploadController::class, 'show'])->middleware(['tenant.can:media.upload', 'throttle:120,1'])->name('api.media.uploads.show');
+            Route::post('/media/uploads/{id}/complete', [MediaUploadController::class, 'complete'])->middleware('tenant.can:media.upload')->name('api.media.uploads.complete');
             Route::get('/media', [MediaController::class, 'index'])->middleware('tenant.can:media.view')->name('api.media.index');
             Route::post('/media', [MediaController::class, 'store'])->middleware('tenant.can:media.upload')->name('api.media.upload');
             Route::get('/media/{id}', [MediaController::class, 'show'])->middleware('tenant.can:media.view')->name('api.media.show');
@@ -747,6 +772,11 @@ Route::middleware(['tenant', 'throttle:api'])->group(function () {
 
             // Payment Requests (R3-3, OD-27)
             Route::get('/billing/pricing', [PaymentRequestController::class, 'pricing'])->name('api.billing.pricing');
+            // PAY-SET-1: how students pay this academy (methods + receiving account).
+            Route::get('/billing/payment-settings', [\App\Http\Controllers\Api\Billing\PaymentSettingsController::class, 'show'])->name('api.billing.payment_settings.show');
+            Route::put('/billing/payment-settings', [\App\Http\Controllers\Api\Billing\PaymentSettingsController::class, 'update'])
+                ->middleware('tenant.can:tenant.settings')
+                ->name('api.billing.payment_settings.update');
             Route::get('/payment-requests', [PaymentRequestController::class, 'index'])->name('api.payments.index');
             Route::post('/payment-requests', [PaymentRequestController::class, 'store'])->name('api.payments.store');
             Route::get('/payment-requests/{id}', [PaymentRequestController::class, 'show'])->name('api.payments.show');

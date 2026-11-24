@@ -78,6 +78,7 @@ export const NAVIGATION_REGISTRY: NavItem[] = [
   { id: 'admin-branches', href: '/admin/branches', label: 'الفروع والقاعات', iconName: 'branches', experience: 'admin', group: 'management', module: 'offline', anyOf: ['branches.manage'] },
   { id: 'admin-reports', href: '/admin/reports', label: 'التقارير', iconName: 'reports', experience: 'admin', group: 'management', module: 'analytics', anyOf: ['reports.generate', 'reports.view'] },
   { id: 'admin-academic-settings', href: '/admin/academic-settings', label: 'الإعدادات الأكاديمية', iconName: 'tasks', experience: 'admin', group: 'management', anyOf: ['tenant.settings'] },
+  { id: 'admin-payment-settings', href: '/admin/payment-settings', label: 'وسائل الدفع', iconName: 'wallet', experience: 'admin', group: 'management', module: 'billing', anyOf: ['tenant.settings'] },
   { id: 'admin-audit', href: '/admin/audit', label: 'سجل التدقيق', iconName: 'audit', experience: 'admin', group: 'management', anyOf: ['audit.view'] },
   { id: 'admin-integrations', href: '/admin/integrations', label: 'التكاملات', iconName: 'integrations', experience: 'admin', group: 'management', anyOf: ['tenant.settings', 'roles.view'] },
   { id: 'admin-landing', href: '/admin/landing', label: 'صفحتي العامة', iconName: 'landing', experience: 'admin', group: 'management', anyOf: ['tenant.branding'] },
@@ -111,6 +112,7 @@ export const NAVIGATION_REGISTRY: NavItem[] = [
   { id: 'platform-payments', href: '/platform/payments', label: 'مراجعة المدفوعات', iconName: 'finance', experience: 'admin', group: 'platform', area: 'platform', primary: true },
   { id: 'platform-capacity', href: '/platform/capacity', label: 'السعة وطلبات الزيادة', iconName: 'capacity', experience: 'admin', group: 'platform', area: 'platform' },
   { id: 'platform-support-sessions', href: '/platform/support-sessions', label: 'جلسات الدعم الفني', iconName: 'support', experience: 'admin', group: 'platform', area: 'platform', primary: true },
+  { id: 'platform-storage', href: '/platform/storage', label: 'تخزين الفيديوهات (Google Drive)', iconName: 'media', experience: 'admin', group: 'platform', area: 'platform', primary: true },
   { id: 'platform-audit', href: '/platform/audit', label: 'سجل التدقيق العام', iconName: 'audit', experience: 'admin', group: 'platform', area: 'platform' },
   { id: 'platform-settings', href: '/platform/settings', label: 'إعدادات المنصة والرسائل', iconName: 'settings', experience: 'admin', group: 'platform', area: 'platform', primary: true },
 ];

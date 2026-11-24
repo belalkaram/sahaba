@@ -10,6 +10,7 @@ import { notFound } from 'next/navigation';
 import { Download, Plus, Search, Settings, Trash2, Users } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
+import { Avatar } from '../../components/ui/avatar';
 import { Card, CardHeader } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { Select } from '../../components/ui/select';
@@ -108,6 +109,15 @@ export default function DesignSystemGallery() {
             <p className="text-sm text-fg">
               {formatDual('2026-11-12T16:30:00')} · {formatPercent(85)} · {formatCurrency(399)} · {formatRelative(new Date(Date.UTC(2026, 10, 1)))}
             </p>
+          </div>
+        </Card>
+
+        <Card>
+          <CardHeader title="الأفاتار التلقائي (OD-49)" description="المعلم والإداري: شكل هندسي بألوان هادئة. الطالب: وجه مبتسم بألوان زاهية. مشتق من معرّف المستخدم." />
+          <div className="flex flex-wrap items-end gap-6">
+            {['t-01', 't-02', 't-03'].map((id) => <Avatar key={id} seed={id} name="معلم" kind="formal" size="xl" />)}
+            {['s-01', 's-02', 's-03'].map((id) => <Avatar key={id} seed={id} name="طالب" kind="friendly" size="xl" />)}
+            <Avatar name="بدون معرّف" size="lg" />
           </div>
         </Card>
 

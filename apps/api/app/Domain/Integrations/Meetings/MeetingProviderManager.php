@@ -22,7 +22,7 @@ class MeetingProviderManager
         $this->providers = [
             'manual' => new ManualMeetingProvider,
             'mock' => new MockMeetingProvider,
-            'google_meet' => new GoogleMeetProvider,
+            'google_meet' => app(GoogleMeetProvider::class),
             'zoom' => new ZoomMeetingProvider,
         ];
     }

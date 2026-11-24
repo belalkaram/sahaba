@@ -223,6 +223,29 @@ class BillingGateTest extends TestCase
         $pkgResp->assertStatus(201);
         $packageId = $pkgResp->json('data.package.id');
 
+        // 1b. Students only ever see active packages, even when they ask for status=all.
+        $draft = Package::create(['name' => 'Draft package', 'price' => 10, 'currency' => 'EGP', 'status' => 'draft']);
+        $studentHeaders = ['X-Tenant-Slug' => 'alnahda', 'Authorization' => 'Bearer '.$studentToken];
+        $listAll = $this->withHeaders($studentHeaders)->getJson('/api/v1/packages?status=all');
+        $listAll->assertStatus(200);
+        $this->assertNotContains($draft->id, collect($listAll->json('data.packages'))->pluck('id')->all());
+        $this->assertContains($packageId, collect($listAll->json('data.packages'))->pluck('id')->all());
+        $this->withHeaders($studentHeaders)->getJson('/api/v1/packages/'.$draft->id)->assertStatus(404);
+
+        // 1c. PAY-SET-1: nothing is accepted until the academy configures its methods; students cannot configure them.
+        $this->withHeaders($studentHeaders)->postJson('/api/v1/payment-requests', [
+            'package_id' => $packageId, 'payment_method' => 'instapay', 'reference_code' => 'X-1',
+        ])->assertStatus(422)->assertJsonPath('error.code', 'PAYMENT_METHOD_NOT_ACCEPTED');
+        $this->withHeaders($studentHeaders)->putJson('/api/v1/billing/payment-settings', ['accepted_methods' => ['cash']])
+            ->assertStatus(403);
+        $this->withHeaders($studentHeaders)->getJson('/api/v1/billing/payment-settings')
+            ->assertStatus(200)->assertJsonPath('data.accepted_methods', []);
+        $context->setTenant($tenantA);
+        $dbManager->configureConnection($tenantA);
+        \App\Models\TenantSetting::setValue(\App\Models\TenantSetting::PAYMENT_SETTINGS, [
+            'accepted_methods' => ['instapay', 'cash'], 'instapay_address' => 'alnahda@instapay',
+        ]);
+
         // 2. Student Submits Payment Request
         $submitPayResp = $this->withHeaders([
             'X-Tenant-Slug' => 'alnahda',

@@ -23,6 +23,28 @@ function platformAuthHeader(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+/** ADR-009: a platform Google account used as video storage. Byte counts are null when Google reports no limit. */
+export interface DriveAccount {
+  id: string;
+  account_email: string;
+  status: 'connected' | 'error' | 'disabled';
+  accepting_uploads: boolean;
+  priority: number;
+  quota_limit_bytes: number | null;
+  quota_usage_bytes: number;
+  reserved_bytes: number;
+  free_bytes: number | null;
+  quota_checked_at: string | null;
+  connected_at: string | null;
+  last_error: string | null;
+}
+
+export interface DriveAccountsResponse {
+  configured: boolean;
+  margin_bytes: number;
+  accounts: DriveAccount[];
+}
+
 export interface PlatformMetricsSummary {
   total_tenants: number;
   active_tenants: number;
@@ -366,6 +388,32 @@ export const platformApi = {
     } finally {
       clearPlatformToken();
     }
+  },
+
+  // ADR-009: platform Google Drive storage pool
+  async getDriveAccounts(): Promise<DriveAccountsResponse> {
+    const res = await apiClient.get<DriveAccountsResponse>('/platform/drive-accounts', { headers: platformAuthHeader(), skipUnauthorizedHandler: true });
+    return res.data;
+  },
+
+  async driveAccountConnectUrl(): Promise<string> {
+    const res = await apiClient.get<{ authorization_url: string }>('/platform/drive-accounts/connect', { headers: platformAuthHeader(), skipUnauthorizedHandler: true });
+    return res.data.authorization_url;
+  },
+
+  async updateDriveAccount(id: string, payload: { accepting_uploads?: boolean; priority?: number }): Promise<DriveAccount> {
+    const res = await apiClient.put<{ account: DriveAccount }>(`/platform/drive-accounts/${id}`, payload, { headers: platformAuthHeader(), skipUnauthorizedHandler: true });
+    return res.data.account;
+  },
+
+  async refreshDriveQuota(id: string): Promise<DriveAccount> {
+    const res = await apiClient.post<{ account: DriveAccount }>(`/platform/drive-accounts/${id}/refresh-quota`, {}, { headers: platformAuthHeader(), skipUnauthorizedHandler: true });
+    return res.data.account;
+  },
+
+  async disconnectDriveAccount(id: string): Promise<DriveAccount> {
+    const res = await apiClient.delete<{ account: DriveAccount }>(`/platform/drive-accounts/${id}`, { headers: platformAuthHeader(), skipUnauthorizedHandler: true });
+    return res.data.account;
   },
 
   async getSettings(): Promise<PlatformSettings> {

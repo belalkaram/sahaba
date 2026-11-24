@@ -24,7 +24,7 @@ import { AnnouncementHost } from '../announcements/announcement-host';
 import { ThemeSwitcher } from './theme-switcher';
 import { CommandPalette } from './command-palette';
 import { NotificationBell } from './notification-bell';
-import { Avatar } from '../ui/avatar';
+import { Avatar, avatarKindFor, type AvatarKind } from '../ui/avatar';
 import { BrandMark } from '../brand/brand-mark';
 import { cn } from '../../lib/cn';
 import { readableBrandColor } from '../../lib/brand-color';
@@ -416,6 +416,8 @@ export const AppShell: React.FC<AppShellProps> = ({ children, experienceOverride
               {area === 'tenant' && <NotificationBell />}
               <UserMenu
                 name={displayName}
+                avatarSeed={user?.id ?? null}
+                avatarKind={area === 'platform' ? 'formal' : avatarKindFor(activeExperience)}
                 role={roleLabel}
                 profileHref={activeExperience === 'student' && area === 'tenant' ? '/student/profile' : undefined}
                 onLogout={handleLogout}
@@ -518,9 +520,13 @@ function UserMenu({
   role,
   profileHref,
   onLogout,
+  avatarSeed,
+  avatarKind,
 }: {
   name: string;
   role: string;
+  avatarSeed: string | null;
+  avatarKind: AvatarKind;
   profileHref?: string;
   onLogout: () => void;
 }) {
@@ -549,7 +555,7 @@ function UserMenu({
         aria-expanded={open}
         className="flex items-center gap-2.5 rounded-md p-1 ps-1 transition-colors hover:bg-surface-muted sm:pe-3"
       >
-        <Avatar name={name} size="sm" />
+        <Avatar name={name} seed={avatarSeed} kind={avatarKind} size="sm" />
         <span className="hidden text-start leading-tight sm:block">
           <span className="block max-w-[160px] truncate text-sm font-semibold text-fg">{name}</span>
           <span className="block text-xs text-fg-muted">{role}</span>

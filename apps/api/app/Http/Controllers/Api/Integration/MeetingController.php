@@ -6,6 +6,7 @@ use App\Domain\Billing\Services\ContentAccessPolicy;
 use App\Domain\Integrations\DTOs\MeetingRequest;
 use App\Domain\Integrations\Exceptions\ProviderException;
 use App\Domain\Integrations\Exceptions\ProviderTimeoutException;
+use App\Domain\Integrations\Google\GoogleNotConnectedException;
 use App\Domain\Integrations\Meetings\MeetingProviderManager;
 use App\Http\Controllers\Controller;
 use App\Models\ClassSession;
@@ -17,6 +18,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -109,14 +111,6 @@ class MeetingController extends Controller
         $providerName = $hasLink ? 'manual' : $requested;
         $enableFailover = $this->simulatedProvidersAllowed() && ($validated['enable_failover'] ?? false);
 
-        if ($providerName === 'google_meet') {
-            return ApiResponse::error(
-                'GOOGLE_NOT_CONNECTED',
-                'حساب Google غير مربوط بعد. الصق رابط الاجتماع يدوياً.',
-                Response::HTTP_UNPROCESSABLE_ENTITY
-            );
-        }
-
         if ($providerName === 'manual' && ! $hasLink) {
             return ApiResponse::error(
                 'MEETING_LINK_REQUIRED',
@@ -136,6 +130,12 @@ class MeetingController extends Controller
                 $provider = $providerManager->provider($providerName);
                 $response = $provider->createMeeting($meetingRequest);
             }
+        } catch (GoogleNotConnectedException) {
+            return ApiResponse::error(
+                'GOOGLE_NOT_CONNECTED',
+                'حساب Google غير مربوط. اطلب من مدير المؤسسة ربطه من صفحة التكاملات، أو الصق رابط الاجتماع يدوياً.',
+                Response::HTTP_UNPROCESSABLE_ENTITY
+            );
         } catch (ProviderTimeoutException $e) {
             return ApiResponse::error('PROVIDER_TIMEOUT', $e->getMessage(), Response::HTTP_GATEWAY_TIMEOUT);
         } catch (ProviderException $e) {
@@ -201,8 +201,8 @@ class MeetingController extends Controller
             return ApiResponse::error('MEETING_NOT_OPEN', 'لم يحن موعد الدخول إلى هذه الحصة بعد أو انتهى.', Response::HTTP_FORBIDDEN);
         }
 
-        // Manual links are stored as given; simulated providers exist only in tests.
-        $joinUrl = $meeting->provider === 'manual'
+        // Manual and Google Meet links are stored as given; simulated providers exist only in tests.
+        $joinUrl = in_array($meeting->provider, ['manual', 'google_meet'], true)
             ? $meeting->join_url
             : $providerManager->provider($meeting->provider)->getJoinUrl($meeting->external_meeting_id, ['role' => $isStaff ? 'host' : 'attendee']);
 
@@ -223,17 +223,20 @@ class MeetingController extends Controller
     {
         $meeting = Meeting::findOrFail($id);
 
+        $providerCancelled = true;
         try {
-            $provider = $providerManager->provider($meeting->provider);
-            $provider->cancelMeeting($meeting->external_meeting_id);
-        } catch (\Throwable) {
-            // Log provider failure but proceed to cancel internal record
+            $providerManager->provider($meeting->provider)->cancelMeeting((string) $meeting->external_meeting_id);
+        } catch (\Throwable $e) {
+            // The platform record is still cancelled (join is refused); the calendar event may remain.
+            $providerCancelled = false;
+            Log::warning('Meeting provider cancel failed', ['meeting_id' => $meeting->id, 'provider' => $meeting->provider, 'error' => $e->getMessage()]);
         }
 
         $meeting->update(['status' => 'cancelled']);
 
         return ApiResponse::success([
             'meeting' => $meeting,
+            'provider_cancelled' => $providerCancelled,
             'message' => 'Meeting cancelled successfully.',
         ]);
     }

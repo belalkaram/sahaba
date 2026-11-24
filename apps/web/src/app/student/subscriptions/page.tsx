@@ -11,6 +11,7 @@ import { Card } from '../../../components/ui/card';
 import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
 import { EmptyState } from '../../../components/ui/empty-state';
+import { DataState } from '../../../components/ui/data-state';
 import { SkeletonCard } from '../../../components/ui/skeleton';
 import { PageHeader } from '../../../components/ui/page-header';
 import { ClockIcon, BookOpenIcon, ShieldIcon, CreditCardIcon } from '../../../components/icons';
@@ -20,11 +21,14 @@ export default function StudentSubscriptionsPage() {
   const [subscriptions, setSubscriptions] = useState<SubscriptionItem[]>([]);
   const [entitlements, setEntitlements] = useState<EntitlementItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     async function loadData() {
       try {
         setLoading(true);
+        setLoadFailed(false);
         const [subs, ents] = await Promise.all([
           billingApi.getMySubscriptions(),
           billingApi.getMyEntitlements(),
@@ -32,13 +36,14 @@ export default function StudentSubscriptionsPage() {
         setSubscriptions(subs);
         setEntitlements(ents);
       } catch {
-        // Fallback
+        // Never show "no subscriptions" when we simply could not load them.
+        setLoadFailed(true);
       } finally {
         setLoading(false);
       }
     }
     loadData();
-  }, []);
+  }, [reloadKey]);
 
   const getEntitlementDescription = (key: string) => {
     if (key === 'all_courses' || key === 'ONLINE_ACCESS') {
@@ -66,7 +71,9 @@ export default function StudentSubscriptionsPage() {
         }
       />
 
-      {loading ? (
+      {!loading && loadFailed ? (
+        <DataState state="error" message="تعذر تحميل اشتراكاتك. هذا لا يعني أن اشتراكك أُلغي." onRetry={() => setReloadKey((k) => k + 1)} />
+      ) : loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <SkeletonCard />
           <SkeletonCard />

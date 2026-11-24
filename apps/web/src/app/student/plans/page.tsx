@@ -95,8 +95,8 @@ export default function StudentPlansPage() {
             <ShieldIcon size={18} />
           </div>
           <div>
-            <div className="font-semibold text-fg">وسائل دفع متعددة</div>
-            <div>InstaPay، المحافظ الإلكترونية، أو التحويل البنكي</div>
+            <div className="font-semibold text-fg">وسائل الدفع</div>
+            <div>تظهر وسائل الدفع التي تقبلها أكاديميتك عند اختيار الباقة.</div>
           </div>
         </div>
 

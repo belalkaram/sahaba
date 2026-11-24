@@ -62,6 +62,7 @@ class ContentAccessPolicyTest extends TestCase
         $dbManager->migrateTenant($this->tenant);
         $dbManager->configureConnection($this->tenant);
         app(TenantContext::class)->setTenant($this->tenant);
+        \App\Models\TenantSetting::setValue(\App\Models\TenantSetting::PAYMENT_SETTINGS, ['accepted_methods' => ['instapay'], 'instapay_address' => 'test@instapay']);
 
         $this->tenant->features()->create(['feature_key' => 'courses', 'enabled' => true]);
         $this->tenant->features()->create(['feature_key' => 'billing', 'enabled' => true]);

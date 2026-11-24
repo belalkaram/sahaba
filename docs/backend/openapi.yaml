@@ -139,6 +139,23 @@ paths:
           description: Standard success envelope { data, meta }
         default:
           description: Standard error envelope { error, meta }
+  /billing/payment-settings:
+    get:
+      summary: "billing.payment_settings.show"
+      description: "Auth: tenant.auth."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
+    put:
+      summary: "billing.payment_settings.update"
+      description: "Auth: tenant.auth. Permission: tenant.settings."
+      responses:
+        '200':
+          description: Standard success envelope { data, meta }
+        default:
+          description: Standard error envelope { error, meta }
   /billing/pricing:
     get:
       summary: "billing.pricing"
@@ -3107,6 +3124,149 @@ paths:
         default:
           description: Standard error envelope { error, meta }
   # END GENERATED ROUTES
+  /integrations/google:
+    get:
+      summary: Tenant Google connection status (tenant.settings) — ADR-008
+      tags: [Integrations]
+      responses:
+        '200':
+          description: "data.google: { configured, connected, status (connected|error|not_connected), account_email, scopes, connected_at, last_error }. Never contains tokens."
+        '403':
+          description: Missing tenant.settings
+    delete:
+      summary: Disconnect Google — revokes the token at Google (best effort) and deletes it (tenant.settings)
+      tags: [Integrations]
+      responses:
+        '200':
+          description: Status after disconnect
+        '404':
+          description: GOOGLE_NOT_CONNECTED
+  /integrations/google/connect:
+    get:
+      summary: Start Google consent (tenant.settings). Scopes openid, email, drive.file, calendar.events; offline access.
+      tags: [Integrations]
+      responses:
+        '200':
+          description: "data.authorization_url — open it in the browser. Carries a single-use state valid for 10 minutes."
+        '503':
+          description: GOOGLE_NOT_CONFIGURED (client id/secret missing on the server)
+  /integrations/google/callback:
+    get:
+      summary: Google OAuth redirect target (public — Google sends no tenant header; the tenant comes only from the state)
+      tags: [Integrations]
+      security: []
+      parameters:
+        - { name: state, in: query, required: false, schema: { type: string } }
+        - { name: code, in: query, required: false, schema: { type: string } }
+        - { name: error, in: query, required: false, schema: { type: string } }
+      responses:
+        '302':
+          description: "Redirect to WEB_APP_URL/admin/integrations?google=connected, or ?google=error&reason=state|denied|exchange"
+  /media/uploads:
+    post:
+      summary: Start a direct upload to the tenant's Google Drive folder (media.upload) — ADR-008
+      tags: [Media]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, file_name, mime_type, size_bytes]
+              properties:
+                title: { type: string, maxLength: 255 }
+                file_name: { type: string, maxLength: 255 }
+                mime_type: { type: string, pattern: '^video/' }
+                size_bytes: { type: integer, minimum: 1, description: "≤ GOOGLE_DRIVE_UPLOAD_MAX_BYTES (5 GB default)" }
+                course_id: { type: string, format: uuid, nullable: true }
+                lesson_id: { type: string, format: uuid, nullable: true }
+      responses:
+        '201':
+          description: "data: { upload_id, upload_url, expires_at, upload }. The browser PUTs the file bytes to upload_url (Google resumable session, CORS bound to the request Origin). Storage is the academy connection, else the platform pool account chosen by free space (ADR-009)."
+        '409':
+          description: GOOGLE_NOT_CONNECTED (no storage at all) or STORAGE_FULL (no pool account has room for the file plus the margin)
+        '422':
+          description: VALIDATION_FAILED
+        '502':
+          description: PROVIDER_ERROR
+  /media/uploads/{id}:
+    get:
+      summary: Upload status (uploader only). While pending, asks Google how many bytes it holds so the browser resumes from there (ADR-009)
+      tags: [Media]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: "data.upload {id, status pending|finalizing|completed|failed, size_bytes, received_bytes (pending), upload_url (pending and not expired), failure_reason, media_asset}"
+        '403':
+          description: Another user's upload
+  /media/uploads/{id}/complete:
+    post:
+      summary: Every byte is at Google; a `media` queue worker checks folder and type, shares the file by link and creates the media asset (uploader only, ADR-009)
+      tags: [Media]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '201':
+          description: "data.upload (completed) + data.media_asset (metadata.verification = verified, metadata.storage). Idempotent once completed."
+        '202':
+          description: "data.upload with status finalizing; poll GET /media/uploads/{id}"
+        '403':
+          description: Another user's upload
+        '409':
+          description: UPLOAD_INCOMPLETE, GOOGLE_NOT_CONNECTED
+        '422':
+          description: INVALID_UPLOAD (file outside the tenant folder or not a video)
+  /platform/drive-accounts:
+    get:
+      summary: Platform Google Drive storage accounts with limit, usage, reserved and free bytes; tokens never returned (ADR-009)
+      tags: [Platform Storage]
+      responses:
+        '200':
+          description: "data {configured, margin_bytes, accounts[]}"
+  /platform/drive-accounts/connect:
+    get:
+      summary: Google consent URL for a new storage account (scopes openid email drive.file); the shared public callback returns to /platform/storage
+      tags: [Platform Storage]
+      responses:
+        '200':
+          description: data.authorization_url
+        '503':
+          description: GOOGLE_NOT_CONFIGURED
+  /platform/drive-accounts/{id}:
+    put:
+      summary: Pause or resume new uploads (accepting_uploads) or change the order (priority, lower first). Audited
+      tags: [Platform Storage]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: data.account
+        '409':
+          description: ACCOUNT_NOT_CONNECTED when resuming a disconnected account
+    delete:
+      summary: Disconnect (revokes tokens, keeps the row and the files). Audited
+      tags: [Platform Storage]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: data.account (status disabled)
+        '409':
+          description: UPLOADS_IN_PROGRESS while space is reserved on it
+  /platform/drive-accounts/{id}/refresh-quota:
+    post:
+      summary: Read the account storage quota from Google now
+      tags: [Platform Storage]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: data.account
+        '409':
+          description: ACCOUNT_NOT_CONNECTED
+        '502':
+          description: PROVIDER_ERROR
   /me/notification-preferences:
     get:
       summary: Own notification preferences per event

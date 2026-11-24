@@ -6,6 +6,7 @@ use App\Domain\Billing\Services\ContentAccessPolicy;
 use App\Domain\Integrations\DTOs\VideoUploadRequest;
 use App\Domain\Integrations\Exceptions\ProviderException;
 use App\Domain\Integrations\Exceptions\ProviderTimeoutException;
+use App\Domain\Integrations\Media\InvalidDriveLinkException;
 use App\Domain\Integrations\Media\VideoProviderManager;
 use App\Http\Controllers\Controller;
 use App\Models\MediaAsset;
@@ -38,6 +39,7 @@ class MediaController extends Controller
         }
 
         $assets = $query->orderBy('created_at', 'desc')->get();
+        $assets->each(fn (MediaAsset $asset) => $this->hidePlaybackLinks($request, $asset));
 
         return ApiResponse::success(['media_assets' => $assets]);
     }
@@ -81,6 +83,8 @@ class MediaController extends Controller
                 $provider = $providerManager->provider($providerName);
                 $response = $provider->uploadVideo($uploadRequest);
             }
+        } catch (InvalidDriveLinkException $e) {
+            return ApiResponse::error('INVALID_MEDIA_LINK', $e->getMessage(), Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (ProviderTimeoutException $e) {
             return ApiResponse::error('PROVIDER_TIMEOUT', $e->getMessage(), Response::HTTP_GATEWAY_TIMEOUT);
         } catch (ProviderException $e) {
@@ -108,9 +112,10 @@ class MediaController extends Controller
     /**
      * Show media asset details.
      */
-    public function show(string $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         $media = MediaAsset::with(['course', 'lesson'])->findOrFail($id);
+        $this->hidePlaybackLinks($request, $media);
 
         return ApiResponse::success(['media_asset' => $media]);
     }
@@ -162,6 +167,18 @@ class MediaController extends Controller
             'embed_url' => $embedUrl,
             'status' => $media->status,
         ]);
+    }
+
+    /**
+     * ADR-008: Drive files are shared by link, so the link is issued only by `embedUrl()` after the access policy.
+     */
+    private function hidePlaybackLinks(Request $request, MediaAsset $asset): void
+    {
+        /** @var TenantUser|null $user */
+        $user = $request->user();
+        if (! $user || ! $user->hasPermissionTo('media.upload')) {
+            $asset->makeHidden(['embed_url', 'playback_url']);
+        }
     }
 
     /**

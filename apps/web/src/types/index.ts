@@ -582,6 +582,8 @@ export interface MediaAsset {
   lesson_id?: string;
   course?: Course;
   lesson?: Lesson;
+  /** ADR-008: `verification` is `verified` when the API saw the file through the academy's Google connection. */
+  metadata?: { verification?: 'verified' | 'unverified'; source?: 'upload'; [key: string]: unknown } | null;
   created_at?: string;
 }
 

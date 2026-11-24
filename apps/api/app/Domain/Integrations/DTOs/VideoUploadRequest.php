@@ -9,6 +9,7 @@ class VideoUploadRequest
         public readonly ?string $filePath = null,
         public readonly ?string $externalId = null,
         public readonly array $metadata = [],
+        public readonly string $mediaType = 'video',
     ) {}
 
     public static function fromArray(array $data): self
@@ -18,6 +19,7 @@ class VideoUploadRequest
             filePath: $data['file_path'] ?? null,
             externalId: $data['external_id'] ?? null,
             metadata: $data['metadata'] ?? [],
+            mediaType: $data['media_type'] ?? 'video',
         );
     }
 }

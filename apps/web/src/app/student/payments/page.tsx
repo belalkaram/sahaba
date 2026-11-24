@@ -8,6 +8,7 @@ import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
 import { StatCard } from '../../../components/ui/stat-card';
 import { EmptyState } from '../../../components/ui/empty-state';
+import { DataState } from '../../../components/ui/data-state';
 import { SkeletonTable } from '../../../components/ui/skeleton';
 import { Drawer } from '../../../components/ui/drawer';
 import { PageHeader } from '../../../components/ui/page-header';
@@ -17,15 +18,18 @@ import { formatDateTime } from '../../../lib/format';
 export default function StudentPaymentsPage() {
   const [payments, setPayments] = useState<PaymentRequestItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<PaymentRequestItem | null>(null);
 
   const loadPayments = async () => {
     try {
       setLoading(true);
+      setLoadFailed(false);
       const data = await billingApi.getPaymentRequests();
       setPayments(data);
     } catch {
-      // Fallback
+      // Never show zero totals or "no payments" when we simply could not load them.
+      setLoadFailed(true);
     } finally {
       setLoading(false);
     }
@@ -84,6 +88,10 @@ export default function StudentPaymentsPage() {
       />
 
       {/* High-level stats */}
+      {loadFailed && !loading ? (
+        <DataState state="error" message="تعذر تحميل سجل المدفوعات. حاول مرة أخرى." onRetry={loadPayments} />
+      ) : (
+      <>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <StatCard
           title="إجمالي الطلبات"
@@ -214,6 +222,8 @@ export default function StudentPaymentsPage() {
           </div>
         )}
       </Card>
+      </>
+      )}
 
       {/* Details Drawer */}
       <Drawer

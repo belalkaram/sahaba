@@ -5,27 +5,45 @@ namespace App\Domain\Integrations\Meetings;
 use App\Domain\Integrations\Contracts\MeetingProviderInterface;
 use App\Domain\Integrations\DTOs\MeetingRequest;
 use App\Domain\Integrations\DTOs\MeetingResponse;
+use App\Domain\Integrations\Google\GoogleCalendarClient;
+use Illuminate\Support\Str;
 
+/**
+ * R8-6: a real Meet conference created as a Google Calendar event on the tenant's connected account.
+ * The external id is the calendar event id (needed to cancel it); the join link is stored on the meeting.
+ */
 class GoogleMeetProvider implements MeetingProviderInterface
 {
+    public function __construct(private readonly GoogleCalendarClient $calendar) {}
+
     public function getProviderName(): string
     {
         return 'google_meet';
     }
 
-    /**
-     * R8-6: real creation needs the tenant Google connection (Calendar API, conferenceData), which
-     * is not available yet. A generated code would be a link to a meeting that does not exist, so
-     * this refuses; teachers paste a real link through the manual provider instead.
-     */
     public function createMeeting(MeetingRequest $request): MeetingResponse
     {
-        throw new ProviderException('Google account is not connected for this tenant.');
+        $event = $this->calendar->createMeetEvent(
+            $request->title,
+            $request->description,
+            $request->startTime ?? now()->toDateTimeImmutable(),
+            $request->durationMinutes,
+            $request->idempotencyKey ?: (string) Str::uuid(),
+        );
+
+        return new MeetingResponse(
+            externalMeetingId: (string) $event['id'],
+            joinUrl: (string) $event['hangoutLink'],
+            hostUrl: (string) $event['hangoutLink'],
+            provider: 'google_meet',
+            rawPayload: [
+                'calendar_event_id' => $event['id'],
+                'calendar_html_link' => $event['htmlLink'] ?? null,
+                'meet_code' => $event['conferenceData']['conferenceId'] ?? $this->extractMeetingCode((string) $event['hangoutLink']),
+            ],
+        );
     }
 
-    /**
-     * Extract clean Google Meet code from input string or URL.
-     */
     public function extractMeetingCode(string $input): string
     {
         $input = trim($input);
@@ -39,20 +57,19 @@ class GoogleMeetProvider implements MeetingProviderInterface
         return $input;
     }
 
+    /** Meetings keep the link Google returned; this is only a fallback for a bare Meet code. */
     public function getJoinUrl(string $externalMeetingId, array $userContext = []): string
     {
-        return "https://meet.google.com/{$externalMeetingId}";
+        return 'https://meet.google.com/'.$this->extractMeetingCode($externalMeetingId);
     }
 
     public function cancelMeeting(string $externalMeetingId): bool
     {
-        return true;
+        return $this->calendar->deleteEvent($externalMeetingId);
     }
 
     public function verifyWebhookSignature(string $payload, string $signature, string $secret): bool
     {
-        $computed = hash_hmac('sha256', $payload, $secret);
-
-        return hash_equals($computed, $signature);
+        return hash_equals(hash_hmac('sha256', $payload, $secret), $signature);
     }
 }

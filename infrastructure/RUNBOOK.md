@@ -269,7 +269,7 @@ docker exec lms_redis redis-cli -a "$REDIS_PASSWORD" FLUSHDB
 Reports, notification emails and analytics run on the queue. Without a worker, reports stay in `queued` and emails are not sent.
 
 ```bash
-php artisan queue:work      # worker (lms_worker in Docker)
+php artisan queue:work --queue=media,default   # worker (lms_worker in Docker); `media` = Drive finalise/processing jobs (ADR-009)
 php artisan schedule:work   # scheduler (lms_scheduler in Docker)
 ```
 

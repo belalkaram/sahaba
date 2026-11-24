@@ -10,6 +10,7 @@ export interface CreateMeetingPayload {
   provider?: 'manual' | 'google_meet' | 'zoom' | 'mock';
   meeting_code?: string;
   meet_url?: string;
+  idempotency_key?: string;
   duration_minutes?: number;
   course_id?: string;
   session_id?: string;

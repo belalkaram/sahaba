@@ -16,6 +16,9 @@ class TenantSetting extends TenantModel
     /** OD-35: minimum attendance % in a course to sit its exams; null = no rule (the academy chooses). */
     public const MIN_ATTENDANCE_FOR_EXAMS = 'min_attendance_for_exams';
 
+    /** PAY-SET-1: accepted payment methods and receiving account for academy packages. */
+    public const PAYMENT_SETTINGS = 'payment_settings';
+
     public const WHATSAPP_ENABLED = 'whatsapp_enabled';
 
     public const WHATSAPP_PHONE_NUMBER_ID = 'whatsapp_phone_number_id';

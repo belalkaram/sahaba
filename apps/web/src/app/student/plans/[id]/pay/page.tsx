@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, use } from 'react';
 import Link from 'next/link';
-import { billingApi, PackageItem } from '../../../../../lib/billing-api';
+import { billingApi, PackageItem, type PaymentSettings } from '../../../../../lib/billing-api';
 import { Card } from '../../../../../components/ui/card';
 import { Button } from '../../../../../components/ui/button';
 import { Input } from '../../../../../components/ui/input';
@@ -27,14 +27,8 @@ export default function StudentPlanPaymentPage({ params }: PageProps) {
   const packageId = resolvedParams.id;
 
   const [pkg, setPkg] = useState<PackageItem | null>(null);
-  const [bankInfo, setBankInfo] = useState<{
-    currency?: string;
-    receiving_account_type?: string;
-    bank_name?: string | null;
-    account_holder_name?: string | null;
-    iban?: string | null;
-    transfer_instructions?: string | null;
-  } | null>(null);
+  const [bankInfo, setBankInfo] = useState<PaymentSettings | null>(null);
+  const accepted = bankInfo?.accepted_methods ?? [];
 
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -62,10 +56,12 @@ export default function StudentPlanPaymentPage({ params }: PageProps) {
             if (err instanceof ApiError && err.status === 404) return null;
             throw err;
           }),
-          billingApi.getPricing(),
+          billingApi.getPaymentSettings(),
         ]);
         setPkg(pkgData);
         setBankInfo(pricingData);
+        // Start on the first method the academy accepts.
+        if (pricingData.accepted_methods[0]) setPaymentMethod(pricingData.accepted_methods[0]);
       } catch {
         setLoadFailed(true);
       } finally {
@@ -246,24 +242,32 @@ export default function StudentPlanPaymentPage({ params }: PageProps) {
             <label className="text-xs font-bold text-fg uppercase tracking-wider block">
               1. اختر وسيلة الدفع المناسبة:
             </label>
+            {accepted.length === 0 && (
+              <p role="alert" className="rounded-md bg-warning-subtle p-3 text-sm text-warning-subtle-fg">
+                لم تحدّد أكاديميتك وسائل الدفع بعد، لذلك لا يمكن إرسال طلب سداد الآن. تواصل مع إدارة الأكاديمية.
+              </p>
+            )}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {[
                 {
                   id: 'bank_transfer',
+                  available: accepted.includes('bank_transfer'),
                   label: 'تحويل بنكي مباشر',
                   desc: 'إيداع أو تحويل عبر الحساب المصرفي (IBAN)',
                 },
                 {
                   id: 'instapay',
+                  available: accepted.includes('instapay'),
                   label: 'InstaPay (إنستاباي)',
                   desc: 'تحويل لحظي عبر الحساب أو رقم الهاتف',
                 },
                 {
                   id: 'cash',
+                  available: accepted.includes('cash'),
                   label: 'سداد نقدي بالفرع',
                   desc: 'الدفع المباشر في مقر السنتر أو القاعة',
                 },
-              ].map((m) => {
+              ].filter((m) => m.available).map((m) => {
                 const isSelected = paymentMethod === m.id;
                 return (
                   <button
@@ -310,22 +314,28 @@ export default function StudentPlanPaymentPage({ params }: PageProps) {
                 ) : (
                   <p className="text-warning">بيانات الحساب المصرفي لم تُضف بعد. تواصل مع الإدارة قبل التحويل.</p>
                 )}
-                {bankInfo?.transfer_instructions && (
-                  <p className="text-fg-muted pt-1 border-t border-border mt-1">
-                    {bankInfo.transfer_instructions}
+                {bankInfo?.instructions && (
+                  <p className="whitespace-pre-line text-fg-muted pt-1 border-t border-border mt-1">
+                    {bankInfo.instructions}
                   </p>
                 )}
               </div>
             )}
             {paymentMethod === 'instapay' && (
-              <p>
-                يرجى التحويل إلى عنوان إنستاباي أو الحساب البنكي الموضح، ثم إرفاق لقطة شاشة للإيصال وكتابة الرقم المرجعي.
-              </p>
+              <div className="space-y-1">
+                <p>
+                  عنوان إنستاباي:{' '}
+                  <span className="ltr-isolate font-mono font-bold text-primary select-all">{bankInfo?.instapay_address}</span>
+                </p>
+                {bankInfo?.instructions && <p className="whitespace-pre-line">{bankInfo.instructions}</p>}
+                <p>بعد التحويل أرفق لقطة شاشة للإيصال واكتب الرقم المرجعي.</p>
+              </div>
             )}
             {paymentMethod === 'cash' && (
-              <p>
-                يمكنك التوجه إلى مقر السنتر أو القاعة وسداد الرسوم نقداً، ثم تسجيل رقم الإيصال هنا لمطابقة السجل.
-              </p>
+              <div className="space-y-1">
+                <p>ادفع نقداً لدى الأكاديمية، ثم سجّل رقم الإيصال هنا لمطابقة السجل.</p>
+                {bankInfo?.instructions && <p className="whitespace-pre-line">{bankInfo.instructions}</p>}
+              </div>
             )}
           </div>
 
@@ -427,7 +437,7 @@ export default function StudentPlanPaymentPage({ params }: PageProps) {
             <Button
               variant="primary"
               type="submit"
-              disabled={submitting}
+              disabled={submitting || accepted.length === 0}
               isLoading={submitting}
               className="px-6"
             >

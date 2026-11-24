@@ -21,7 +21,7 @@ class VideoProviderManager
     {
         $this->providers = [
             'mock' => new MockVideoProvider,
-            'google_drive' => new GoogleDriveVideoProvider,
+            'google_drive' => app(GoogleDriveVideoProvider::class),
             'vimeo' => new VimeoVideoProvider,
         ];
     }

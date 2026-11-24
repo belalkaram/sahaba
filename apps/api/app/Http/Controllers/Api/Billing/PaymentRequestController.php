@@ -70,6 +70,15 @@ class PaymentRequestController extends Controller
             'proof_url' => 'nullable|string|max:500',
         ]);
 
+        // PAY-SET-1: only methods the academy accepts; nothing is accepted until it configures them.
+        if (! PaymentSettingsController::accepts($validated['payment_method'])) {
+            return ApiResponse::error(
+                'PAYMENT_METHOD_NOT_ACCEPTED',
+                'وسيلة الدفع هذه غير مفعّلة في أكاديميتك.',
+                Response::HTTP_UNPROCESSABLE_ENTITY
+            );
+        }
+
         $tenant = $tenantContext->getTenant();
         $pricing = PlatformPricing::getForTenant($tenant?->id);
 
@@ -79,7 +88,8 @@ class PaymentRequestController extends Controller
             $proofPath = $request->file('proof')->store('tenants/'.$tenantSlug.'/proofs', 'local');
         }
 
-        $package = Package::findOrFail($validated['package_id']);
+        // A student can only pay for a package the academy is offering.
+        $package = Package::where('status', 'active')->findOrFail($validated['package_id']);
         $amount = isset($validated['amount']) ? (float) $validated['amount'] : (float) $package->price;
         $currency = $package->currency ?? $pricing->currency ?? 'SAR';
         $periodMonth = $validated['period_month'] ?? now()->format('Y-m');

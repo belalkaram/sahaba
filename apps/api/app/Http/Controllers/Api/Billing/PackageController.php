@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api\Billing;
 
 use App\Http\Controllers\Controller;
 use App\Models\Package;
+use App\Models\TenantUser;
+use App\Support\Authorization\AbacEngine;
 use App\Support\ApiResponse;
 use App\Support\Audit\AuditLogger;
 use Illuminate\Http\JsonResponse;
@@ -12,12 +14,20 @@ use Symfony\Component\HttpFoundation\Response;
 
 class PackageController extends Controller
 {
+    private function canManage(Request $request): bool
+    {
+        $user = $request->user();
+
+        return $user instanceof TenantUser && app(AbacEngine::class)->authorize($user, 'packages.manage');
+    }
+
     /**
      * List packages.
      */
     public function index(Request $request): JsonResponse
     {
-        $status = $request->query('status', 'active');
+        // Only staff who manage packages may see draft/archived ones; everyone else sees active only.
+        $status = $this->canManage($request) ? $request->query('status', 'active') : 'active';
         $query = Package::with('entitlements');
 
         if ($status !== 'all') {
@@ -77,9 +87,13 @@ class PackageController extends Controller
     /**
      * Show a package.
      */
-    public function show(string $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
-        $package = Package::with('entitlements')->findOrFail($id);
+        $query = Package::with('entitlements');
+        if (! $this->canManage($request)) {
+            $query->where('status', 'active');
+        }
+        $package = $query->findOrFail($id);
 
         return ApiResponse::success(['package' => $package]);
     }

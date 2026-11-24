@@ -2,10 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Added] - 2026-11-24 — Each academy sets how students pay it (PAY-SET-1, OD-34)
+
+- New per-academy setting (tenant_settings key payment_settings): accepted methods (bank_transfer, instapay, cash), bank name, account holder, IBAN, InstaPay address, instructions.
+- API: GET /billing/payment-settings (any academy user), PUT with tenant.settings. Bank transfer requires an IBAN, InstaPay requires an address (422).
+- POST /payment-requests refuses a method the academy has not enabled (422 PAYMENT_METHOD_NOT_ACCEPTED) and refuses non-active packages. Nothing is enabled by default (fail closed): academies must configure methods before students can pay.
+- New page /admin/payment-settings (sidebar "وسائل الدفع", tenant.settings). The student pay page now shows the academy's own account and methods, not the platform account from /billing/pricing.
+- Removed the placeholder platform bank account (fake Al Rajhi IBAN) that PlatformPricing created by default; fields start empty.
+- Migration note: existing academies show no payment method to students until an admin saves this page.
+- Checked: full API suite 384/384 after regenerating OpenAPI, web tests 38/38, tsc; admin page validation checked in the browser. Student pay page not checked in the browser.
+
 ## [Changed] - 2026-11-24 — Theme switcher is a one-click light/dark toggle
 
 - components/layout/theme-switcher.tsx: the 3-option menu (light/dark/system) was clipped inside the floating glass navbar; it is now a single button that flips light <-> dark. First visit still follows the device (system) until the user clicks; the click is saved.
 - Checked: tsc --noEmit; toggled both ways on /pricing in the browser, no menu rendered.
+
+## [Fixed] - 2026-11-24 — Student billing pages show only real academy data
+
+- GET /packages and /packages/{id}: without packages.manage only active packages are returned (status=all and draft ids were reachable by students). Covered in BillingGateTest.
+- /student/subscriptions and /student/payments show an error with retry when loading fails, instead of an empty state or zero totals.
+- /student/plans/[id]/pay: bank transfer is offered only when bank details are configured; InstaPay only when the academy wrote transfer instructions (shown verbatim); cash always. Plans page no longer lists fixed payment methods.
+- Superseded the same day by PAY-SET-1 (entry above).
+- Checked: BillingGateTest, tsc --noEmit, web tests. Not checked in the browser.
 
 ## [Changed] - 2026-11-24 — Emerald Glass design system (R8) for the web app
 
@@ -26,12 +44,10 @@ All notable changes to this project will be documented in this file.
 - Not done: a separate landing page by `staff_type`; teachers who hold those permissions still see the item.
 - Checked: `tsc --noEmit`, `lint:design`, ESLint, web tests 38/38 (new nav-gating case). Not checked in the browser.
 
-
 ## [Fixed] - 2026-11-24 — Student dashboard shows the sessions of every class (REV-4, J-11)
 
 - `/student/dashboard` used `classList[0]`, so a student in several classes only saw the first class's sessions in the activity feed. It now loads every class (4 at a time), merges and de-duplicates by session id; a failed class is reported through `partial()`.
 - Checked: `tsc --noEmit` clean, `lint:design` pass, ESLint 0 errors. Not checked: a student with 2+ classes in the browser, no automated test.
-
 
 ## [Fixed] - 2026-11-24 — Last 7 swallowed errors removed (R1-B6 / REV-2, T-UX-01)
 
@@ -42,6 +58,11 @@ All notable changes to this project will be documented in this file.
 - `student/card`: a failed QR draw now shows the error banner with retry instead of a blank canvas.
 - Checked: `tsc --noEmit` clean, `lint:design` pass, ESLint 0 errors on the 7 files. Not checked: in the browser, no E2E.
 
+## [Added] - 2026-11-19 — Generated avatars, formal for staff and friendly for students (OD-49)
+
+- Users without an uploaded photo get a generated avatar from `boring-avatars` 2.0.4 (pinned, MIT). It is drawn as inline SVG in the browser, with no network call.
+- Students get the smiling `beam` face on bright colours. Teachers, staff, parents and platform admins get the geometric `bauhaus` shape on the brand's deep greens, slate and sand. The seed is the user id, so the same person always gets the same picture.
+- Used in the top-bar user menu, the student profile, the teacher on student course cards, the credentials student list and the activity feed. Uploaded photos still win; initials remain the last fallback.
 
 ## [Added] - 2026-11-19 — Templates style the whole academy page, not only the header (ADR-007, TL-4)
 
@@ -60,6 +81,15 @@ All notable changes to this project will be documented in this file.
 - Editor: the preview opens on the draft automatically, reloads after every saved change, renews the token before it expires, no longer overflows off-screen (1280px frame), and no longer builds `/a/{slug}&theme=` without a token. The light/dark toggle now works inside the frame (`?theme=` honoured only when framed, never stored).
 - Tenant dark tokens: the selector was `[data-tenant-theme][data-theme="dark"]` while `data-theme` lives on `<html>`, so dark tokens never applied; now `[data-theme="dark"] [data-tenant-theme]` too.
 - Verified: browser on localhost — template, colour preset and section toggles all reflected in the preview, dark toggle applied without changing the stored preference; owner draft restored afterwards. `tsc` clean, theme tests 21/21, `TenantLandingSettingsTest` 16/16 (new contact opt-in test). Not verified: `npm run build`, 5 templates × sizes, publish flow end-to-end.
+
+## [Added] - 2026-11-19 — Real Google Meet, platform Drive storage pool, resumable uploads and media workers (R8-6, R4-3a/b/c, ADR-009)
+
+- Google Meet: "Google Meet تلقائي" creates a real Calendar event with a Meet link on the academy's Google connection. Cancelling deletes the event, and a failed Google cancel is reported instead of swallowed. The meeting start time is sent with the teacher's time zone.
+- Super admin `/platform/storage`: several Google Drive accounts used as video storage, with free and reserved space, ordering, pause and disconnect.
+- Storage choice and reservations: uploads take the first account with room for the file plus a 1 GiB margin, with a locked space reservation per upload. When no account has room the upload gets `409 STORAGE_FULL` before any byte is sent. Academies with their own Google connection keep using it.
+- Resumable uploads: a dropped upload resumes from the byte Google already holds, including after a page reload with the same file.
+- Media workers (queue `media`): finalising uploads and polling Drive processing. `lms:refresh-drive-quotas` runs every 15 minutes. The Docker worker now listens on `media,default`.
+- Verified: `GoogleMeetCalendarTest` 8/8, `GoogleDrivePoolTest` 16/16 and the existing Google tests, all with Google faked; web `tsc` clean. Not verified: anything against real Google, and the pages in a browser.
 
 ## [Added] - 2026-11-17 — Tenant Google connection and real Google Drive uploads (R4-3, ADR-008)
 

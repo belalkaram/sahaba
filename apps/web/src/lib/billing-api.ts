@@ -10,6 +10,18 @@ export interface PackageEntitlementItem {
   value?: string;
 }
 
+export type PaymentMethod = 'bank_transfer' | 'instapay' | 'cash';
+
+/** PAY-SET-1: how students pay the academy for its packages. */
+export interface PaymentSettings {
+  accepted_methods: PaymentMethod[];
+  bank_name: string | null;
+  account_holder_name: string | null;
+  iban: string | null;
+  instapay_address: string | null;
+  instructions: string | null;
+}
+
 export interface PackageItem {
   id: string;
   name: string;
@@ -123,6 +135,17 @@ export const billingApi = {
 
   async archivePackage(id: string): Promise<void> {
     await apiClient.post(`/packages/${id}/archive`);
+  },
+
+  /** PAY-SET-1: how students pay this academy (accepted methods + receiving account). */
+  async getPaymentSettings(): Promise<PaymentSettings> {
+    const res = await apiClient.get<PaymentSettings>('/billing/payment-settings');
+    return res.data;
+  },
+
+  async updatePaymentSettings(payload: PaymentSettings): Promise<PaymentSettings> {
+    const res = await apiClient.put<PaymentSettings>('/billing/payment-settings', payload);
+    return res.data;
   },
 
   // Payment Requests

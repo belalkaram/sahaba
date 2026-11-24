@@ -11,6 +11,7 @@ import { ClockIcon, VideoIcon, CheckCircleIcon } from '../../../components/icons
 import { Check, Copy, Presentation, Video, X } from 'lucide-react';
 import { formatDateTime, formatNumber } from '../../../lib/format';
 import { partial } from '../../../lib/partial-failure';
+import { ApiError } from '../../../lib/api-client';
 export default function TeacherMeetingsPage() {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -25,6 +26,8 @@ export default function TeacherMeetingsPage() {
   const [durationMinutes, setDurationMinutes] = useState(60);
   const [startTime, setStartTime] = useState('');
   const [customMeetUrl, setCustomMeetUrl] = useState('');
+  // R8-6: 'google' creates a real Meet through the academy's Google connection; 'manual' stores a pasted link.
+  const [linkMode, setLinkMode] = useState<'google' | 'manual'>('google');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -59,11 +62,13 @@ export default function TeacherMeetingsPage() {
       const created = await integrationApi.createMeeting({
         title: title.trim(),
         description: description.trim() || undefined,
-        provider: 'manual',
+        provider: linkMode === 'google' ? 'google_meet' : 'manual',
         course_id: courseId || undefined,
         duration_minutes: Number(durationMinutes),
-        start_time: startTime || undefined,
-        meet_url: customMeetUrl.trim(),
+        // datetime-local has no zone; send the teacher's local time as an absolute instant (Google needs it).
+        start_time: startTime ? new Date(startTime).toISOString() : undefined,
+        meet_url: linkMode === 'manual' ? customMeetUrl.trim() : undefined,
+        idempotency_key: linkMode === 'google' ? crypto.randomUUID() : undefined,
       });
 
       setMeetings((prev) => [created, ...prev]);
@@ -74,12 +79,18 @@ export default function TeacherMeetingsPage() {
       setIsCreating(false);
       setFeedbackMsg({
         type: 'success',
-        text: 'تم حفظ الحصة ورابطها.',
+        text: linkMode === 'google' ? 'تم إنشاء اجتماع Google Meet وحفظ رابطه.' : 'تم حفظ الحصة ورابطها.',
       });
-    } catch {
+    } catch (err) {
+      const code = err instanceof ApiError ? err.code : null;
       setFeedbackMsg({
         type: 'error',
-        text: 'تعذّر حفظ الحصة. تأكد أن الرابط يبدأ بـ https://',
+        text:
+          code === 'GOOGLE_NOT_CONNECTED'
+            ? 'حساب Google غير مربوط. اطلب من مدير المؤسسة ربطه من صفحة التكاملات، أو اختر «رابط يدوي».'
+            : code === 'PROVIDER_ERROR' || code === 'PROVIDER_TIMEOUT'
+              ? 'تعذّر إنشاء الاجتماع في Google. أعد المحاولة أو الصق رابطاً يدوياً.'
+              : 'تعذّر حفظ الحصة. تأكد أن الرابط يبدأ بـ https://',
       });
     } finally {
       setIsSubmitting(false);
@@ -115,7 +126,7 @@ export default function TeacherMeetingsPage() {
             </h1>
           </div>
           <p className="text-sm text-secondary mt-1">
-            أنشئ رابط الاجتماع في Google Meet أو أي خدمة أخرى، ثم الصقه هنا ليظهر لطلابك.
+            أنشئ اجتماع Google Meet تلقائياً من حساب المؤسسة، أو الصق رابط اجتماع من أي خدمة أخرى.
           </p>
         </div>
 
@@ -131,9 +142,6 @@ export default function TeacherMeetingsPage() {
         </button>
       </div>
 
-      <div className="rounded-md border border-border bg-surface-muted p-4 text-sm text-fg-muted">
-        ربط حساب Google غير متاح بعد، لذلك لا تُنشأ الاجتماعات تلقائياً. الروابط هنا تُحفظ كما تدخلها وتظهر بعلامة «رابط يدوي».
-      </div>
 
       {feedbackMsg && (
         <div
@@ -155,7 +163,15 @@ export default function TeacherMeetingsPage() {
               <span className="text-primary"><Video size={16} strokeWidth={1.75} aria-hidden /></span>
               بيانات الحصة المباشرة
             </h2>
-            <span className="text-xs text-secondary">سيتم توليد رابط الاجتماع فوراً</span>
+            <div className="flex gap-2" role="radiogroup" aria-label="طريقة الرابط">
+              {([['google', 'Google Meet تلقائي'], ['manual', 'رابط يدوي']] as const).map(([value, label]) => (
+                <button key={value} type="button" role="radio" aria-checked={linkMode === value}
+                  onClick={() => setLinkMode(value)}
+                  className={`rounded-md border px-3 py-1.5 text-xs font-semibold ${linkMode === value ? 'border-primary bg-primary text-primary-fg' : 'border-border text-secondary'}`}>
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <form onSubmit={handleCreateMeeting} className="space-y-4">
@@ -217,20 +233,24 @@ export default function TeacherMeetingsPage() {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-secondary mb-1">
-                  رابط الاجتماع *
-                </label>
-                <input aria-label="رابط الاجتماع"
-                  type="text"
-                  placeholder="https://meet.google.com/abc-defg-hij"
-                  required
-                  dir="ltr"
-                  value={customMeetUrl}
-                  onChange={(e) => setCustomMeetUrl(e.target.value)}
-                  className="w-full bg-background border border-border rounded-lg px-3.5 py-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary transition-all font-mono"
-                />
-              </div>
+              {linkMode === 'manual' ? (
+                <div>
+                  <label className="block text-xs font-semibold text-secondary mb-1">
+                    رابط الاجتماع *
+                  </label>
+                  <input aria-label="رابط الاجتماع"
+                    type="text"
+                    placeholder="https://meet.google.com/abc-defg-hij"
+                    required
+                    dir="ltr"
+                    value={customMeetUrl}
+                    onChange={(e) => setCustomMeetUrl(e.target.value)}
+                    className="w-full bg-background border border-border rounded-lg px-3.5 py-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary transition-all font-mono"
+                  />
+                </div>
+              ) : (
+                <p className="self-end text-xs text-secondary">يُنشأ الرابط في Google Calendar الخاص بالمؤسسة ويظهر للطلبة عند موعد الحصة فقط.</p>
+              )}
             </div>
 
             <div>
@@ -275,7 +295,7 @@ export default function TeacherMeetingsPage() {
           <div className="py-16 text-center text-secondary text-sm">جارٍ تحميل الاجتماعات من الخادم...</div>
         ) : meetings.length === 0 ? (
           <Card className="p-12 text-center text-secondary">
-            لا توجد حصص مباشرة مجدولة. أضف حصة وألصق رابط الاجتماع.
+            لا توجد حصص مباشرة مجدولة بعد.
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -291,9 +311,9 @@ export default function TeacherMeetingsPage() {
                       <div className="flex items-center gap-2">
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
                           <span><Video size={16} strokeWidth={1.75} aria-hidden /></span>
-                          <span>{isManual ? 'رابط يدوي' : meeting.provider}</span>
+                          <span>{isManual ? 'رابط يدوي' : meeting.provider === 'google_meet' ? 'Google Meet' : meeting.provider}</span>
                         </span>
-                        {meeting.external_meeting_id && (
+                        {isManual && meeting.external_meeting_id && (
                           <span className="font-mono text-xs font-semibold text-secondary bg-background px-2 py-0.5 rounded-xs border border-border">
                             {meeting.external_meeting_id}
                           </span>

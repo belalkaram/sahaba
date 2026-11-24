@@ -12,5 +12,7 @@ Artisan::command('inspire', function () {
 Schedule::command('lms:notify-scheduled')->hourly()->withoutOverlapping();
 Schedule::command('lms:compute-analytics')->dailyAt('02:00')->withoutOverlapping();
 Schedule::command('lms:refresh-platform-metrics')->hourly()->withoutOverlapping();
+// ADR-009: platform Drive storage quotas and expired upload reservations.
+Schedule::command('lms:refresh-drive-quotas')->everyFifteenMinutes()->withoutOverlapping();
 // Safety net for the pgsql tenant clone template (normally refreshed after `migrate` / lms:migrate-tenants).
 Schedule::command('tenants:refresh-template')->hourly()->withoutOverlapping();

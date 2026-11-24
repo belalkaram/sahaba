@@ -49,7 +49,10 @@
 | R3 | R3-7 | Approval side effects | T-FEAT-23 | DONE | `ContentAccessPolicyTest::test_approved_payment_unlocks_content_and_auto_enrolls_student` |
 | R4 | R4-1 | Content model | T-FEAT-02 | DONE | `course_modules`, `lessons` updates, `lesson_materials`, backfill |
 | R4 | R4-2 | Content API | T-FEAT-01 | DONE | `CourseModuleController`, `CourseController` outline, `LessonController`, `LessonMaterialController` |
-| R4 | R4-3 | Google Drive real (needs Google project) | T-FEAT-06, 07, 08 | BLOCKED | Awaiting Google Cloud project credentials from owner (OAuth web client, Drive API) |
+| R4 | R4-3 | Google Drive real (needs Google project) | T-FEAT-06, 07, 08 | PARTIAL | ADR-008; `GoogleDriveConnectionTest` 13/13 (Google faked via `Http::fake`); live local API issues a real consent URL. Not yet: real consent + real upload played by a student (owner must be a consent-screen test user). `docs/recovery-reports/R4.md` (R4-3 section) |
+| R4 | R4-3a | Platform Drive storage pool (ADR-009) | — | PARTIAL | 2026-11-19: super admin `/platform/storage`, central `platform_drive_accounts` / folders / reservations, priority order + free-space check + locked reservations, `STORAGE_FULL`; `GoogleDrivePoolTest` 16/16 with Google faked. Not yet: a real pool account connected and used |
+| R4 | R4-3b | Resumable uploads (ADR-009) | — | PARTIAL | `GET /media/uploads/{id}` returns Google's received bytes; the browser resends only the rest with back-off and resumes after a reload (same file). Tested at the API; the browser path is not exercised against Google |
+| R4 | R4-3c | Media queue workers (ADR-009) | — | PARTIAL | `FinalizeMediaUpload`, `PollDriveVideoProcessing` on queue `media`, `lms:refresh-drive-quotas` every 15 min; Docker worker now runs `--queue=media,default`. Tested with the sync queue only |
 | R4 | R4-4 | Video events & progress | T-FEAT-03 | DONE | `ProgressAggregator`, `VideoEventController`, heartbeat batching, abuse signals, 9 feature tests PASS |
 | R4 | R4-5 | Course Builder UI | T-FEAT-04 | DONE | `/teacher/courses` grid & creation, `/teacher/courses/[id]` full Course Builder workspace |
 | R4 | R4-6 | Course Player UI | T-FEAT-05, 09 | DONE | `/student/courses/[id]` overview, `/student/courses/[id]/lessons/[lessonId]` distraction-free player with watermark |
@@ -69,6 +72,7 @@
 | R6 | R6-6 | Student assessment UI | â€” | PARTIAL | `/student/exams`, exam take/results exist; no E2E |
 | R7A | R7-0a | Tokens & themes | T-UX-03 | PARTIAL | `styles/tokens.css`, `lint:design` guard, light/dark checked on sample pages; no Playwright screenshots, no axe |
 | R7A | R7-0b | Primitives & patterns | T-UX-10, 08 | PARTIAL | `components/ui/*`, dev-only `/components`; keyboard/axe not audited |
+| R7A | R7-0c | Generated avatars (OD-49) | — | PARTIAL | 2026-11-19: `components/ui/avatar.tsx` renders `boring-avatars` (friendly `beam` for students, formal `bauhaus` for everyone else), wired into the app-shell user menu, student profile, student course teacher, credentials student list and activity feed (`actorId`/`actorRole`). `tsc` clean; both styles checked in light and dark on the dev-only `/components` showcase (no console errors); not checked on the real pages with a logged-in user. Places that draw their own initials circles are not converted |
 | R7A | R7-1 | App Shell | T-UX-07, 04 | PARTIAL | `components/layout/app-shell.tsx`, checked 1280 and 390 on sample pages; no E2E |
 | R7A | R7-2 | Break up God pages | T-UX-06 | PARTIAL | `features/*` for some pages; 39 `.tsx` files still > 300 lines (largest: exam builder 1162, `admin/users` 1043, `teacher/courses/[id]` 969, `staff/sessions/[id]` 890) - 2026-11-16 |
 | R7A | R7-3 | Detail page pattern | T-UX-09 | PARTIAL | `components/layout/detail-layout.tsx`; not used on every detail page |
@@ -84,7 +88,7 @@
 | R8 | R8-3 | Queue | T-FEAT-32 | PARTIAL | Jobs + real worker run; CSV import still synchronous; scheduler not run in Docker |
 | R8 | R8-4 | Analytics honesty | T-FEAT-29 | PARTIAL | `ReportsAnalyticsMeetingsR8Test`; course/class analytics API only; no metrics definitions UI |
 | R8 | R8-5 | Reports | T-FEAT-31, 32 | PARTIAL | `ReportsAnalyticsMeetingsR8Test`; CSV + print verified; PDF pending library approval |
-| R8 | R8-6 | Google Meet real (needs Google project) | T-FEAT-10, 11, 12 | BLOCKED (Google credentials) | Manual links + join enforcement tested in `ReportsAnalyticsMeetingsR8Test`; real Google events not done |
+| R8 | R8-6 | Google Meet real (needs Google project) | T-FEAT-10, 11, 12 | PARTIAL | 2026-11-19: Calendar event + `conferenceData` on the academy connection (`GoogleCalendarClient`), cancel deletes the event; `GoogleMeetCalendarTest` 8/8 with Google faked; teacher page has "Google Meet تلقائي". Not yet: a real meeting created against Google (needs a consent-screen test user and a connected academy). `docs/recovery-reports/R8.md` |
 | R8 | R8-7 | Platform metrics | T-FEAT-27 | DONE | `ReportsAnalyticsMeetingsR8Test::test_platform_metrics_come_from_snapshots_and_include_queue_health` |
 | R9 | R9-1 | E2E suite | T-QA-03 | PARTIAL | `apps/web/e2e/flows.spec.ts` (16 flows: sign-in per role, payment->access, QR attendance, exam, provisioning, course build/watch/resume, proof upload, access code, support session), `lms:seed-e2e`, CI job `e2e`; not run in the 2026-11-16 review; no notifications/R5 mobile-scanner E2E |
 | R9 | R9-2 | Contract tests | T-QA-04 | PARTIAL | `OpenApiCoverageTest` PASS (route coverage); no response-shape tests vs OpenAPI; no TS types generated from OpenAPI in CI |
@@ -166,7 +170,7 @@
 
 | Needed for | What the owner must provide |
 |---|---|
-| R4-3, R8-6 | Google Cloud project: OAuth client (web), consent screen, Drive API + Calendar API enabled, redirect URI for the API |
+| R4-3, R8-6 | PROVIDED 2026-11-17 (local): project `lms-platform-515016`, redirect `http://localhost:8000/api/v1/integrations/google/callback`. Production needs its own redirect URI, test users or app verification. 2026-11-19: publishing the consent screen is BLOCKED until a public domain exists (Branding needs home page, privacy policy URL and an authorized domain verified in Search Console); stays in Testing (test users, refresh tokens expire after 7 days). Test user `karambelal91@gmail.com` added 2026-11-19 (1/100) |
 | R8-1 (email) | SMTP credentials (or keep `log` mailer) |
 | R0-1 | Set `PLATFORM_ADMIN_TOKEN` in `apps/api/.env` |
 | R1-A9 | `PLATFORM_ADMIN_EMAIL` / `PLATFORM_ADMIN_PASSWORD` in `apps/api/.env` |

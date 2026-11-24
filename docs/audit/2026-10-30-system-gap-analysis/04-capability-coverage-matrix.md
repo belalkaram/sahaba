@@ -48,7 +48,7 @@
 | FR-ONLINE-001 | الكورسات | CRUD مع ownership/scope (R1-A4) | `/teacher/courses` (R4-5) | **REAL** | T-SEC-09 (مغلق ومفحوص) |
 | FR-ONLINE-002 | الدروس | CRUD + ترتيب + نشر (R4-2) | Course Builder `/teacher/courses/[id]` (R4-5) | **REAL** | T-FEAT-01, 04 (مغلق؛ صفحة > 900 سطر) |
 | FR-ONLINE-003 | محتوى داخل الدرس | `course_modules` + `lesson_materials` + أنواع الدروس (R4-1) | Builder + Player (R4-5, R4-6) | **REAL** | T-FEAT-02 (مغلق) |
-| FR-ONLINE-004/005 | Drive/Vimeo + تضمين | تسجيل رابط + embed بعد فحص الوصول (R3-1)؛ رفع Drive الحقيقي **غير منفذ** | تسجيل رابط + مشغل | PARTIAL (BLOCKED: بيانات Google Cloud، OD-3) | T-FEAT-06, 07 |
+| FR-ONLINE-004/005 | Drive/Vimeo + تضمين | ربط Google لكل مؤسسة (ADR-008)، رفع مباشر إلى مجلد المؤسسة، روابط ملصقة بحالة مؤكد/غير مؤكد، embed بعد فحص الوصول؛ لم يُجرَّب رفع حقيقي بعد | اتصال/فصل في التكاملات + رفع بتقدم في مكتبة الفيديو | PARTIAL (R4-3: اختبارات بـ Google مُحاكى؛ تجربة حقيقية مطلوبة) | T-FEAT-06, 07 |
 | FR-ONLINE-006 | تقدم المشاهدة | `video_events` + `ProgressAggregator` (R4-4) | مشغل يرسل heartbeat ويستكمل من آخر موضع | **REAL** | T-FEAT-03 (مغلق؛ سيناريو E2E موجود لم يُشغَّل في هذه المراجعة) |
 | FR-ONLINE-007 | كشف إساءة الاستخدام | إشارات abuse تُسجَّل (R4-4) | لا واجهة مراجعة | PARTIAL | — |
 | FR-ONLINE-008 | علامة مائية | — | تعمل (متحركة) | REAL | — |
