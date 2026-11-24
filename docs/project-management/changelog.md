@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Changed] - 2026-11-24 — Theme switcher is a one-click light/dark toggle
+
+- components/layout/theme-switcher.tsx: the 3-option menu (light/dark/system) was clipped inside the floating glass navbar; it is now a single button that flips light <-> dark. First visit still follows the device (system) until the user clicks; the click is saved.
+- Checked: tsc --noEmit; toggled both ways on /pricing in the browser, no menu rendered.
+
 ## [Changed] - 2026-11-24 — Emerald Glass design system (R8) for the web app
 
 - Spec + references: docs/design/emerald-glass/ (DESIGN.md, tokens.css, glass.css, reference HTML, screenshots).
