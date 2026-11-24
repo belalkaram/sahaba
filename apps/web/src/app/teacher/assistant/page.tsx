@@ -21,8 +21,11 @@ import { partial } from '../../../lib/partial-failure';
 export default function TeachingAssistantPage() {
   const { user } = useAuth();
   const canScan = useCan('attendance.scan');
+  // /grading/pending is guarded by exams.grade on the backend.
+  const canGrade = useCan('exams.grade');
   const [sessions, setSessions] = useState<ClassSession[]>([]);
-  const [pendingGradingCount, setPendingGradingCount] = useState(0);
+  // null = unknown (no permission, or the request failed): shown as "—", never as 0.
+  const [pendingGradingCount, setPendingGradingCount] = useState<number | null>(null);
   const [coursesCount, setCoursesCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -31,37 +34,32 @@ export default function TeachingAssistantPage() {
       try {
         setLoading(true);
 
-        const [coursesList, sessionsList] = await Promise.all([
+        // J-04: one grading-inbox request (same scope and count as /teacher/grading) instead of
+        // N+1 requests over the first 5 courses; sessions are filtered for today from the full list.
+        const [coursesList, sessionsList, pending] = await Promise.all([
           educationApi.getCourses().catch(partial([])),
           attendanceApi.getSessions().catch(partial([])),
+          canGrade ? assessmentApi.getPendingGrading().catch(partial(null)) : Promise.resolve(null),
         ]);
 
         setCoursesCount(coursesList.length);
-        setSessions(sessionsList.slice(0, 5));
-
-        // Check pending submissions across courses
-        let gradingCount = 0;
-        for (const c of coursesList.slice(0, 5)) {
-          const assignments = await assessmentApi.getAssignments(c.id).catch(partial([]));
-          for (const a of assignments) {
-            const subs = await assessmentApi.getAssignmentSubmissions(c.id, a.id).catch(partial([]));
-            gradingCount += subs.filter((s) => s.status === 'submitted').length;
-          }
-        }
-        setPendingGradingCount(gradingCount);
+        setSessions(sessionsList);
+        setPendingGradingCount(pending ? pending.count : null);
       } finally {
         setLoading(false);
       }
     };
 
     loadAssistantData();
-  }, []);
+  }, [canGrade]);
 
-  const todaySessions = sessions.filter((s) => {
-    if (!s.starts_at && !s.session_date) return false;
-    const sessionDate = new Date(s.starts_at || s.session_date || '').toDateString();
-    return sessionDate === new Date().toDateString();
-  });
+  const todaySessions = sessions
+    .filter((s) => {
+      if (!s.starts_at && !s.session_date) return false;
+      const sessionDate = new Date(s.starts_at || s.session_date || '').toDateString();
+      return sessionDate === new Date().toDateString();
+    })
+    .sort((a, b) => new Date(a.starts_at || a.session_date || 0).getTime() - new Date(b.starts_at || b.session_date || 0).getTime());
 
   return (
     <div className="space-y-6 text-start">
@@ -101,10 +99,10 @@ export default function TeachingAssistantPage() {
 
         <StatCard
           title="أوراق وإجابات بانتظار الرصد"
-          value={pendingGradingCount}
-          subtitle="تسليمات الطلاب المعلقة"
+          value={pendingGradingCount ?? '—'}
+          subtitle="واجبات واختبارات بانتظار التصحيح"
           icon={<TaskIcon size={18} />}
-          variant={pendingGradingCount > 0 ? 'amber' : 'default'}
+          variant={pendingGradingCount ? 'amber' : 'default'}
         />
 
         <StatCard
@@ -133,12 +131,12 @@ export default function TeachingAssistantPage() {
               <CalendarIcon size={16} className="text-primary" />
               <span>الحصص والجلسات المتاحة للرصد</span>
             </h3>
-            <span className="text-xs text-fg-muted font-mono">{formatNumber(sessions.length)} جلسة</span>
+            <span className="text-xs text-fg-muted font-mono">{formatNumber(todaySessions.length)} جلسة اليوم</span>
           </div>
 
           {loading ? (
             <div className="py-8 text-center text-xs text-fg-muted">جارٍ تحميل الجلسات...</div>
-          ) : sessions.length === 0 ? (
+          ) : todaySessions.length === 0 ? (
             <EmptyState
               icon={<CalendarDays size={20} strokeWidth={1.75} aria-hidden />}
               title="لا توجد جلسات مجدولة اليوم"
@@ -146,7 +144,7 @@ export default function TeachingAssistantPage() {
             />
           ) : (
             <div className="space-y-3">
-              {sessions.map((session) => (
+              {todaySessions.map((session) => (
                 <div
                   key={session.id}
                   className="p-3.5 rounded-md bg-surface-raised border border-border flex items-center justify-between gap-3 text-xs"

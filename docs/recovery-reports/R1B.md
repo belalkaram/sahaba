@@ -138,3 +138,31 @@ OK (107 tests, 1496 assertions)
 3. **Fail Closed:** Unauthenticated users or missing permissions result in explicit 403 Forbidden screens, never silent broken state.
 4. **Session Mirroring:** Auth token in `tokenStore` is mirrored to `lms_auth_token` cookie for SSR middleware compatibility.
 
+
+---
+
+## 5. Addendum 2026-11-24 — R1-B6 closed (REV-2, T-UX-01)
+
+Seven pages turned a failed request into empty or invented data. Each now reports the failure.
+
+| Page | Before | After |
+|---|---|---|
+| `admin/capacity` | history `.catch(() => [])` -> "no previous requests" | failure goes to the page error state with retry (403 -> forbidden) |
+| `platform/payments` | tenants filter `.catch(() => [])` | `.catch(partial([]))`: AppShell reports the partial failure |
+| `student/assignments` | questions `.catch(() => [])` -> free-text box for a question-based assignment | no fallback; toast, assignment stays closed |
+| `student/plans/[id]/pay` | package/pricing `.catch(() => null)` -> "package not found" and a made-up bank name + placeholder IBAN | 404 only = not found; other failure = `DataState` error + retry; no invented bank details |
+| `staff/attendance/scan/[sessionId]` | three `.catch(() => null/{})` on the report | `partial()` |
+| `student/card` | QR draw `.catch(() => {})` -> blank canvas | error banner with retry |
+| `teacher/classes/[id]` | branch/classrooms `.catch(() => {})`, empty `catch { // Fallback }` on the student list | `partial()`; add-student dialog shows the error |
+
+### Verification (what actually ran)
+
+- `npx tsc --noEmit` (apps/web): no output, clean.
+- `npm run lint:design`: passed.
+- `npx eslint` on the 7 files: 0 errors, 24 warnings (existing `set-state-in-effect` and unused-var patterns, not introduced here).
+- Not run: browser check of the 7 pages, Playwright, `npm run build`.
+
+### Discovered, not fixed
+
+- `notifications/page.tsx:81`: `markAsRead(...).catch(() => undefined)` (best effort, user sees nothing if it fails).
+- `student/assignments` and `teacher/classes/[id]` still use `alert()`/`confirm()` (REV-6).

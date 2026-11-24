@@ -11,6 +11,7 @@ import { Button } from '../../../../../components/ui/button';
 import { Badge } from '../../../../../components/ui/badge';
 import { Modal } from '../../../../../components/ui/modal';
 import { formatNumber, formatPercent, formatTime } from '../../../../../lib/format';
+import { partial } from '../../../../../lib/partial-failure';
 import {
   QrCode,
   Flashlight,
@@ -152,7 +153,7 @@ export default function StaffAttendanceSessionScannerPage() {
       setSessionError(null);
       const [sessData, repData] = await Promise.all([
         attendanceApi.getSession(sessionId),
-        attendanceApi.getSessionReport(sessionId).catch(() => null),
+        attendanceApi.getSessionReport(sessionId).catch(partial(null)),
       ]);
       setSession(sessData);
       if (repData) setReport(repData);
@@ -222,7 +223,7 @@ export default function StaffAttendanceSessionScannerPage() {
         ]);
 
         // Refresh report stats
-        attendanceApi.getSessionReport(sessionId).then(setReport).catch(() => {});
+        attendanceApi.getSessionReport(sessionId).then(setReport).catch(partial(undefined));
       } catch (err: unknown) {
         playAudioFeedback('error');
         triggerHaptic('error');
@@ -293,7 +294,7 @@ export default function StaffAttendanceSessionScannerPage() {
 
       // Refresh report
       if (sessionId) {
-        attendanceApi.getSessionReport(sessionId).then(setReport).catch(() => {});
+        attendanceApi.getSessionReport(sessionId).then(setReport).catch(partial(undefined));
       }
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : 'فشل التراجع عن مسح الحضور.');

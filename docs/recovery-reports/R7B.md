@@ -114,3 +114,13 @@ Executed `npm test -- --run` in `apps/web`:
 With Phase R7B 100% completed and verified, the project proceeds to:
 - **Phase R7C:** Staff Experience (`/staff`) — Teacher, Teaching Assistant (OD-2), and Finance Desk.
 
+
+---
+
+## Addendum 2026-11-24 — REV-4 (J-11)
+
+`student/dashboard/page.tsx` fetched sessions for `classList[0]` only. It now fetches every class of the student (concurrency 4), merges and de-duplicates by session id, and `StudentActivityWidget` sorts the result. A failed class is reported via `partial()`.
+
+- Ran: `npx tsc --noEmit` (clean), `npm run lint:design` (pass), `npx eslint` on the page (0 errors, 1 existing warning).
+- Not verified: no student with 2+ classes was loaded in the browser; no Playwright test.
+- Known limit: still one request per class (J-13 asks for one upcoming-sessions endpoint).

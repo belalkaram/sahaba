@@ -29,7 +29,7 @@
 | R1B | R1-B3 | Navigation registry + `/staff` `/admin` | T-RBAC-07 | DONE | `src/config/navigation-registry.ts`, `src/components/layout/sidebar-nav.tsx` |
 | R1B | R1-B4 | Route guards + 403 | T-RBAC-05 | DONE | `src/middleware.ts`, `ExperienceGuard.tsx` explicit 403 |
 | R1B | R1-B5 | `useCan` / `<Can>` | T-RBAC-07 | DONE | `useCan.ts`, `Can.tsx`, `permission-gate.tsx` |
-| R1B | R1-B6 | Data-state layer, remove swallowed errors | T-UX-01 | PARTIAL | `src/components/ui/data-state.tsx`; 7 swallowed-error sites remain (admin/capacity, platform/payments, student/assignments, student/plans/[id]/pay, staff scan, student/card, teacher/classes/[id]) - 2026-11-16 |
+| R1B | R1-B6 | Data-state layer, remove swallowed errors | T-UX-01 | DONE | `src/components/ui/data-state.tsx`; 2026-11-24: the 7 swallowed-error sites fixed (admin/capacity, platform/payments, student/assignments, student/plans/[id]/pay, staff scan, student/card, teacher/classes/[id]); tsc + lint:design pass, ESLint 0 errors; not checked in the browser. Remaining outside the list: `notifications/page.tsx` mark-as-read `.catch(() => undefined)`; ~15 `catch {}` that set a message are not swallowing |
 | R1B | R1-B7 | 401 handling | T-SEC-13 | DONE | `src/lib/api-client.ts`, `token-store.ts` cookie mirror |
 | R1B | R1-B8 | Role management screens | FR-AUTHZ-004 | DONE | `src/app/admin/roles/page.tsx`, `src/app/admin/layout.tsx` |
 | R1B | R1-B9 | Playwright + role navigation tests | T-QA-03 | DONE | `apps/web/tests/access-model.test.ts` (7 tests PASS), `support-session-banner.tsx` |
@@ -147,10 +147,10 @@
 | Phase | Task | Title | Closes | Status | Evidence |
 |---|---|---|---|---|---|
 | REV | REV-1 | Commit the untracked Tenant Landing code (TL-1..TL-6) in logical commits | TL-1..6 | TODO | `git status` shows migration, model, service, controller, `features/tenant-landing`, `lib/theme`, tests as `??` |
-| REV | REV-2 | Remove remaining swallowed errors (7 sites) and use `data-state` | T-UX-01 | TODO | list in R1-B6 row |
+| REV | REV-2 | Remove remaining swallowed errors (7 sites) and use `data-state` | T-UX-01 | DONE | 2026-11-24, see R1-B6 row and `docs/recovery-reports/R1B.md` |
 | REV | REV-3 | Break up pages > 300 lines (39 files); unblocks the coverage-matrix gate row Master 63 | T-UX-06 | TODO | R7-2 row |
-| REV | REV-4 | Student dashboard sessions for every class, not only the first | J-11 | TODO | `docs/audit/2026-11-12-user-journey-ux-audit/README.md` |
-| REV | REV-5 | Assistant landing/dashboard: use `GET /grading/pending`, gate the assistant nav item by permission | J-04, J-05 | TODO | same audit |
+| REV | REV-4 | Student dashboard sessions for every class, not only the first | J-11 | PARTIAL | 2026-11-24: `student/dashboard/page.tsx` loads the sessions of every class (concurrency 4, de-duplicated by id) instead of `classList[0]`; tsc + lint:design pass, ESLint 0 errors. NOT verified: no test with a student in 2 classes, not checked in the browser; still N requests (a single upcoming-sessions endpoint is J-13/P2) |
+| REV | REV-5 | Assistant landing/dashboard: use `GET /grading/pending`, gate the assistant nav item by permission | J-04, J-05 | PARTIAL | 2026-11-24: `teacher/assistant/page.tsx` takes the pending count from `GET /grading/pending` (one request, same scope as `/teacher/grading`; "—" when the user lacks `exams.grade` or the call fails) and filters today's sessions from the full list; nav item `admin-assistant` now needs `attendance.scan` / `exams.grade` / `assignments.grade`; test `access-model.test.ts` (38/38 PASS), tsc, lint:design, ESLint clean. NOT done: a landing path by `staff_type` (assistant still lands on `/teacher/dashboard`; teachers with grading permission still see the item); not checked in the browser |
 | REV | REV-6 | Replace native `alert()`/`confirm()` with `ConfirmDialog` and toast | J-09 | TODO | same audit |
 | REV | REV-7 | Guard `/staff/*` with `ExperienceGuard` and AppShell | J-10 | TODO | same audit |
 | REV | REV-8 | Remove the duplicate `/student/assessments`; no full reload from the grades page | J-12 | TODO | same audit |

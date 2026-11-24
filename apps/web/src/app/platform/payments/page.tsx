@@ -17,6 +17,7 @@ import { EmptyState } from '../../../components/ui/empty-state';
 import { SkeletonTable } from '../../../components/ui/skeleton';
 import { Drawer } from '../../../components/ui/drawer';
 import { formatDate, formatDateTime, formatNumber } from '../../../lib/format';
+import { partial } from '../../../lib/partial-failure';
 import {
   CreditCard,
   CheckCircle,
@@ -70,7 +71,7 @@ export default function PlatformPaymentsPage() {
           page,
           per_page: 25,
         }),
-        platformApi.getTenants().catch(() => [] as Tenant[]),
+        platformApi.getTenants().catch(partial([] as Tenant[])),
       ]);
 
       setPayments(paymentsRes.payment_requests);

@@ -68,7 +68,7 @@ export const NAVIGATION_REGISTRY: NavItem[] = [
   { id: 'staff-media', href: '/teacher/media', label: 'مكتبة الوسائط', iconName: 'media', experience: ['admin', 'staff'], group: 'teaching', module: 'online', anyOf: ['media.view', 'media.upload'] },
   { id: 'staff-analytics', href: '/teacher/analytics', label: 'التحليلات', iconName: 'analytics', experience: ['admin', 'staff'], group: 'teaching', module: 'analytics', anyOf: ['analytics.view'] },
   { id: 'staff-reports', href: '/teacher/reports', label: 'التقارير', iconName: 'reports', experience: 'staff', group: 'teaching', module: 'analytics', anyOf: ['reports.generate', 'reports.view'] },
-  { id: 'admin-assistant', href: '/teacher/assistant', label: 'مهام المساعد التعليمي', iconName: 'tasks', experience: ['admin', 'staff'], group: 'teaching' },
+  { id: 'admin-assistant', href: '/teacher/assistant', label: 'مهام المساعد التعليمي', iconName: 'tasks', experience: ['admin', 'staff'], group: 'teaching', anyOf: ['attendance.scan', 'exams.grade', 'assignments.grade'] },
   { id: 'admin-payments', href: '/teacher/payments', label: 'مراجعة المدفوعات', iconName: 'receipts', experience: ['admin', 'staff'], group: 'finance', module: 'billing', anyOf: ['payments.view', 'payments.approve', 'payments.reject', 'billing.view'] },
   { id: 'admin-packages', href: '/admin/packages', label: 'الباقات والأسعار', iconName: 'packages', experience: 'admin', group: 'finance', module: 'billing', anyOf: ['packages.view', 'packages.manage', 'billing.view'] },
   { id: 'admin-capacity', href: '/admin/capacity', label: 'السعة: الطلاب والأكواد', iconName: 'capacity', experience: 'admin', group: 'management', anyOf: ['tenant.settings', 'students.view'] },

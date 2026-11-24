@@ -38,7 +38,7 @@ export default function CapacityPage() {
 
   const fetchAll = useCallback(async () => {
     try {
-      const [summary, history] = await Promise.all([capacityApi.summary(), capacityApi.requests().catch(() => [] as TenantCapacityRequest[])]);
+      const [summary, history] = await Promise.all([capacityApi.summary(), capacityApi.requests()]);
       setLoad({ s: 'ready', capacity: summary.capacity, pending: summary.pending_request, transfer: summary.transfer, history });
     } catch (err) {
       setLoad(err instanceof ApiError && err.status === 403 ? { s: 'forbidden' } : { s: 'error' });

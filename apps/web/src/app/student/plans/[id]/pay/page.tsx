@@ -15,6 +15,8 @@ import {
   IconBack,
 } from '../../../../../components/icons';
 import { formatNumber } from '../../../../../lib/format';
+import { ApiError } from '../../../../../lib/api-client';
+import { DataState } from '../../../../../components/ui/data-state';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -35,6 +37,8 @@ export default function StudentPlanPaymentPage({ params }: PageProps) {
   } | null>(null);
 
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -51,22 +55,25 @@ export default function StudentPlanPaymentPage({ params }: PageProps) {
     async function loadData() {
       try {
         setLoading(true);
+        setLoadFailed(false);
         const [pkgData, pricingData] = await Promise.all([
-          billingApi.getPackage(packageId).catch(() => null),
-          billingApi.getPricing().catch(() => null),
+          // Only a real 404 means "package does not exist"; any other failure is a load error.
+          billingApi.getPackage(packageId).catch((err: unknown) => {
+            if (err instanceof ApiError && err.status === 404) return null;
+            throw err;
+          }),
+          billingApi.getPricing(),
         ]);
         setPkg(pkgData);
-        if (pricingData) {
-          setBankInfo(pricingData);
-        }
+        setBankInfo(pricingData);
       } catch {
-        setError('تعذر تحميل بيانات الباقة أو تفاصيل الحساب المصرفي.');
+        setLoadFailed(true);
       } finally {
         setLoading(false);
       }
     }
     loadData();
-  }, [packageId]);
+  }, [packageId, reloadKey]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -164,6 +171,18 @@ export default function StudentPlanPaymentPage({ params }: PageProps) {
             </Link>
           </div>
         </Card>
+      </div>
+    );
+  }
+
+  if (loadFailed) {
+    return (
+      <div className="max-w-xl mx-auto py-12">
+        <DataState
+          state="error"
+          message="تعذر تحميل بيانات الباقة أو تفاصيل الحساب المصرفي."
+          onRetry={() => setReloadKey((k) => k + 1)}
+        />
       </div>
     );
   }
@@ -273,18 +292,24 @@ export default function StudentPlanPaymentPage({ params }: PageProps) {
             </div>
             {paymentMethod === 'bank_transfer' && (
               <div className="space-y-1">
-                <p>
-                  البنك: <span className="text-fg font-bold">{bankInfo?.bank_name || 'مصرف الراجحي'}</span>
-                  {bankInfo?.account_holder_name && (
-                    <> — المستفيد: <span className="text-fg font-bold">{bankInfo.account_holder_name}</span></>
-                  )}
-                </p>
-                <p>
-                  رقم الآيبان (IBAN):{' '}
-                  <span className="text-primary font-mono font-bold select-all">
-                    {bankInfo?.iban || 'SA0000000000000000000000'}
-                  </span>
-                </p>
+                {bankInfo?.bank_name || bankInfo?.iban ? (
+                  <>
+                    <p>
+                      {bankInfo.bank_name && <>البنك: <span className="text-fg font-bold">{bankInfo.bank_name}</span></>}
+                      {bankInfo.account_holder_name && (
+                        <> — المستفيد: <span className="text-fg font-bold">{bankInfo.account_holder_name}</span></>
+                      )}
+                    </p>
+                    {bankInfo.iban && (
+                      <p>
+                        رقم الآيبان (IBAN):{' '}
+                        <span className="text-primary font-mono font-bold select-all">{bankInfo.iban}</span>
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-warning">بيانات الحساب المصرفي لم تُضف بعد. تواصل مع الإدارة قبل التحويل.</p>
+                )}
                 {bankInfo?.transfer_instructions && (
                   <p className="text-fg-muted pt-1 border-t border-border mt-1">
                     {bankInfo.transfer_instructions}

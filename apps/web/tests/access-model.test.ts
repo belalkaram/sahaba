@@ -75,6 +75,19 @@ describe('NavigationRegistry Filtering', () => {
     assert.ok(!withoutPerms.some((i) => i.id === 'admin-courses'));
   });
 
+  test('assistant tasks item needs a scan or grading permission (J-05)', () => {
+    const modules = ['online', 'offline', 'assessment'];
+
+    assert.ok(!filterNavItems('staff', modules, {}).some((i) => i.id === 'admin-assistant'));
+    assert.ok(!filterNavItems('staff', modules, { 'courses.view': 'tenant' }).some((i) => i.id === 'admin-assistant'));
+    for (const permission of ['attendance.scan', 'exams.grade', 'assignments.grade']) {
+      assert.ok(
+        filterNavItems('staff', modules, { [permission]: 'assigned' }).some((i) => i.id === 'admin-assistant'),
+        `${permission} shows the item`,
+      );
+    }
+  });
+
   test('admin experience gets both admin-only and staff items', () => {
     const modules = ['online', 'offline', 'billing'];
     const allPerms: PermissionsMap = {

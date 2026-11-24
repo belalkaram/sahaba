@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Fixed] - 2026-11-24 — Assistant desk counts grading from the inbox and hides from staff without a matching permission (REV-5, J-04, J-05)
+
+- `/teacher/assistant`: "waiting for grading" now comes from `GET /grading/pending` (assignments and exams, same scope and number as `/teacher/grading`) instead of N+1 requests over the first 5 courses that ignored exams. Without `exams.grade`, or when the call fails, it shows "—", never 0.
+- "Today's sessions" is filtered from the full session list (it used to take the first 5 sessions and then filter), sorted by time.
+- Sidebar item "مهام المساعد التعليمي" is shown only with `attendance.scan`, `exams.grade` or `assignments.grade`.
+- Not done: a separate landing page by `staff_type`; teachers who hold those permissions still see the item.
+- Checked: `tsc --noEmit`, `lint:design`, ESLint, web tests 38/38 (new nav-gating case). Not checked in the browser.
+
+
+## [Fixed] - 2026-11-24 — Student dashboard shows the sessions of every class (REV-4, J-11)
+
+- `/student/dashboard` used `classList[0]`, so a student in several classes only saw the first class's sessions in the activity feed. It now loads every class (4 at a time), merges and de-duplicates by session id; a failed class is reported through `partial()`.
+- Checked: `tsc --noEmit` clean, `lint:design` pass, ESLint 0 errors. Not checked: a student with 2+ classes in the browser, no automated test.
+
+
+## [Fixed] - 2026-11-24 — Last 7 swallowed errors removed (R1-B6 / REV-2, T-UX-01)
+
+- `admin/capacity`: a failed request history now shows the page error with retry instead of "no previous requests".
+- `student/assignments`: a failed question load no longer falls back to the free-text box (which could let a student submit a free-text answer to a question-based assignment); a toast explains the failure and the assignment does not open.
+- `student/plans/[id]/pay`: only a real 404 means "package not found"; any other failure shows `DataState` with retry. The invented fallback bank name ("مصرف الراجحي") and placeholder IBAN were removed; when the academy has no transfer details the page says so.
+- `platform/payments`, `staff/attendance/scan/[sessionId]`, `teacher/classes/[id]`: secondary loads use `partial()` so the failure is reported by AppShell instead of looking like empty data; the add-student dialog shows an error when the student list fails to load.
+- `student/card`: a failed QR draw now shows the error banner with retry instead of a blank canvas.
+- Checked: `tsc --noEmit` clean, `lint:design` pass, ESLint 0 errors on the 7 files. Not checked: in the browser, no E2E.
+
+
 ## [Added] - 2026-11-19 — Templates style the whole academy page, not only the header (ADR-007, TL-4)
 
 - Each template now has its own home hero (`templates/<id>/hero.tsx`, registered next to the header): Oasis arch band, Beacon editorial split with numbered stats, Breeze soft blobs with floating stat cards, Atlas hex band with a stat tile grid, Horizon plain and spacious. Shared parts live in `templates/hero-parts.tsx`.

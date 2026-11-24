@@ -92,3 +92,12 @@ cd apps/api; php vendor/bin/phpunit
 ## 5. Status Sign-Off
 
 Phase R7C is **COMPLETE & VERIFIED**. All staff and teacher interfaces strictly adhere to architectural boundaries, design system tokens, and real multi-tenant data contracts.
+
+---
+
+## Addendum 2026-11-24 — REV-5 (J-04, J-05)
+
+- `teacher/assistant/page.tsx`: pending grading = `assessmentApi.getPendingGrading()` (`GET /grading/pending`, guarded by `exams.grade`), one request instead of N+1 over 5 courses; `null` renders "—". Today's sessions are filtered from all sessions (J-04b).
+- `navigation-registry.ts`: `admin-assistant` has `anyOf: ['attendance.scan', 'exams.grade', 'assignments.grade']`.
+- Ran: `npx tsc --noEmit` (clean), `npm run lint:design` (pass), ESLint on the two files (0 errors), `npm test` 38/38 (new case in `tests/access-model.test.ts`).
+- Not done / not verified: landing by `staff_type`, assistant "assigned students" view, browser check as an assistant, Playwright.

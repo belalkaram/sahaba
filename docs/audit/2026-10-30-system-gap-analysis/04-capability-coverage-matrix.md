@@ -105,7 +105,7 @@
 | Master §68-69 | PWA آمن | PARTIAL (`offline.html` في precache والـ SW لا يخزّن API؛ لا اختبار آلي) | T-UX-11 |
 | Master §63 | لا God Files | **BROKEN** (39 ملف .tsx > 300 سطر؛ الأكبر: exam builder 1162، admin/users 1043، teacher/courses/[id] 969) | T-UX-06 |
 | Quality Gate §6 | لا بيانات وهمية | PARTIAL (محاكاة AI Tutor والفصل الوهمي أُزيلتا؛ بقي محتوى الـ landing التجريبي المعلَّم OD-21) | T-UX-04, 05, T-FEAT-29, 30, 33, 27b |
-| Quality Gate §14 | حالات Loading/Empty/Error/Forbidden | PARTIAL (طبقة `data-state` موجودة؛ بقيت 7 مواضع تبتلع الخطأ، منها admin/capacity, platform/payments, student/assignments, student/plans/[id]/pay) | T-UX-01 |
+| Quality Gate §14 | حالات Loading/Empty/Error/Forbidden | PARTIAL (طبقة `data-state` موجودة؛ أُغلقت المواضع السبعة التي تبتلع الخطأ في 2026-11-24؛ لم يُفحص في المتصفح ولا E2E) | T-UX-01 |
 | Quality Gate §10 | Landing page | PARTIAL (موجودة بمحتوى تجريبي معلَّم، OD-21) | T-UX-02 |
 
 ## الإجمالي

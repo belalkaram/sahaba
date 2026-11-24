@@ -37,7 +37,7 @@ export default function StudentCardPage() {
           dark: '#0f172a',
           light: '#ffffff',
         },
-      }).catch(() => {});
+      }).catch(() => setError('تعذر رسم رمز البطاقة المطبوعة.'));
     }
   }, [showPrintCard, data?.student.student_code]);
 
@@ -85,9 +85,7 @@ export default function StudentCardPage() {
           dark: '#0f172a',
           light: '#ffffff',
         },
-      }).catch(() => {
-        // Render fallback
-      });
+      }).catch(() => setError('تعذر رسم رمز QR. اضغط إعادة المحاولة.'));
     }
   }, [data?.token]);
 

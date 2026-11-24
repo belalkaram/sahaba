@@ -18,7 +18,10 @@ import { IconNext } from '../../../components/icons/directional';
 import { formatDate, formatNumber } from '../../../lib/format';
 import { partial } from '../../../lib/partial-failure';
 import { mapWithConcurrency } from '../../../lib/concurrency';
+import { ApiError } from '../../../lib/api-client';
+import { useToast } from '../../../components/ui/toast';
 export default function StudentAssignmentsPage() {
+  const toast = useToast();
   const [courses, setCourses] = useState<Course[]>([]);
   const [assignments, setAssignments] = useState<{ course: Course; item: Assignment }[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,10 +61,13 @@ export default function StudentAssignmentsPage() {
   const openSubmission = async (courseId: string, assignmentId: string) => {
     setOpeningId(assignmentId);
     try {
-      setQuestions(await assessmentApi.getAssignmentQuestions(courseId, assignmentId).catch(() => []));
-    } finally {
+      // A failed load must not fall back to the free-text box: the assignment may be question-based.
+      setQuestions(await assessmentApi.getAssignmentQuestions(courseId, assignmentId));
       setSubmittingId(assignmentId);
       setSubmissionContent('');
+    } catch (err) {
+      toast.danger('تعذّر فتح الواجب', err instanceof ApiError ? err.message : 'حاول مرة أخرى بعد قليل.');
+    } finally {
       setOpeningId(null);
     }
   };

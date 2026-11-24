@@ -11,6 +11,7 @@ import { BuildingIcon, CalendarIcon, ClockIcon, PlusIcon, QrCodeIcon, SearchIcon
 
 import { X } from 'lucide-react';
 import { formatDateTime } from '../../../../lib/format';
+import { partial } from '../../../../lib/partial-failure';
 export default function TeacherClassDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -28,6 +29,7 @@ export default function TeacherClassDetailPage() {
   // Add Student Modal
   const [isAddingStudent, setIsAddingStudent] = useState(false);
   const [studentSearch, setStudentSearch] = useState('');
+  const [studentsError, setStudentsError] = useState<string | null>(null);
   const [enrollingStudentId, setEnrollingStudentId] = useState<string | null>(null);
 
   // Schedule Session Modal
@@ -51,7 +53,7 @@ export default function TeacherClassDetailPage() {
       if (data.branch_id) {
         adminApi.getBranch(data.branch_id).then((b) => {
           if (b.classrooms) setClassrooms(b.classrooms);
-        }).catch(() => {});
+        }).catch(partial(undefined));
       }
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } } };
@@ -68,11 +70,13 @@ export default function TeacherClassDetailPage() {
   // Load all students when opening Add Student modal
   const handleOpenAddStudent = async () => {
     setIsAddingStudent(true);
+    setStudentsError(null);
     try {
       const res = await educationApi.getStudents();
       setAllStudents(res);
-    } catch {
-      // Fallback
+    } catch (err: unknown) {
+      const e = err as { message?: string };
+      setStudentsError(e.message || 'تعذر تحميل قائمة الطلاب.');
     }
   };
 
@@ -419,7 +423,11 @@ export default function TeacherClassDetailPage() {
             </div>
 
             <div className="max-h-60 overflow-y-auto divide-y divide-border/60">
-              {filteredAvailableStudents.length === 0 ? (
+              {studentsError ? (
+                <div role="alert" className="p-6 text-center text-xs text-danger">
+                  {studentsError}
+                </div>
+              ) : filteredAvailableStudents.length === 0 ? (
                 <div className="p-6 text-center text-xs text-secondary">
                   لم يتم العثور على طلاب متاحين.
                 </div>

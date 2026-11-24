@@ -82,8 +82,13 @@ export default function StudentDashboardPage() {
         }
 
         if (classList.length > 0) {
-          const sList = await attendanceApi.getSessions(classList[0].id).catch(partial([]));
-          setSessions(sList);
+          // J-11: a student can be in several classes; load the sessions of every one of them.
+          const perClass = await mapWithConcurrency(classList, 4, (cls) =>
+            attendanceApi.getSessions(cls.id).catch(partial([] as ClassSession[])),
+          );
+          const unique = new Map<string, ClassSession>();
+          perClass.flat().forEach((s) => unique.set(s.id, s));
+          setSessions([...unique.values()]);
         }
 
         if (user?.student?.id) {
