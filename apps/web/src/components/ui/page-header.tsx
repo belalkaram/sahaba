@@ -39,7 +39,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
         <div className="min-w-0 space-y-2">
           {eyebrow && <p className="text-xs font-semibold text-primary">{eyebrow}</p>}
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="heading-accent font-display text-2xl text-fg sm:text-3xl">{title}</h1>
+            <h1 className="heading-accent font-display text-2xl sm:text-3xl">{title}</h1>
             {badge && <div className="shrink-0">{badge}</div>}
           </div>
           {desc && <p className="max-w-2xl text-sm text-fg-muted sm:text-base">{desc}</p>}

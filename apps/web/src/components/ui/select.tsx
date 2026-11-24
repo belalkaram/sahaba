@@ -40,7 +40,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             className={cn(
               controlBase,
               error ? controlError : controlNormal,
-              'h-10 appearance-none ps-3.5 pe-10 cursor-pointer text-sm font-medium transition-colors',
+              'h-[var(--input-h)] appearance-none ps-4 pe-10 cursor-pointer text-sm font-medium transition-colors',
               className,
             )}
             {...props}
@@ -64,7 +64,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           </select>
           <ChevronDown
             size={16}
-            className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-fg-subtle transition-transform duration-200"
+            className="pointer-events-none absolute end-[14px] top-1/2 -translate-y-1/2 text-fg-subtle transition-transform duration-200"
             aria-hidden
           />
         </div>

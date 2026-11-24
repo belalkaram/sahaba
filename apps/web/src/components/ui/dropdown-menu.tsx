@@ -68,13 +68,13 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
           role="menu"
           aria-orientation="vertical"
           className={cn(
-            'absolute z-50 mt-1.5 min-w-[200px] rounded-lg border border-border bg-surface-raised p-1.5 shadow-lg ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-150',
+            'absolute z-50 mt-1.5 min-w-[200px] glass rounded-md p-1.5 animate-in fade-in zoom-in-95 duration-150',
             align === 'right' ? 'start-0' : 'end-0',
           )}
         >
           {items.map((item) => (
             <React.Fragment key={item.id}>
-              {item.dividerBefore && <div className="my-1 border-t border-border" />}
+              {item.dividerBefore && <div className="my-1 border-t border-border-subtle" />}
               <button
                 type="button"
                 role="menuitem"
@@ -86,7 +86,7 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
                   }
                 }}
                 className={cn(
-                  'flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-xs font-semibold text-start transition-colors',
+                  'flex w-full items-center gap-2.5 rounded-sm px-3 py-2 text-sm font-semibold text-start transition-colors',
                   item.disabled
                     ? 'opacity-40 cursor-not-allowed text-fg-muted pointer-events-none'
                     : item.selected

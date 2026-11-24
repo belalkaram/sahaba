@@ -58,7 +58,7 @@ export const Tabs: React.FC<TabsProps> = ({ tabs, activeTab, onChange, className
       onKeyDown={onKeyDown}
       className={cn(
         'relative flex max-w-full items-center overflow-x-auto',
-        underline ? 'gap-6 border-b border-border' : 'inline-flex gap-1 rounded-lg border border-border bg-surface-muted p-1',
+        underline ? 'gap-6 border-b border-border' : 'glass-well inline-flex gap-1 rounded-full p-1',
         className,
       )}
     >
@@ -67,7 +67,7 @@ export const Tabs: React.FC<TabsProps> = ({ tabs, activeTab, onChange, className
         aria-hidden
         className={cn(
           'pointer-events-none absolute left-0',
-          underline ? 'bottom-0 h-0.5 rounded-full bg-primary' : 'top-1 bottom-1 rounded-md bg-surface shadow-sm',
+          underline ? 'bottom-0 h-0.5 rounded-full bg-primary' : 'top-1 bottom-1 rounded-full bg-[var(--glass-bg-strong)] shadow-sm',
         )}
       />
       {tabs.map((tab) => {
@@ -83,7 +83,7 @@ export const Tabs: React.FC<TabsProps> = ({ tabs, activeTab, onChange, className
             onClick={() => onChange(tab.id)}
             className={cn(
               'relative z-10 flex shrink-0 items-center gap-2 whitespace-nowrap text-sm font-semibold transition-colors',
-              underline ? 'pb-3' : 'h-9 rounded-md px-3.5',
+              underline ? 'pb-3' : 'h-10 rounded-full px-4',
               isActive ? (underline ? 'text-primary' : 'text-fg') : 'text-fg-muted hover:text-fg',
             )}
           >

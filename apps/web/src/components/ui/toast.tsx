@@ -62,20 +62,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           <div
             key={toast.id}
             role="alert"
-            className={`pointer-events-auto flex items-start gap-3 rounded-lg border p-3 shadow-lg transition-all animate-in slide-in-from-bottom-2 duration-200 ${
-              toast.type === 'success'
-                ? 'bg-surface border-success/30 text-fg'
-                : toast.type === 'danger'
-                ? 'bg-surface border-danger/30 text-fg'
-                : toast.type === 'warning'
-                ? 'bg-surface border-warning/30 text-fg'
-                : 'bg-surface border-info/30 text-fg'
-            }`}
+            className="glass pointer-events-auto flex items-center gap-3 rounded-lg p-4 text-fg transition-all animate-in slide-in-from-bottom-2 duration-200"
           >
             <div
-              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-sm ${
                 toast.type === 'success'
-                  ? 'bg-success-subtle text-success'
+                  ? 'bg-primary-subtle text-primary'
                   : toast.type === 'danger'
                   ? 'bg-danger-subtle text-danger'
                   : toast.type === 'warning'
@@ -83,20 +75,20 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                   : 'bg-info-subtle text-info'
               }`}
             >
-              {toast.type === 'success' && <Check size={16} strokeWidth={1.75} aria-hidden />}
-              {toast.type === 'danger' && <X size={16} strokeWidth={1.75} aria-hidden />}
-              {toast.type === 'warning' && <TriangleAlert size={16} strokeWidth={1.75} aria-hidden />}
-              {toast.type === 'info' && <Info size={16} strokeWidth={1.75} aria-hidden />}
+              {toast.type === 'success' && <Check size={18} strokeWidth={1.75} aria-hidden />}
+              {toast.type === 'danger' && <X size={18} strokeWidth={1.75} aria-hidden />}
+              {toast.type === 'warning' && <TriangleAlert size={18} strokeWidth={1.75} aria-hidden />}
+              {toast.type === 'info' && <Info size={18} strokeWidth={1.75} aria-hidden />}
             </div>
             <div className="flex-1 min-w-0">
-              <h5 className="text-xs font-bold leading-snug">{toast.title}</h5>
+              <h5 className="text-[15px] font-bold leading-snug">{toast.title}</h5>
               {toast.description && (
-                <p className="text-xs text-fg-muted mt-0.5 leading-relaxed">{toast.description}</p>
+                <p className="text-[13px] text-fg-muted mt-0.5 leading-relaxed">{toast.description}</p>
               )}
             </div>
             <button
               onClick={() => removeToast(toast.id)}
-              className="text-fg-subtle hover:text-fg text-xs p-1"
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-fg-subtle transition-colors hover:bg-surface-muted hover:text-fg"
               aria-label="إغلاق التنبيه"
             >
               

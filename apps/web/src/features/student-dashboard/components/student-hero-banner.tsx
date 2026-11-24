@@ -17,20 +17,19 @@ export const StudentHeroBanner: React.FC<StudentHeroBannerProps> = ({
   meetings,
 }) => {
   return (
-    <div className="relative overflow-hidden rounded-lg bg-surface border border-border shadow-xs flex flex-col">
-      <div className="sadu w-full" />
-      <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6 p-6 sm:p-8 flex-1">
+    <div className="glass relative overflow-hidden rounded-2xl flex min-h-[290px] flex-col">
+      <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8 p-7 sm:px-[52px] sm:py-12 flex-1">
         <div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center rounded-xs bg-primary-subtle text-primary px-2.5 py-0.5 text-xs font-semibold">
+            <span className="inline-flex items-center text-sm font-semibold text-accent">
               طالب نشط
             </span>
             <span className="text-xs text-fg-muted font-mono">{studentCode}</span>
           </div>
-          <h1 className="mt-3 text-2xl sm:text-3xl font-bold text-fg tracking-tight">
+          <h1 className="mt-3 font-display text-3xl sm:text-[44px] leading-tight text-fg-strong">
             أهلاً بك، {name}  
  </h1>
-          <p className="mt-2 text-xs sm:text-sm text-fg-muted max-w-xl leading-relaxed">
+          <p className="mt-3 text-sm sm:text-base text-fg-muted max-w-xl leading-relaxed">
             منصتك الأكاديمية المتكاملة: استكمل دروسك المسجلة، تابع حصصك المباشرة، وحقق أعلى الدرجات.
           </p>
         </div>
@@ -41,18 +40,16 @@ export const StudentHeroBanner: React.FC<StudentHeroBannerProps> = ({
               href={meetings[0].join_url}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center justify-center gap-2 rounded-md bg-primary text-primary-fg px-5 py-2.5 font-bold text-xs hover:bg-primary-hover transition-colors shadow-xs"
+              className="btn-primary flex h-[var(--control-h-lg)] items-center justify-center gap-2 rounded-full px-7 font-bold text-sm transition-[filter] hover:brightness-105"
             >
               <VideoIcon size={16} />
               دخول المحاضرة المباشرة
             </a>
           )}
-          <Link href="/student/courses">
-            <button className="flex items-center justify-center gap-2 rounded-md border border-border bg-surface px-5 py-2.5 font-semibold text-xs text-fg hover:bg-surface-raised transition-colors">
+          <Link href="/student/courses" className="flex h-[var(--control-h-lg)] items-center justify-center gap-2 rounded-full border border-[var(--glass-border)] bg-[var(--glass-bg-strong)] px-7 font-semibold text-sm text-fg shadow-[var(--glass-highlight)] hover:bg-surface-raised transition-colors">
               <BookOpenIcon size={16} />
               استعراض المقررات
-            </button>
-          </Link>
+            </Link>
         </div>
       </div>
     </div>

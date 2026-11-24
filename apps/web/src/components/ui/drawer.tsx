@@ -39,11 +39,11 @@ export const Drawer: React.FC<DrawerProps> = ({ isOpen, onClose, title, subtitle
         aria-labelledby={titleId}
         tabIndex={-1}
         className={cn(
-          'relative z-10 flex h-full w-full flex-col border-e border-border bg-surface-raised shadow-xl outline-none',
+          'relative z-10 flex h-full w-full flex-col glass outline-none',
           widthClasses[width],
         )}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
+        <div className="flex items-start justify-between gap-4 border-b border-border-subtle px-6 py-5">
           <div className="min-w-0">
             <h2 id={titleId} className="text-lg font-bold text-fg">
               {title}
@@ -54,7 +54,7 @@ export const Drawer: React.FC<DrawerProps> = ({ isOpen, onClose, title, subtitle
             type="button"
             data-dialog-close
             onClick={onClose}
-            className="-me-2 grid h-9 w-9 shrink-0 place-items-center rounded-md text-fg-muted transition-colors hover:bg-surface-muted hover:text-fg"
+            className="-me-2 grid h-9 w-9 shrink-0 place-items-center rounded-full text-fg-muted transition-colors hover:bg-surface-muted hover:text-fg"
             aria-label="إغلاق"
           >
             <X size={18} aria-hidden />
@@ -62,7 +62,7 @@ export const Drawer: React.FC<DrawerProps> = ({ isOpen, onClose, title, subtitle
         </div>
         <div className="flex-1 space-y-4 overflow-y-auto p-6">{children}</div>
         {footer && (
-          <div className="flex items-center justify-end gap-2 border-t border-border bg-surface-sunken px-6 py-4">{footer}</div>
+          <div className="flex items-center justify-end gap-2 border-t border-border-subtle bg-[var(--glass-bg-flat)] px-6 py-4">{footer}</div>
         )}
       </div>
     </div>

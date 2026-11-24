@@ -10,36 +10,31 @@ export interface TeacherHeroBannerProps {
 
 export const TeacherHeroBanner: React.FC<TeacherHeroBannerProps> = ({ name }) => {
   return (
-    <div className="relative overflow-hidden rounded-lg bg-surface border border-border shadow-xs flex flex-col">
-      <div className="sadu w-full" />
-      <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6 p-6 sm:p-8 flex-1">
+    <div className="glass relative overflow-hidden rounded-2xl flex min-h-[290px] flex-col">
+      <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8 p-7 sm:px-[52px] sm:py-12 flex-1">
         <div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center rounded-xs bg-primary-subtle text-primary px-2.5 py-0.5 text-xs font-semibold">
+            <span className="inline-flex items-center text-sm font-semibold text-accent">
               بوابة الكادر التعليمي
             </span>
           </div>
-          <h1 className="mt-3 text-2xl sm:text-3xl font-bold text-fg tracking-tight">
+          <h1 className="mt-3 font-display text-3xl sm:text-[44px] leading-tight text-fg-strong">
             مرحباً بك، {name}  
  </h1>
-          <p className="mt-2 text-xs sm:text-sm text-fg-muted max-w-xl leading-relaxed">
+          <p className="mt-3 text-sm sm:text-base text-fg-muted max-w-xl leading-relaxed">
             متابعة الحصص الدراسية، تسجيل حضور الطلاب بالباركود الآمن، وتدقيق الواجبات والمدفوعات.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <Link href="/teacher/courses">
-            <button className="flex items-center justify-center gap-2 rounded-md bg-primary text-primary-fg px-5 py-2.5 font-bold text-xs hover:bg-primary-hover transition-colors shadow-xs">
+          <Link href="/teacher/courses" className="btn-primary flex h-[var(--control-h-lg)] items-center justify-center gap-2 rounded-full px-7 font-bold text-sm transition-[filter] hover:brightness-105">
               <BookOpenIcon size={16} />
               إدارة المقررات
-            </button>
-          </Link>
-          <Link href="/teacher/students">
-            <button className="flex items-center justify-center gap-2 rounded-md border border-border bg-surface px-5 py-2.5 font-semibold text-xs text-fg hover:bg-surface-raised transition-colors">
+            </Link>
+          <Link href="/teacher/students" className="flex h-[var(--control-h-lg)] items-center justify-center gap-2 rounded-full border border-[var(--glass-border)] bg-[var(--glass-bg-strong)] px-7 font-semibold text-sm text-fg shadow-[var(--glass-highlight)] hover:bg-surface-raised transition-colors">
               <UsersIcon size={16} />
               سجل الطلاب
-            </button>
-          </Link>
+            </Link>
         </div>
       </div>
     </div>

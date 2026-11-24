@@ -1,0 +1,158 @@
+/**
+ * Sahaba — "Emerald Glass" theme (R8)
+ * Drop-in replacement for the SEMANTIC layer (2a/2b) of apps/web/src/styles/tokens.css.
+ * Keep primitives (§1), chrome tokens, legacy aliases and the tone-zone selectors as they are.
+ * Token NAMES are unchanged on purpose — only values move, plus new --glass-* / --ambient-* tokens.
+ * Light = the source of truth. Dark = same shapes/icons, evening palette.
+ */
+
+/* ---------------------------------------------------------------- Light (default) */
+:root, [data-theme="light"], [data-tone="light"] {
+  color-scheme: light;
+
+  /* Page + ambient light behind the glass */
+  --surface-sunken: #E6F2EE;
+  --ambient-1: #6FD4BC;   /* top-left orb */
+  --ambient-2: #E9D6B4;   /* sand orb */
+  --ambient-3: #A8E8D6;
+  --ambient-4: #CFE4FF;
+  --ambient-opacity: .75;
+
+  /* Glass surfaces */
+  --glass-bg: linear-gradient(160deg, rgba(255,255,255,.72), rgba(255,255,255,.38));
+  --glass-bg-flat: rgba(255,255,255,.55);      /* nested wells: rows, course body, who-card */
+  --glass-bg-strong: rgba(255,255,255,.85);    /* chips on glass: time tile, seg-on */
+  --glass-border: rgba(255,255,255,.9);
+  --glass-blur: 28px;
+  --glass-saturate: 160%;
+  --glass-highlight: inset 0 1px 0 #fff;
+  --glass-shadow: inset 0 1px 0 #fff, inset 0 -1px 0 rgba(12,127,109,.06), 0 30px 60px -32px rgba(12,90,78,.35);
+
+  --surface: rgba(255,255,255,.72);
+  --surface-raised: #FFFFFF;
+  --surface-muted: rgba(12,90,78,.08);
+  --surface-overlay: rgba(11,46,41,.35);
+
+  /* Text */
+  --fg: #0B2E29;
+  --fg-strong: #0D4A42;     /* display titles, KPI numbers */
+  --fg-muted: #3D5A54;
+  --fg-subtle: #557069;
+  --fg-inverse: #FFFFFF;
+
+  /* Borders */
+  --border: rgba(12,90,78,.14);
+  --border-subtle: rgba(12,90,78,.08);
+  --border-strong: rgba(12,90,78,.24);
+
+  /* Brand */
+  --primary: var(--brand-primary, #0A7363);
+  --primary-hover: #0B6659;
+  --primary-fg: #FFFFFF;
+  --primary-gradient: linear-gradient(180deg, #149C84, #0A7363);
+  --primary-glow: 0 10px 24px -10px rgba(10,115,99,.75);
+  --primary-subtle: rgba(10,115,99,.12);
+  --primary-subtle-fg: #0B6659;
+  --primary-ring: rgba(10,115,99,.16);
+
+  --accent: #9C6B36;            /* small labels, section numbers, kicker */
+  --accent-fg: #FFFFFF;
+  --accent-subtle: rgba(205,160,97,.22);
+  --accent-subtle-fg: #5F3F25;
+
+  /* Feedback: subtle = translucent tint (works on glass) */
+  --success: #137336;  --success-subtle: rgba(22,163,74,.13);  --success-subtle-fg: #14532D;
+  --warning: #A14A08;  --warning-subtle: rgba(217,119,6,.14);  --warning-subtle-fg: #78350F;
+  --danger:  #C42020;  --danger-subtle:  rgba(220,38,38,.11);  --danger-subtle-fg:  #7F1D1D;
+  --info:    #1D4ED8;  --info-subtle:    rgba(37,99,235,.11);  --info-subtle-fg:    #1E3A8A;  /* was olive — now blue */
+  --success-fg:#fff; --warning-fg:#fff; --danger-fg:#fff; --info-fg:#fff;
+
+  --progress-fill: linear-gradient(90deg, #CDA061, #149C84);
+  --live-dot: #A8E8D6;
+
+  --shadow-xs: 0 1px 2px rgba(12,90,78,.06);
+  --shadow-sm: 0 4px 12px -6px rgba(12,90,78,.25);
+  --shadow-md: 0 20px 40px -18px rgba(12,90,78,.4);
+  --shadow-lg: var(--glass-shadow);
+  --focus-ring: 0 0 0 4px var(--primary-ring);
+
+  --logo-frame: #037161; --logo-pages: #03A591; --logo-arch: #D8AB71;
+}
+
+/* ---------------------------------------------------------------- Dark */
+[data-theme="dark"], [data-tone="dark"] {
+  color-scheme: dark;
+
+  --surface-sunken: #0A1715;
+  --ambient-1: #0C7F6D;
+  --ambient-2: #7D532E;
+  --ambient-3: #0D5249;
+  --ambient-4: #1E3A66;
+  --ambient-opacity: .6;
+
+  --glass-bg: linear-gradient(160deg, rgba(255,255,255,.11), rgba(255,255,255,.04));
+  --glass-bg-flat: rgba(255,255,255,.06);
+  --glass-bg-strong: rgba(255,255,255,.12);
+  --glass-border: rgba(255,255,255,.13);
+  --glass-highlight: inset 0 1px 0 rgba(255,255,255,.16);
+  --glass-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 30px 60px -30px rgba(0,0,0,.7);
+
+  --surface: rgba(255,255,255,.08);
+  --surface-raised: #13241F;
+  --surface-muted: rgba(255,255,255,.08);
+  --surface-overlay: rgba(0,0,0,.6);
+
+  --fg: #EEF7F4;
+  --fg-strong: #F2FBF8;
+  --fg-muted: rgba(226,240,236,.8);
+  --fg-subtle: rgba(214,232,226,.7);
+  --fg-inverse: #03201B;
+
+  --border: rgba(255,255,255,.12);
+  --border-subtle: rgba(255,255,255,.07);
+  --border-strong: rgba(255,255,255,.2);
+
+  --primary: var(--brand-primary-dark, #2FD3B1);
+  --primary-hover: #5CE3C6;
+  --primary-fg: #03201B;
+  --primary-gradient: linear-gradient(180deg, #5CE3C6, #2FD3B1);
+  --primary-glow: 0 10px 26px -10px rgba(47,211,177,.7);
+  --primary-subtle: rgba(47,211,177,.16);
+  --primary-subtle-fg: #7FE6CF;
+  --primary-ring: rgba(47,211,177,.2);
+
+  --accent: #E8C88F;
+  --accent-fg: #3F2A19;
+  --accent-subtle: rgba(232,200,143,.18);
+  --accent-subtle-fg: #F4E0BB;
+
+  --success: #86EFAC;  --success-subtle: rgba(74,222,128,.15);  --success-subtle-fg: #BBF7D0;
+  --warning: #FCD34D;  --warning-subtle: rgba(251,191,36,.15);  --warning-subtle-fg: #FDE68A;
+  --danger:  #FCA5A5;  --danger-subtle:  rgba(252,154,154,.15); --danger-subtle-fg:  #FECACA;
+  --info:    #93C5FD;  --info-subtle:    rgba(140,196,255,.15); --info-subtle-fg:    #D6E8FF;
+  --success-fg:#052E16; --warning-fg:#451A03; --danger-fg:#450A0A; --info-fg:#0B2545;
+
+  --progress-fill: linear-gradient(90deg, #E8C88F, #2FD3B1);
+  --live-dot: #2FD3B1;
+
+  --shadow-xs: 0 1px 2px rgba(0,0,0,.3);
+  --shadow-sm: 0 4px 12px -6px rgba(0,0,0,.5);
+  --shadow-md: 0 20px 40px -18px rgba(0,0,0,.6);
+  --shadow-lg: var(--glass-shadow);
+  --focus-ring: 0 0 0 4px var(--primary-ring);
+
+  --logo-frame: #FFFFFF; --logo-pages: #A8E8D6; --logo-arch: #E9D6B4;
+}
+
+/* ---------------------------------------------------------------- Shape scale (both modes — identical) */
+:root {
+  --radius-xs: 7px;     /* checkbox */
+  --radius-sm: 14px;    /* buttons, inputs, icon tiles, time tile */
+  --radius-md: 20px;    /* nested wells: rows, course card, who-card */
+  --radius-lg: 24px;    /* toast */
+  --radius-xl: 28px;    /* section cards, KPI cards, empty-state art */
+  --radius-2xl: 36px;   /* hero */
+  --radius-full: 9999px;/* badges, segmented control, switches, hero CTA */
+
+  --control-h: 48px; --control-h-sm: 38px; --control-h-lg: 56px; --input-h: 50px;
+}

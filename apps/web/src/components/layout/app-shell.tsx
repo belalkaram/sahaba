@@ -273,14 +273,15 @@ export const AppShell: React.FC<AppShellProps> = ({ children, experienceOverride
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-surface-sunken text-fg">
+    <div className="relative isolate flex min-h-screen flex-col text-fg">
+      <div className="ambient" aria-hidden><i /><i /><i /></div>
       <SupportSessionBanner />
 
       <div className="flex flex-1">
         {/* Desktop sidebar */}
         <aside
           className={cn(
-            'rail-surface sticky top-0 z-30 hidden h-screen shrink-0 flex-col border-e border-border transition-[width] duration-300 ease-out md:flex',
+            'rail-surface sticky top-3 z-30 m-3 me-0 hidden h-[calc(100vh-1.5rem)] shrink-0 flex-col self-start overflow-hidden rounded-xl border border-[var(--glass-border)] shadow-[var(--glass-shadow)] transition-[width] duration-300 ease-out md:flex',
             collapsed ? 'w-[var(--shell-sidebar-collapsed)]' : 'w-[var(--shell-sidebar)]',
           )}
           aria-label="القائمة الجانبية"
@@ -377,11 +378,11 @@ export const AppShell: React.FC<AppShellProps> = ({ children, experienceOverride
 
         <div className="flex min-w-0 flex-1 flex-col">
           {/* Top bar */}
-          <header className="chrome-surface sticky top-0 z-40 flex h-[68px] items-center gap-3 border-b border-border px-4 shadow-xs sm:px-6">
+          <header className="chrome-surface sticky top-3 z-40 mx-3 mt-3 flex h-[64px] items-center gap-3 rounded-full border border-[var(--glass-border)] px-3 shadow-[var(--glass-shadow)] sm:px-4">
             <button
               type="button"
               onClick={() => setMoreOpen(true)}
-              className="grid h-10 w-10 place-items-center rounded-md text-fg-muted hover:bg-surface-muted hover:text-fg md:hidden"
+              className="grid h-10 w-10 place-items-center rounded-full text-fg-muted hover:bg-surface-muted hover:text-fg md:hidden"
               aria-label="فتح القائمة"
             >
               <Menu size={20} strokeWidth={1.75} aria-hidden />
@@ -395,7 +396,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children, experienceOverride
             <button
               type="button"
               onClick={() => setPaletteOpen(true)}
-              className="hidden h-10 w-full max-w-md items-center gap-2.5 rounded-md border border-border bg-surface-raised px-3 text-sm text-fg-subtle transition-colors hover:border-primary/40 md:flex"
+              className="hidden h-10 w-full max-w-md items-center gap-2.5 rounded-full border border-border bg-surface-raised px-4 text-sm text-fg-subtle transition-colors hover:border-primary/40 md:flex"
             >
               <Search size={16} strokeWidth={1.75} aria-hidden />
               <span className="flex-1 text-start">انتقال سريع إلى صفحة…</span>
@@ -406,7 +407,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children, experienceOverride
               <button
                 type="button"
                 onClick={() => setPaletteOpen(true)}
-                className="grid h-10 w-10 place-items-center rounded-md text-fg-muted hover:bg-surface-muted hover:text-fg md:hidden"
+                className="grid h-10 w-10 place-items-center rounded-full text-fg-muted hover:bg-surface-muted hover:text-fg md:hidden"
                 aria-label="بحث"
               >
                 <Search size={18} strokeWidth={1.75} aria-hidden />
@@ -442,7 +443,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children, experienceOverride
 
       {/* Mobile bottom navigation */}
       <nav
-        className="chrome-surface fixed inset-x-0 bottom-0 z-40 flex items-stretch border-t border-border pb-[env(safe-area-inset-bottom)] md:hidden"
+        className="chrome-surface fixed inset-x-3 bottom-3 z-40 flex items-stretch overflow-hidden rounded-full border border-[var(--glass-border)] shadow-[var(--glass-shadow)] mb-[env(safe-area-inset-bottom)] md:hidden"
         aria-label="التنقل السفلي"
       >
         {mobilePrimary.map((item) => {
@@ -610,7 +611,7 @@ function MobileSheet({ title, onClose, children }: { title: string; onClose: () 
         role="dialog"
         aria-modal="true"
         aria-label="القائمة"
-        className="chrome-surface absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-xl border-t border-border px-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-2 shadow-xl"
+        className="chrome-surface absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-xl border-t border-[var(--glass-border)] px-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-2 shadow-xl"
       >
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-border-strong" aria-hidden />
         <div className="mb-3 flex items-center justify-between px-3">

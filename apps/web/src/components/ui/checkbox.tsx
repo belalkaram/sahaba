@@ -38,7 +38,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             ref={setMergedRef}
             checked={checked}
             disabled={disabled}
-            className={`peer h-4.5 w-4.5 shrink-0 appearance-none rounded border bg-surface transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 checked:bg-primary checked:border-primary disabled:cursor-not-allowed disabled:opacity-50 ${
+            className={`peer h-5 w-5 shrink-0 appearance-none rounded-xs border bg-[var(--glass-bg-flat)] transition-all cursor-pointer outline-none focus-visible:shadow-[var(--focus-ring)] checked:bg-primary checked:border-primary disabled:cursor-not-allowed disabled:opacity-50 ${
               error ? 'border-danger' : 'border-border-strong hover:border-primary'
             } ${className}`}
             {...props}

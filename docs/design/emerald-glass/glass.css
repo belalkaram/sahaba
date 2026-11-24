@@ -1,0 +1,32 @@
+/* Sahaba Emerald Glass — utilities. Import after tokens.css (e.g. in globals.css). */
+
+/* Ambient light layer — render ONCE in the app shell, behind everything. */
+.ambient { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; background: var(--surface-sunken); }
+.ambient > i { position: absolute; border-radius: 50%; opacity: var(--ambient-opacity); filter: blur(60px); }
+.ambient > i:nth-child(1) { inset-inline-start: 55%; top: -200px; width: 900px; height: 900px; background: radial-gradient(circle, var(--ambient-1), transparent 70%); }
+.ambient > i:nth-child(2) { inset-inline-start: -15%; top: 40%;   width: 800px; height: 800px; background: radial-gradient(circle, var(--ambient-2), transparent 70%); }
+.ambient > i:nth-child(3) { inset-inline-start: 40%;  top: 70%;   width: 900px; height: 900px; background: radial-gradient(circle, var(--ambient-3), transparent 70%); }
+
+/* Primary glass panel: cards, KPI, hero, toast, dropdowns, modals */
+.glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: blur(var(--glass-blur, 28px)) saturate(var(--glass-saturate, 160%));
+  backdrop-filter: blur(var(--glass-blur, 28px)) saturate(var(--glass-saturate, 160%));
+  box-shadow: var(--glass-shadow);
+}
+/* Nested well INSIDE a glass panel — never blur twice */
+.glass-well { background: var(--glass-bg-flat); border: 1px solid var(--glass-border); }
+
+/* Primary action */
+.btn-primary { background: var(--primary-gradient); color: var(--primary-fg); box-shadow: var(--glass-highlight), var(--primary-glow); }
+
+/* Fallback: no backdrop-filter, or user asked for less transparency */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass { background: var(--surface-raised); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass { background: var(--surface-raised); backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .ambient > i { display: none; }
+}
+/* Performance: big tables / long lists use .glass-well rows, never .glass per row. */

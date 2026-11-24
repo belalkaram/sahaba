@@ -42,12 +42,9 @@ export function PublicHeader() {
       if (progressRef.current) {
         progressRef.current.style.transform = `scaleX(${max > 0 ? Math.min(y / max, 1) : 0})`;
       }
-      header.classList.toggle('shadow-md', y > 8);
-      header.classList.toggle('border-border', y > 8);
-      header.classList.toggle('border-border/60', y <= 8);
       // Give the page back its full height while reading down; bring the header back on the way up.
       const hide = !openRef.current && y > 180 && y > lastY + 4;
-      header.style.transform = hide ? 'translateY(-100%)' : 'translateY(0)';
+      header.style.transform = hide ? 'translateY(calc(-100% - 12px))' : 'translateY(0)';
       lastY = y;
     };
 
@@ -74,23 +71,30 @@ export function PublicHeader() {
     <header
       ref={headerRef}
       className={cn(
-        'chrome-surface sticky top-0 z-40 border-b border-border/60',
+        'sticky top-3 z-40 mx-3 sm:mx-6',
         'transition-[transform,box-shadow] duration-300 will-change-transform motion-reduce:transition-none',
       )}
     >
-      <span ref={progressRef} aria-hidden className="absolute inset-x-0 bottom-0 h-0.5 origin-right scale-x-0 bg-primary" />
+      {/* Floating glass pill (Emerald Glass): same glass, border and shadow as the app sidebar. */}
+      <div
+        className={cn(
+          'chrome-surface relative mx-auto max-w-[var(--content-max)] overflow-hidden border border-[var(--glass-border)] shadow-[var(--glass-shadow)] transition-[border-radius] duration-300',
+          open ? 'rounded-xl' : 'rounded-full',
+        )}
+      >
+      <span ref={progressRef} aria-hidden className="absolute inset-x-6 bottom-0 h-0.5 origin-right scale-x-0 rounded-full bg-primary" />
       {/* 3 equal tracks: brand | centered links | actions — links stay optically centered at any width */}
-      <div className="mx-auto grid h-[68px] max-w-[var(--content-max)] grid-cols-[1fr_auto] items-center gap-4 px-4 sm:px-6 lg:h-[76px] lg:grid-cols-[1fr_auto_1fr]">
+      <div className="grid h-[64px] grid-cols-[1fr_auto] items-center gap-4 ps-5 pe-3 sm:ps-6 lg:h-[72px] xl:grid-cols-[1fr_auto_1fr]">
         <Link href="/" className="justify-self-start">
-          <BrandLockup size={52} />
+          <BrandLockup size={46} />
         </Link>
 
-        <nav className="hidden items-center justify-center gap-1 lg:flex" aria-label="روابط الموقع">
+        <nav className="hidden items-center justify-center gap-0.5 xl:flex" aria-label="روابط الموقع">
           {NAV.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="relative whitespace-nowrap rounded-md px-4 py-2 text-[0.9375rem] font-medium text-fg-muted transition-colors hover:bg-surface-muted hover:text-fg"
+              className="relative whitespace-nowrap rounded-full px-3.5 py-2 text-[0.9375rem] font-medium text-fg-muted transition-colors hover:bg-surface-muted hover:text-fg"
             >
               {item.label}
             </Link>
@@ -100,17 +104,17 @@ export function PublicHeader() {
         <div className="flex items-center justify-self-end gap-2">
           <ThemeSwitcher />
           <span className="hidden items-center gap-2 sm:flex">
-            <Link href="/login" className={buttonClasses('ghost', 'md')}>
+            <Link href="/login" className={buttonClasses('ghost', 'md', 'rounded-full!')}>
               تسجيل الدخول
             </Link>
-            <Link href="/register-school" className={buttonClasses('primary', 'md')}>
+            <Link href="/register-school" className={buttonClasses('primary', 'md', 'rounded-full!')}>
               سجّل أكاديميتك
             </Link>
           </span>
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
-            className="grid h-10 w-10 place-items-center rounded-md text-fg-muted hover:bg-surface-muted lg:hidden"
+            className="grid h-10 w-10 place-items-center rounded-full text-fg-muted hover:bg-surface-muted xl:hidden"
             aria-label={open ? 'إغلاق القائمة' : 'فتح القائمة'}
             aria-expanded={open}
           >
@@ -119,7 +123,7 @@ export function PublicHeader() {
         </div>
       </div>
       {open && (
-        <div className="border-t border-border px-4 pb-4 pt-2 shadow-md lg:hidden">
+        <div className="border-t border-border px-4 pb-4 pt-2 xl:hidden">
           <nav className="grid gap-1" aria-label="روابط الموقع">
             {NAV.map((item) => (
               <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className="rounded-md px-3 py-3 text-base font-medium text-fg hover:bg-surface-muted">
@@ -137,6 +141,7 @@ export function PublicHeader() {
           </div>
         </div>
       )}
+      </div>
     </header>
   );
 }
@@ -184,7 +189,8 @@ function FooterCol({ title, links }: { title: string; links: [string, string][] 
 /** Shell for public content pages. */
 export function PublicPage({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col bg-surface-sunken">
+    <div className="relative isolate flex min-h-screen flex-col">
+      <div className="ambient" aria-hidden><i /><i /><i /></div>
       <PublicHeader />
       <main className="flex-1">{children}</main>
       <PublicFooter />

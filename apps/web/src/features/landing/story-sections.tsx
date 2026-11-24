@@ -132,7 +132,7 @@ export function Services() {
 
         <div className="grid gap-6 lg:grid-cols-2">
           {SERVICES.map((service) => (
-            <article key={service.key} className="flex flex-col rounded-2xl border border-border bg-surface-sunken p-6 shadow-sm sm:p-8" data-reveal>
+            <article key={service.key} className="flex flex-col glass rounded-xl p-6 sm:p-8" data-reveal>
               <div className="mb-6 flex items-center gap-3">
                 <span className="arch grid h-14 w-12 place-items-center bg-primary-subtle text-primary">
                   <Icon name={service.icon} size={24} />
@@ -236,7 +236,7 @@ export function Analytics() {
         <SectionHeading eyebrow={ANALYTICS.eyebrow} title={ANALYTICS.title} description={ANALYTICS.description} />
 
         <div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:items-center">
-          <div className="space-y-6 rounded-2xl border border-border bg-surface-sunken p-6 shadow-sm sm:p-8" data-reveal>
+          <div className="space-y-6 glass rounded-xl p-6 sm:p-8" data-reveal>
             {ANALYTICS.metrics.map((metric) => (
               <div key={metric.label}>
                 <div className="mb-2 flex items-baseline justify-between gap-3">

@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Changed] - 2026-11-24 — Emerald Glass design system (R8) for the web app
+
+- Spec + references: docs/design/emerald-glass/ (DESIGN.md, tokens.css, glass.css, reference HTML, screenshots).
+- styles/tokens.css: semantic layer 2a/2b replaced with Emerald Glass values (info is now blue); new --glass-*, --ambient-*, --control-h*, --input-h tokens; radius scale 7/14/20/24/28/36. Primitives, chrome, legacy aliases and tone zones kept.
+- styles/glass.css imported in globals.css; .ambient layer in app shell, PublicPage and the landing page.
+- components/ui: button, field/input/select/textarea, switch, checkbox, badge (+live), tabs, card (+CardHeader number), kpi-card/stat-card, progress-bar, toast, empty-state, avatar, modal, drawer, dropdown-menu follow the DESIGN.md shape table. No theme branching.
+- Student and teacher hero banners are glass heroes (r36, Liftaswash title, pill CTA).
+- Floating glass chrome: sidebar is a rounded deep-green glass panel in both themes; app top bar, mobile bottom nav and the public header are floating glass pills. Dark chrome tokens moved from beige to deep-green glass so dark mode is dark end to end. Public nav links collapse to the menu below xl.
+- Follow-up review: /login got the .ambient layer; page titles lost the sand underline (heading-accent now = --fg-strong).
+- Checked: tsc --noEmit; /components in light and dark in the browser. Student, teacher, parent and tenant-admin dashboards checked in both modes in the browser. Not checked: every page by role; tenant landing templates still use gradient-brand heroes.
+
 ## [Fixed] - 2026-11-24 — Assistant desk counts grading from the inbox and hides from staff without a matching permission (REV-5, J-04, J-05)
 
 - `/teacher/assistant`: "waiting for grading" now comes from `GET /grading/pending` (assignments and exams, same scope and number as `/teacher/grading`) instead of N+1 requests over the first 5 courses that ignored exams. Without `exams.grade`, or when the call fails, it shows "—", never 0.

@@ -29,7 +29,8 @@ export default async function HomePage() {
   ]);
 
   return (
-    <div className="min-h-screen bg-surface-sunken">
+    <div className="relative isolate min-h-screen">
+      <div className="ambient" aria-hidden><i /><i /><i /></div>
       <SignedInRedirect />
       <LandingMotion />
       <PublicHeader />

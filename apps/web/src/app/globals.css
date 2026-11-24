@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "../styles/tokens.css";
+@import "../styles/glass.css";
 
 /* Dark variant follows the data-theme attribute set by ThemeProvider (system/light/dark). */
 /* Tone zones (OD-48): a data-tone subtree overrides the page theme for `dark:` utilities too. */
@@ -358,20 +359,9 @@ html.motion-ready [data-hero-visual] {
   border-radius: 999px 999px var(--radius-lg) var(--radius-lg);
 }
 
-/* Kashida-style accent under display headings. */
+/* Display headings. Emerald Glass (R8) removed the sand underline; titles use --fg-strong. */
 @utility heading-accent {
-  position: relative;
-  padding-bottom: 0.625rem;
-  &::after {
-    content: "";
-    position: absolute;
-    inset-inline-start: 0;
-    bottom: 0;
-    width: 2rem;
-    height: 3px;
-    border-radius: 3px;
-    background: var(--accent);
-  }
+  color: var(--fg-strong);
 }
 
 @utility bg-gradient-brand {

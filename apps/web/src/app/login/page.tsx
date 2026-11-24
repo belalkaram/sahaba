@@ -108,7 +108,8 @@ function LoginForm() {
   );
 
   return (
-    <div className="grid min-h-screen bg-surface lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
+    <div className="relative isolate grid min-h-screen lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
+      <div className="ambient" aria-hidden><i /><i /><i /></div>
       {/* Form side (inline start = right in RTL) */}
       <div ref={formRef} className="relative flex flex-col px-6 py-6 sm:px-10 lg:px-16">
         <div className="flex items-center justify-between" data-enter>
@@ -325,7 +326,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-surface" />}>
+    <Suspense fallback={<div className="min-h-screen bg-surface-sunken" />}>
       <LoginForm />
     </Suspense>
   );

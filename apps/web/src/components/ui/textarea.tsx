@@ -3,6 +3,8 @@
 import React, { forwardRef } from 'react';
 
 import { TriangleAlert } from 'lucide-react';
+import { cn } from '../../lib/cn';
+import { controlBase, controlError, controlNormal } from './field';
 export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;
   error?: string;
@@ -25,9 +27,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           id={textareaId}
           ref={ref}
           rows={rows}
-          className={`w-full rounded-md border bg-surface px-3 py-2 text-sm text-fg placeholder:text-fg-subtle focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-            error ? 'border-danger focus:ring-danger' : 'border-border'
-          } ${className}`}
+          className={cn(controlBase, error ? controlError : controlNormal, 'px-4 py-3', className)}
           {...props}
         />
         {error ? (

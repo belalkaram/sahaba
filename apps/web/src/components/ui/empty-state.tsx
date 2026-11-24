@@ -27,22 +27,22 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ icon, title, description
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center text-center rounded-lg border border-dashed border-border-strong bg-surface',
+        'flex flex-col items-center justify-center text-center',
         compact ? 'gap-3 px-6 py-8' : 'gap-4 px-6 py-12',
         className,
       )}
     >
-      <div className="relative grid h-16 w-16 place-items-center rounded-2xl bg-primary-subtle text-primary">
-        <span className="relative">{icon || <Cloud size={24} strokeWidth={1.75} aria-hidden />}</span>
+      <div className="glass relative grid h-[84px] w-[84px] place-items-center rounded-xl text-primary">
+        <span className="relative">{icon || <Cloud size={32} strokeWidth={1.75} aria-hidden />}</span>
       </div>
       <div className="max-w-md space-y-1">
-        <h3 className="text-base font-bold text-fg">{title}</h3>
+        <h3 className="text-lg font-bold text-fg">{title}</h3>
         <p className="text-sm leading-relaxed text-fg-muted">{description}</p>
       </div>
       {action && (
         <div className="mt-1">
           {isActionObject ? (
-            <Button size="sm" onClick={(action as { onClick: () => void }).onClick}>
+            <Button size="sm" variant="secondary" onClick={(action as { onClick: () => void }).onClick}>
               {(action as { label: string }).label}
             </Button>
           ) : (

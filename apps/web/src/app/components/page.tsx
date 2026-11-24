@@ -190,7 +190,7 @@ export default function DesignSystemGallery() {
         <div className="grid gap-6 lg:grid-cols-3">
           <Card variant="brand" className="lg:col-span-2">
             <h3 className="font-display text-2xl">بطاقة الهوية (brand)</h3>
-            <p className="mt-2 text-white/75">للمواضع المميزة فقط: «تابع التعلّم» والـ Hero.</p>
+            <p className="mt-2 text-fg-muted">للمواضع المميزة فقط: «تابع التعلّم» والـ Hero.</p>
           </Card>
           <Card variant="interactive">
             <h3 className="text-base font-bold text-fg">بطاقة تفاعلية</h3>

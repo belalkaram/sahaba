@@ -14,8 +14,8 @@ export interface AvatarProps {
 const sizeClasses = {
   xs: 'w-6 h-6 text-xs',
   sm: 'w-8 h-8 text-xs',
-  md: 'w-10 h-10 text-sm',
-  lg: 'w-12 h-12 text-base',
+  md: 'w-11 h-11 text-sm',
+  lg: 'w-14 h-14 text-base',
   xl: 'w-16 h-16 text-xl',
 };
 
@@ -50,7 +50,7 @@ export const Avatar: React.FC<AvatarProps> = ({
   return (
     <div className={`relative inline-block shrink-0 ${className}`}>
       <div
-        className={`${sizeClasses[size]} rounded-full overflow-hidden flex items-center justify-center font-bold bg-primary-subtle text-primary-subtle-fg border border-border select-none`}
+        className={`${sizeClasses[size]} rounded-full overflow-hidden flex items-center justify-center font-bold bg-primary-subtle text-primary-subtle-fg shadow-[0_0_0_2px_var(--glass-border)] select-none`}
       >
         {src && !imageFailed ? (
           <img

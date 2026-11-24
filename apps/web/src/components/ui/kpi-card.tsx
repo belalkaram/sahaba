@@ -72,30 +72,30 @@ export const KpiCard: React.FC<KpiCardProps> = ({
   const countRef = useCountUp(numeric, fmt);
 
   return (
-    <div className={cn('rounded-lg border border-border bg-surface p-5 shadow-sm', className)}>
-      <div className="flex items-start justify-between gap-3">
-        <span className="text-sm font-medium text-fg-muted">{label}</span>
-        {icon && <span className={cn('grid h-10 w-10 shrink-0 place-items-center rounded-md', toneTile[tone])}>{icon}</span>}
+    <div className={cn('glass rounded-xl p-[22px]', className)}>
+      <div className="flex items-center gap-3">
+        {icon && <span className={cn('grid h-10 w-10 shrink-0 place-items-center rounded-sm', toneTile[tone])}>{icon}</span>}
+        <span className="text-sm font-semibold text-fg-muted">{label}</span>
       </div>
 
-      <div className="mt-2 text-3xl font-bold leading-tight text-fg tabular">
+      <div className="mt-4 break-words font-display text-4xl xl:text-[48px] leading-none text-fg-strong tabular">
         {numeric !== null ? <span ref={countRef}>{fmt(numeric)}</span> : <span>{text ?? '—'}</span>}
       </div>
 
       {hint && <p className="mt-1 text-xs text-fg-subtle">{hint}</p>}
 
       {(delta || sparkline) && (
-        <div className="mt-3 flex items-center justify-between border-t border-border-subtle pt-3">
+        <div className="mt-3 flex items-center justify-between pt-1">
           {delta && (
             <div className="flex items-center gap-1.5 text-xs">
               <span
                 className={cn(
-                  'inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold',
+                  'inline-flex items-center gap-1 font-bold',
                   delta.neutral
-                    ? 'bg-surface-muted text-fg-muted'
+                    ? 'text-fg-muted'
                     : delta.isPositive
-                      ? 'bg-success-subtle text-success-subtle-fg'
-                      : 'bg-danger-subtle text-danger-subtle-fg',
+                      ? 'text-success'
+                      : 'text-warning',
                 )}
               >
                 {!delta.neutral &&

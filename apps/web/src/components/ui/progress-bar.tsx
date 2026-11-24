@@ -23,12 +23,12 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
 
   const sizeClasses = {
     sm: 'h-1.5',
-    md: 'h-2.5',
+    md: 'h-2.5', // 10px
     lg: 'h-4',
   };
 
   const variantClasses = {
-    primary: 'bg-primary',
+    primary: 'bg-[image:var(--progress-fill)]',
     success: 'bg-success',
     warning: 'bg-warning',
     danger: 'bg-danger',
@@ -42,7 +42,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
           <span>{percentage}%</span>
         </div>
       )}
-      <div className={`w-full rounded-full bg-border overflow-hidden ${sizeClasses[size]}`}>
+      <div className={`w-full rounded-full bg-surface-muted overflow-hidden ${sizeClasses[size]}`}>
         <div
           role="progressbar"
           aria-label="نسبة التقدم"
@@ -94,7 +94,7 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
           cy={size / 2}
           r={radius}
           strokeWidth={strokeWidth}
-          className="stroke-border fill-transparent"
+          className="stroke-surface-muted fill-transparent"
         />
         <circle
           cx={size / 2}

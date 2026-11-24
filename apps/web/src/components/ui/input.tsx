@@ -47,7 +47,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         )}
         <div className="relative flex items-center" suppressHydrationWarning>
           {iconPrefix && (
-            <span className="pointer-events-none absolute start-3 flex items-center text-fg-subtle">{iconPrefix}</span>
+            <span className="pointer-events-none absolute start-[14px] flex items-center text-fg-subtle">{iconPrefix}</span>
           )}
           <input
             id={inputId}
@@ -61,8 +61,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             className={cn(
               controlBase,
               error ? controlError : controlNormal,
-              inputSize === 'lg' ? 'h-12 px-4' : 'h-10 px-3.5',
-              iconPrefix && 'ps-10',
+              inputSize === 'lg' ? 'h-[var(--control-h-lg)] px-4' : 'h-[var(--input-h)] px-4',
+              iconPrefix && 'ps-11',
               iconSuffix && 'pe-10',
               className,
             )}
