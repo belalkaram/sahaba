@@ -78,7 +78,8 @@
   /* Glass surfaces */
   --glass-bg: linear-gradient(160deg, rgba(255,255,255,.72), rgba(255,255,255,.38));
   --glass-bg-flat: rgba(255,255,255,.55);      /* nested wells: rows, course body, who-card */
-  --glass-bg-strong: rgba(255,255,255,.85);    /* chips on glass: time tile, seg-on */
+  --glass-bg-strong: rgba(255,255,255,.85);
+  --glass-menu-bg: rgba(255,255,255,.86);  /* profile / notification menus */    /* chips on glass: time tile, seg-on */
   --glass-border: rgba(255,255,255,.9);
   --glass-blur: 28px;
   --glass-saturate: 160%;
@@ -184,6 +185,7 @@
   --glass-bg: linear-gradient(160deg, rgba(255,255,255,.11), rgba(255,255,255,.04));
   --glass-bg-flat: rgba(255,255,255,.06);
   --glass-bg-strong: rgba(255,255,255,.12);
+  --glass-menu-bg: rgba(16,36,31,.88);
   --glass-border: rgba(255,255,255,.13);
   --glass-highlight: inset 0 1px 0 rgba(255,255,255,.16);
   --glass-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 30px 60px -30px rgba(0,0,0,.7);
@@ -336,14 +338,29 @@
   color: var(--chrome-fg);
 }
 
-/* Chrome and rail are glass panels: one blur level, floating over the ambient layer. */
+/*
+ * Chrome and rail are glass panels: one blur level, floating over the ambient layer.
+ * The blur sits on a ::before layer, not on the element itself: an element with backdrop-filter
+ * becomes the backdrop root for its children, so menus opened from the top bar (profile, bell)
+ * could not blur the page behind them and looked see-through.
+ */
 .chrome-surface,
 .rail-surface {
+  isolation: isolate;
+}
+.chrome-surface::before,
+.rail-surface::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
   -webkit-backdrop-filter: blur(var(--glass-blur, 28px)) saturate(var(--glass-saturate, 160%));
   backdrop-filter: blur(var(--glass-blur, 28px)) saturate(var(--glass-saturate, 160%));
 }
 @media (prefers-reduced-transparency: reduce) {
-  .chrome-surface, .rail-surface { -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .chrome-surface::before, .rail-surface::before { -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 
 /* Sidebar rail on a light page: the dark token set (above) on a deep green background. */

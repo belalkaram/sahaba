@@ -18,15 +18,25 @@
 /* Nested well INSIDE a glass panel — never blur twice */
 .glass-well { background: var(--glass-bg-flat); border: 1px solid var(--glass-border); }
 
+/* Popover menus (profile, notifications): frosted and nearly opaque so page text never shows through. */
+.glass-menu {
+  background: var(--glass-menu-bg);
+  border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: blur(32px) saturate(170%);
+  backdrop-filter: blur(32px) saturate(170%);
+  box-shadow: var(--glass-highlight), var(--shadow-md);
+}
+
 /* Primary action */
 .btn-primary { background: var(--primary-gradient); color: var(--primary-fg); box-shadow: var(--glass-highlight), var(--primary-glow); }
 
 /* Fallback: no backdrop-filter, or user asked for less transparency */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .glass { background: var(--surface-raised); }
+  .glass-menu { background: var(--surface-raised); }
 }
 @media (prefers-reduced-transparency: reduce) {
-  .glass { background: var(--surface-raised); backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .glass, .glass-menu { background: var(--surface-raised); backdrop-filter: none; -webkit-backdrop-filter: none; }
   .ambient > i { display: none; }
 }
 /* Performance: big tables / long lists use .glass-well rows, never .glass per row. */

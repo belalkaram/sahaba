@@ -562,7 +562,7 @@ function UserMenu({
         </span>
       </button>
       {open && (
-        <div role="menu" className="absolute end-0 top-full z-50 mt-2 w-60 rounded-md border border-border bg-surface-raised p-1 shadow-lg">
+        <div role="menu" className="absolute end-0 top-full z-50 mt-2 w-60 glass-menu rounded-md p-1">
           <div className="border-b border-border-subtle px-3 py-2.5">
             <p className="truncate text-sm font-semibold text-fg">{name}</p>
             <p className="text-xs text-fg-muted">{role}</p>
